@@ -1,0 +1,11 @@
+# Python bytecode (created automatically whenever Python runs the app)
+__pycache__/
+*.pyc
+
+# Local Python environment created by scripts/setup_env.bat
+.venv/
+
+# PyInstaller output from build_exe.bat
+build/
+dist/
+*.spec
