@@ -9,7 +9,7 @@ from ppe_sam import model, analysis, weather, inputs_export, libraries, report, 
 
 BASE = dict(lat=39.18886, lon=-76.600953, interval=60, inverter_name="TEST Central 2500kW",
             modules_per_string=28, system_voltage=1500, modules_high=1, modules_across=28,
-            orientation="portrait", azimuth=180, rows=1)
+            orientation="portrait", azimuth=180, rows=1, isc_datasheet=13.9)
 TRK = dict(racking="tracker", rotlim=60, ground_clearance=2.5)
 BIF = dict(module_name="TEST Bifacial 530W", bifaciality_base=70, bifaciality_tol=5, bifacial_gain=10)
 
@@ -45,6 +45,18 @@ def test_self_shading_input():
     mono = model.validate_design({**BASE, **TRK, "module_name": "TEST Mono 400W", "pitch": 6, "self_shading": "none"})
     assert mono["self_shading_ppe"] == "none"
     assert {r["input"]: r for r in report.build(mono)}["Self-shading"]["value"] == "None"
+
+
+def test_nec_floor_uses_datasheet_isc():
+    base = {**BASE, **TRK, **BIF, "pitch": 6, "self_shading": "standard"}
+    assert errs({k: v for k, v in base.items() if k != "isc_datasheet"}) == ["isc_datasheet"]   # required
+    assert errs({**base, "isc_datasheet": 500}) == ["isc_datasheet"]
+    d = model.validate_design(base)
+    assert d["isc_datasheet"] == 13.9 and d["module"]["i_sc_ref"] == 13.71   # library value is not used
+    assert round(analysis.nec_floor(d["isc_datasheet"], d["bifacial"], d["bifacial_gain"]), 4) == 13.3788
+    row = {r["input"]: r for r in report.build(d)}["Isc (datasheet) for NEC 70% check"]
+    assert row["value"] == "13.9" and row["method"] == "User entered" and row["key"]
+    assert dict(jobs.review(base)["groups"][1][1])["NEC 70% check"] == "Isc (datasheet) 13.9 A"
 
 
 def run(design, years=(2001, 2002), interval=60):

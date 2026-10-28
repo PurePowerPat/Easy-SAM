@@ -34,6 +34,16 @@ def call(method, path, body=None, raw=False):
         return e.code, json.loads(e.read())
 
 
+def status_with(method, path, headers):
+    req = urllib.request.Request(f"http://127.0.0.1:{PORT}{path}", method=method, headers=headers,
+                                 data=b"{}" if method == "POST" else None)
+    try:
+        with urllib.request.urlopen(req) as r:
+            return r.status
+    except urllib.error.HTTPError as e:
+        return e.code
+
+
 def wait(jid, answer=True):
     while True:
         s = call("GET", f"/api/job/{jid}")[1]
@@ -45,7 +55,7 @@ def wait(jid, answer=True):
 
 
 DESIGN = {"location_mode": "coords", "lat": "33.4", "lon": "-112.0", "interval": "60", "module_source": "cec",
-          "module_name": "TEST Bifacial 530W", "inverter_name": "TEST Central 2500kW",
+          "module_name": "TEST Bifacial 530W", "isc_datasheet": "13.9", "inverter_name": "TEST Central 2500kW",
           "modules_per_string": "26", "system_voltage": "1500",
           "racking": "tracker", "azimuth": "180", "rotlim": "60", "orientation": "portrait",
           "modules_high": "1", "modules_across": "26", "rows": "1", "self_shading": "standard",
@@ -56,7 +66,12 @@ DESIGN = {"location_mode": "coords", "lat": "33.4", "lon": "-112.0", "interval":
 if __name__ == "__main__":
     threading.Thread(target=server.serve, kwargs={"open_browser": False, "port": PORT}, daemon=True).start()
     time.sleep(1)
-    assert call("GET", "/api/info")[1]["version"] == "0.2.8"
+    assert call("GET", "/api/info")[1]["version"] == "0.3.0"
+    own = f"http://127.0.0.1:{PORT}"
+    assert status_with("POST", "/api/validate", {"Origin": own}) == 200                  # the app's own page
+    assert status_with("POST", "/api/validate", {"Origin": f"http://localhost:{PORT}"}) == 200
+    assert status_with("POST", "/api/cache/clear", {"Origin": "https://evil.example"}) == 403
+    assert status_with("GET", "/api/info", {"Host": f"evil.example:{PORT}"}) == 403
     v = call("POST", "/api/validate", {k: v for k, v in DESIGN.items() if k != "self_shading"})[1]
     assert not v["ok"] and [e["field"] for e in v["errors"]] == ["self_shading"], v
     jw = call("POST", "/api/weather", {"lat": 33.4, "lon": -112.0, "interval": 60})[1]["job"]
@@ -65,6 +80,7 @@ if __name__ == "__main__":
     s = wait(call("POST", "/api/run", DESIGN)[1]["job"])
     assert s["status"] == "done", s["error"]
     assert len(REQUESTS) == n0
+    assert s["result"]["nec"]["isc_stc_module"] == 13.9 and round(s["result"]["nec"]["floor_70pct"], 4) == 13.3788
     sh = [r for r in s["result"]["inputs_used"] if r["input"] == "Self-shading"][0]
     assert sh["value"] == "Standard" and sh["section"] == "System design"
     jw2 = call("POST", "/api/weather", {"lat": 35.0, "lon": -110.0, "interval": 60})[1]["job"]

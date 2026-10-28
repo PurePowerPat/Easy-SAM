@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions
-REM PPE SAM Multi-Year v0.2.8 - build the standalone .exe (optional; may be blocked by company policy)
+REM PPE SAM Multi-Year v0.3.0 - build the standalone .exe (optional; may be blocked by company policy)
 cd /d "%~dp0"
 call scripts\setup_env.bat
 if errorlevel 1 goto :err
@@ -11,10 +11,10 @@ if errorlevel 1 goto :err
 "%VPY%" -m PyInstaller --noconfirm --clean --name PPE_SAM_MultiYear --console --collect-all PySAM ^
   --add-data "ppe_sam\static;ppe_sam\static" --add-data "ppe_sam\data;ppe_sam\data" --add-data "libraries;libraries" run_app.py
 if errorlevel 1 goto :err
-echo BUILD SUCCEEDED (v0.2.8): %CD%\dist\PPE_SAM_MultiYear\PPE_SAM_MultiYear.exe
+echo BUILD SUCCEEDED (v0.3.0): %CD%\dist\PPE_SAM_MultiYear\PPE_SAM_MultiYear.exe
 pause
 exit /b 0
 :err
-echo BUILD FAILED (v0.2.8)
+echo BUILD FAILED (v0.3.0)
 pause
 exit /b 1

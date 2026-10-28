@@ -268,6 +268,12 @@ def validate_design(d: dict) -> dict:
         bif = lib_bif or (_truthy(d.get("bifacial_override")) and mod is not None)
         out["bifacial_source"] = "library" if lib_bif else ("user override" if bif else "library (monofacial)")
     out["module"] = mod
+    # NEC 70% check uses the datasheet Isc. Custom modules are entered from the datasheet already;
+    # CEC library modules need it entered (library values often differ from the datasheet).
+    if source == "cec":
+        out["isc_datasheet"] = c.num("isc_datasheet", "Isc (datasheet)", 0.1, 50) if mod is not None else None
+    else:
+        out["isc_datasheet"] = mod["i_sc_ref"] if mod else None
     out["bifacial"] = bif
     out["bifacial_mismatch"] = bool(bif and _truthy(d.get("bifacial_mismatch")))
 

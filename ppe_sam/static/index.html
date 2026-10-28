@@ -349,6 +349,9 @@
         </div>
         <div class="eqcard hidden" id="modcard" title="Source: Database (CEC module library)"></div>
       </div>
+      <div class="g4 hidden" id="iscDsBox" style="margin-top:12px">
+        <div class="fld" data-field="isc_datasheet"><label for="isc_datasheet">Isc (datasheet)<span class="tip">?<span class="tiptext">Short-circuit current at STC from the module datasheet. Used for the NEC 70% floor: 0.70 × 1.25 × Isc. The simulation itself uses the CEC database values.</span></span></label><div class="inwrap"><input id="isc_datasheet" name="isc_datasheet" type="number" step="any" placeholder="e.g. 13.9"><span class="sfx">A</span></div><div class="note" id="iscDsNote"></div></div>
+      </div>
       <div class="checkrow hidden" id="ovBox"><label><input type="checkbox" id="bifOverride">Module is bifacial (database says monofacial)</label></div>
       <div id="cecMismatchSlot"></div>
     </div>
@@ -597,7 +600,7 @@
     carport:'This should be the number of “stacked” modules in one full subarray. This is between 2 and 20.'};
   const GC_TYPICAL = {m:{tracker:'2.5', fixed:'1.0', carport:'5.0'}, in:{tracker:'98', fixed:'39', carport:'197'}};
   const LABELS = {location_mode:'Location input', address:'Address lookup', lat:'Latitude', lon:'Longitude', interval:'Weather time step', module_name:'Module',
-    module_length:'Module length', module_width:'Module width', bifaciality_base:'Bifaciality', bifaciality_tol:'Tolerance',
+    isc_datasheet:'Isc (datasheet)', module_length:'Module length', module_width:'Module width', bifaciality_base:'Bifaciality', bifaciality_tol:'Tolerance',
     bifacial_gain:'Bifacial gain', custom_name:'Module name', custom_celltech:'Cell type', custom_nser:'Cells in series',
     custom_voc:'Voc', custom_isc:'Isc', custom_vmp:'Vmp', custom_imp:'Imp', custom_bvoc:'Voc coefficient',
     custom_aisc:'Isc coefficient', custom_gpmp:'Pmp coefficient', custom_tnoct:'NOCT', custom_fit:'Datasheet values',
@@ -800,7 +803,8 @@
       if(e.key==='Escape') closeList(); if(e.key==='Enter') e.preventDefault(); });
     function choose(r){ closeList(); inp.value=''; setSel(r); showCard(); clearFieldError(inp); update(); scheduleValidate();
       const ch=$(P.card).querySelector('[data-act=change]'); if(ch && !$(P.card).closest('.collapsed')) ch.focus(); }
-    function setSel(r){ if(M){ st.module = r; $('#bifOverride').checked = false;
+    function setSel(r){ if(M){ if(!r || !st.module || r.name!==st.module.name){ f.elements.isc_datasheet.value=''; clearFieldError(f.elements.isc_datasheet); }
+        st.module = r; $('#bifOverride').checked = false;
         if(r){ fillDb('module_length', mm(r.length)); fillDb('module_width', mm(r.width)); } } else st.inverter = r; }
     function showCard(){
       const r = sel(), card = $(P.card); $(P.cancel).classList.add('hidden');
@@ -932,6 +936,11 @@
     setCalc('#cBif', c.bif!==null ? c.bif.toFixed(3) : null);
     setCalc('#cPmp', c.pmp ? c.pmp.toFixed(1) : null);
     setCalc('#cEff', (c.pmp && c.area) ? (c.pmp/(c.area*1000)*100).toFixed(2) : null);
+    const iscNote=$('#iscDsNote'), iscDs=num('isc_datasheet'), iscLib=st.module ? st.module.i_sc_ref : null;
+    if(iscLib){ const pct = iscDs>0 ? (iscDs/iscLib-1)*100 : null, far = pct!==null && Math.abs(pct)>10;
+      iscNote.className = 'note' + (far ? ' warn' : '');
+      iscNote.textContent = `CEC library: ${fmt(iscLib,2)} A` + (pct===null ? '' : ` (datasheet ${pct>=0?'+':''}${pct.toFixed(1)}%)`) + (far ? '. Check the datasheet value.' : ''); }
+    else iscNote.textContent = '';
     const eq=(raw,units,ref,absUnit)=>{ const x=parseFloat(raw); if(isNaN(x)||!(ref>0)) return '';
       const a = units==='pct' ? x/100*ref : x; return units==='pct' ? `= ${a.toPrecision(4)} ${absUnit}` : `= ${(a/ref*100).toFixed(4)} %/°C`; };
     $('#bvocEq').textContent = eq(val('custom_bvoc'), val('custom_bvoc_units'), num('custom_voc'), 'V/°C');
@@ -997,7 +1006,7 @@
     if(!st.loc) m[1].push('location_mode');
     else if(st.loc==='address'){ if(!val('address') || !val('lat') || !val('lon')) m[1].push('address'); }
     else { need(1,'lat'); need(1,'lon'); }
-    if(st.src==='cec'){ if(!st.module) m[2].push('module_name'); }
+    if(st.src==='cec'){ if(!st.module) m[2].push('module_name'); else need(2,'isc_datasheet'); }
     else ['custom_name','custom_celltech','custom_nser','custom_voc','custom_isc','custom_vmp','custom_imp','custom_bvoc','custom_aisc','custom_gpmp','custom_tnoct'].forEach(n=>need(2,n));
     const dims = st.src==='custom' || st.module; need(2,'module_length',dims); need(2,'module_width',dims);
     if(isBif()){ need(2,'bifaciality_base'); need(2,'bifaciality_tol'); need(2,'bifacial_gain'); }
@@ -1062,6 +1071,7 @@
     $('#cecBox').classList.toggle('hidden', custom); $('#customBox').classList.toggle('hidden', !custom);
     $('#copyBox').classList.toggle('hidden', !(custom && st.module));
     $('#ovBox').classList.toggle('hidden', !(st.module && !st.module.bifacial));
+    $('#iscDsBox').classList.toggle('hidden', !st.module);
     const slot = custom ? $('#customMismatchSlot') : $('#cecMismatchSlot'), row = $('#mismatchRow');
     if(row.parentElement !== slot) slot.appendChild(row);
     row.classList.toggle('hidden', !bif);
@@ -1233,7 +1243,7 @@
         kpi('Isc · max 3-hr avg', W.isc_max, 'A', 2, `70% of Isc = ${fmt(n.floor_70pct,2)} A <span class="mark ${pass?'yes':'no'}" title="${pass?'Simulated Isc is above the 70% floor':'Simulated Isc is below the 70% floor: the floor governs'}">${pass?'✓':'✕'}</span>`)
       + kpi('Voc · max 3-hr avg', W.voc_max, 'V', 1, '')
       + kpi('Vmp · max 3-hr avg', W.vmp_max, 'V', 1, W.vmp_min ? `Min (operating) = ${fmt(W.vmp_min.value,1)} V` : '');
-    $('#nec').innerHTML = `<table><tr><th>Item</th><th class="num">Value</th></tr><tr><td>Module Isc at STC</td><td class="num">${fmt(n.isc_stc_module,3)} A</td></tr>
+    $('#nec').innerHTML = `<table><tr><th>Item</th><th class="num">Value</th></tr><tr><td>Module Isc at STC (datasheet)</td><td class="num">${fmt(n.isc_stc_module,3)} A</td></tr>
       ${n.bifacial_gain_pct!==null?`<tr><td>Bifacial gain</td><td class="num">${fmt(n.bifacial_gain_pct,1)} %</td></tr>`:''}
       <tr><td>70% floor = 0.70 × 1.25 × Isc${n.bifacial_gain_pct!==null?' × (1 + gain)':''}</td><td class="num">${fmt(n.floor_70pct,3)} A</td></tr>
       <tr><td>Simulated max 3-hr avg Isc</td><td class="num">${fmt(n.simulated_3hr,3)} A</td></tr>

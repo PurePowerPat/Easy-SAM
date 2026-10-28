@@ -110,6 +110,9 @@ class WeatherJob(_Base):
             self.log(f"Weather retrieval complete: {len(files)} years cached.")
         except InterruptedError:
             self.status, self.message = "cancelled", "Weather retrieval cancelled."
+        except weather.NsrdbAccessError as e:
+            self.failed_stage = "weather"
+            self.status, self.error, self.message = "error", f"{e}", "Weather retrieval failed"
         except Exception as e:  # noqa: BLE001
             self.failed_stage = "weather"
             self.status, self.error, self.message = "error", f"{e}", "Weather retrieval failed"
@@ -268,8 +271,7 @@ class Job(_Base):
             self.ana["done"] += 1
             self.log("3-hour averages calculated.")
 
-            mod = design["module"]
-            floor = analysis.nec_floor(mod["i_sc_ref"], design["bifacial"], design["bifacial_gain"])
+            floor = analysis.nec_floor(design["isc_datasheet"], design["bifacial"], design["bifacial_gain"])
             isc = summary["worst"]["isc_max"]["value"]
             site = weather.nsrdb_site_info(files[0][1])
             self.design, self.inputs, self.files = design, inputs, files
@@ -281,7 +283,7 @@ class Job(_Base):
                   "location_id": site.get("Location ID"), "interval": interval}
             self.result = {
                 "summary": summary,
-                "nec": {"isc_stc_module": mod["i_sc_ref"],
+                "nec": {"isc_stc_module": design["isc_datasheet"],
                         "bifacial_gain_pct": design["bifacial_gain"] if design["bifacial"] else None,
                         "floor_70pct": floor, "simulated_3hr": isc,
                         "governing": max(isc, floor), "floor_governs": isc < floor},
@@ -298,6 +300,9 @@ class Job(_Base):
         except model.DesignError as e:
             self.failed_stage = stage
             self.status, self.error, self.message = "error", str(e), str(e)
+        except weather.NsrdbAccessError as e:
+            self.failed_stage = stage
+            self.status, self.error, self.message = "error", f"{e}", "Run failed"
         except Exception as e:  # noqa: BLE001
             self.failed_stage = stage
             self.status, self.error, self.message = "error", f"{e}", "Run failed"
@@ -355,6 +360,7 @@ def review(raw):
         ["Module", [
             ["Module", f"{m['name']} ({'custom' if d['module_source'] == 'custom' else 'CEC library'})"],
             ["Dimensions", f"{d['module_length_mm']:g} × {d['module_width_mm']:g} mm"],
+            ["NEC 70% check", f"Isc (datasheet) {d['isc_datasheet']:g} A"],
             ["Bifacial", bif]]],
         ["Inverter", [["Inverter", inv["name"]]]],
         ["System design", [

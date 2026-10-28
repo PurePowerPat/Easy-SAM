@@ -11,6 +11,7 @@ from urllib.parse import parse_qs, quote, urlparse
 from . import __date__, __version__, config, geocode, jobs, libraries, model, weather
 
 STATIC = Path(__file__).resolve().parent / "static"
+LOCAL_HOSTS = ("127.0.0.1", "localhost")
 
 
 def _static_dir():
@@ -36,11 +37,22 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _from_this_app(self, post=False):
+        """Only the app's own page may use it. Rejects other host names (a website pointing its own name at
+        127.0.0.1) and, for POSTs, requests sent by other websites (browsers name the sending site in Origin)."""
+        allowed = {f"{h}:{self.server.server_address[1]}" for h in LOCAL_HOSTS}
+        if self.headers.get("Host") not in allowed:
+            return False
+        origin = self.headers.get("Origin")
+        return not post or origin is None or origin in {f"http://{a}" for a in allowed}
+
     def _body(self):
         n = int(self.headers.get("Content-Length") or 0)
         return json.loads(self.rfile.read(n) or b"{}")
 
     def do_GET(self):  # noqa: N802
+        if not self._from_this_app():
+            return self._send(403, {"error": "forbidden"})
         u = urlparse(self.path)
         q = {k: v[0] for k, v in parse_qs(u.query).items()}
         try:
@@ -89,6 +101,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(500, {"error": str(e)})
 
     def do_POST(self):  # noqa: N802
+        if not self._from_this_app(post=True):
+            return self._send(403, {"error": "forbidden"})
         u = urlparse(self.path)
         try:
             if u.path == "/api/validate":
