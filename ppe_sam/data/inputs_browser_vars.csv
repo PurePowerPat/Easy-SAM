@@ -1,0 +1,357 @@
+Variable,Label
+6par_aisc_display,Temperature coefficient of Isc
+6par_aisc_units,aIsc Temp Coeff Units
+6par_area,Module area
+6par_aspect_ratio,Module aspect ratio
+6par_bifacial_ground_clearance_height,Ground clearance height
+6par_bifacial_transmission_factor,Transmission fraction
+6par_bifaciality,Bifaciality
+6par_bvoc_display,Temperature coefficient of Voc
+6par_bvoc_units,bVoc Temp Coeff Units
+6par_celltech,Cell type
+6par_gpmp,Temperature coefficient of max. power point
+6par_imp,Maximum power point current (Imp)
+6par_is_bifacial,Use Bifacial Modules
+6par_isc,Short circuit current (Isc)
+6par_module_name,Module name
+6par_mounting,Approximate installation height
+6par_nser,Number of cells in series
+6par_standoff,Standoff height
+6par_tnoct,Nominal operating cell temperature
+6par_transient_thermal_model_unit_mass,Module unit mass
+6par_vmp,Maximum power point voltage (Vmp)
+6par_voc,Open circuit voltage (Voc)
+acwiring_loss,AC wiring
+adjust,AC availability losses
+albedo,Monthly uniform albedo
+albedo_0,Spatial albedo index value 0
+albedo_1,Spatial albedo index value 1
+albedo_2,Spatial albedo index value 2
+albedo_3,Spatial albedo index value 3
+albedo_4,Spatial albedo index value 4
+albedo_5,Spatial albedo index value 5
+albedo_6,Spatial albedo index value 6
+albedo_7,Spatial albedo index value 7
+albedo_8,Spatial albedo index value 8
+albedo_9,Spatial albedo index value 9
+albedo_spatial_monthly,Spatial monthly albedo
+calculate_bifacial_electrical_mismatch,Calculate bifacial electrical mismatch
+calculate_rack_shading,Calculate rack shading
+cec_array_cols,Columns of modules in array
+cec_array_rows,Rows of modules in array
+cec_backside_temp,Temperature behind the module
+cec_bifacial_ground_clearance_height,Ground clearance height
+cec_bifacial_transmission_factor,Transmission fraction
+cec_bifaciality,Bifaciality
+cec_gap_spacing,Space between module back and roof surface
+cec_heat_transfer,Heat transfer dimensions
+cec_height,Array height
+cec_is_bifacial,Use Bifacial Modules
+cec_mounting_config,Mounting configuration
+cec_mounting_orientation,Mounting structure orientation
+cec_standoff,Mounting standoff
+cec_temp_corr_mode,Temperature Correction Model
+cec_transient_thermal_model_unit_mass,Module unit mass
+clipping_correction_method_ui,Clipping correction approach
+dc_adjust,DC availability losses
+dcoptimizer_loss,DC power optimizer loss
+desired_dcac_ratio,Desired DC to AC ratio
+desired_size,Desired array size
+en_snow_model,Enable snow model
+enable_auto_size,System size option
+enable_interconnection_limit,Enable interconnection limit
+enable_mismatch_vmax_calc,Enable subarray voltage mismatch calculation
+enable_subhourly_clipping_ui,Enable subhourly clipping loss correction
+gcr_option,GCR option
+grid_curtailment,Curtailment
+grid_interconnection_limit_kwac,Grid interconnection limit
+iec61853_test_data,Matrix of test data for IEC 61853 model
+in_location,Address or coordinates
+in_location_list,List of locations
+in_location_options,Download from a list of locations
+in_nsrdb_options,File options
+in_time_step,"Time Step option (0=60 min, 1=30 min)"
+inv_cec_cg_idcmax,Idcmax
+inv_cec_cg_mppt_hi,MPPT High
+inv_cec_cg_mppt_low,MPPT Low
+inv_cec_cg_num_samples,Number samples
+inv_cec_cg_paco,Maximum AC power
+inv_cec_cg_pnt,Pnt
+inv_cec_cg_sample_power_units,Power units
+inv_cec_cg_test_samples,Test sample data
+inv_cec_cg_vdcmax,Vdcmax
+inv_cec_name,Inverter library selection
+inv_ds_ac_voltage,Nominal AC voltage
+inv_ds_eff_peak_or_nom,Manufacturer efficiency
+inv_ds_eff_type,Use weighted or manufacturer efficiency
+inv_ds_eff_weighted,Weighted efficiency
+inv_ds_idcmax,Maximum DC current
+inv_ds_mppt_hi,Maximum MPPT DC voltage
+inv_ds_mppt_low,Minimum MPPT DC voltage
+inv_ds_paco,Maximum AC output power
+inv_ds_pnt,Power consumption at night
+inv_ds_pso,Power consumption during operation
+inv_ds_vdcmax,Maximum DC voltage
+inv_ds_vdco,Nominal DC voltage
+inv_num_mppt,Number of MPPTs
+inv_pd_ac_voltage,Nominal AC voltage
+inv_pd_data,Inverter part load curve data
+inv_pd_eff_type,"Weighted efficiency type (0=CEC efficiency, 1=European efficiency)"
+inv_pd_idcmax,Maximum DC current
+inv_pd_mppt_hi,Maximum MPPT DC voltage
+inv_pd_mppt_low,Minimum MPPT DC voltage
+inv_pd_paco,Maximum AC output power
+inv_pd_pnt,Power consumption at night
+inv_pd_vdcmax,Maximum DC voltage
+inv_pd_vdco,Nominal DC voltage
+inv_tdc_cec_cg,Inv Temp Derate CEC Coefficient Generator
+inv_tdc_cec_db,Inv Temp Derate CEC Database
+inv_tdc_ds,Inv Temp Derate Datasheet
+inv_tdc_plc,Inv Temp Derate Part Load Curve
+inverter_count,Number of inverters
+inverter_model,Current selection for Inverter
+irrad_mode,Weather file irradiance data
+is_advanced,Advanced download option
+module_model,Current selection for Module
+module_name,Module Name
+mppt_hi_inverter,Vmppt_high
+mppt_low_inverter,Vmppt_low
+pv.radmode.is_shown,Current selection for Albedo - Sky Diffuse Model - Irradiance Data (Advanced)
+pv_spectral.is_shown,Current selection for Spectral Correction
+sd11par_AMa0,a0
+sd11par_AMa1,a1
+sd11par_AMa2,a2
+sd11par_AMa3,a3
+sd11par_AMa4,a4
+sd11par_Egref,Bandgap voltage (Eg)
+sd11par_Il,Light current (Il)
+sd11par_Io,Saturation current (Io)
+sd11par_alphaIsc,alpha
+sd11par_area,Module area
+sd11par_aspect_ratio,Module aspect ratio
+sd11par_betaVoc,beta
+sd11par_c1,C1
+sd11par_c2,C2
+sd11par_c3,C3
+sd11par_d1,D1
+sd11par_d2,D2
+sd11par_d3,D3
+sd11par_gammaPmp,gamma
+sd11par_glass,Module cover
+sd11par_mounting,Approximate mounting height
+sd11par_n,Diode factor (n)
+sd11par_nser,Number of cells in series
+sd11par_standoff,Standoff height
+sd11par_tnoct,Nominal operating cell temp
+sd11par_transient_thermal_model_unit_mass,Module unit mass
+sd11par_type,Type
+shading_3d_scene,Open 3D shade calculator
+sky_model,Sky diffuse model
+snl_aspect_ratio,Aspect ratio
+snl_module_name,Module name
+snl_module_structure,Module structure and mounting
+snl_specified_a,a
+snl_specified_b,b
+snl_specified_dT,dT
+snl_transient_thermal_model_unit_mass,Module unit mass
+snow_array,Snow time series losses
+solar_resource,Solar resource library current selection
+spe_a,a
+spe_area,Module area
+spe_aspect_ratio,Module aspect ratio
+spe_b,b
+spe_bifacial_ground_clearance_height,Ground clearance height
+spe_bifacial_transmission_factor,Transmission fraction
+spe_bifaciality,Bifaciality
+spe_dT,dT
+spe_eff0,Efficiency 0
+spe_eff1,Efficiency 1
+spe_eff2,Efficiency 2
+spe_eff3,Efficiency 3
+spe_eff4,Efficiency 4
+spe_fd,Diffuse utilization factor
+spe_is_bifacial,Use Bifacial Modules
+spe_module_structure,Module structure and mounting
+spe_rad0,Radiation level 0
+spe_rad1,Radiation level 1
+spe_rad2,Radiation level 2
+spe_rad3,Radiation level 3
+spe_rad4,Radiation level 4
+spe_reference,Reference Radiation and Efficiency
+spe_temp_coeff,Temperature coefficient (Pmp)
+spe_transient_thermal_model_unit_mass,Module unit mass
+spe_vmp,Maximum power voltage (Vmp)
+spe_voc,Open circuit voltage (Voc)
+spectral_correction_model_choice,Spectral correction model choice
+spectral_recommend_choice,
+subarray1_azimuth,Azimuth 1
+subarray1_backtrack,Enable backtracking 1
+subarray1_dcwiring_loss,DC wiring loss 1
+subarray1_diodeconn_loss,Diodes and connections loss 1
+subarray1_electrical_mismatch,Electrical mismatch 1
+subarray1_gcr,Ground coverage ratio 1
+subarray1_mismatch_loss,Module mismatch loss 1
+subarray1_mod_orient,Module orientation 1
+subarray1_modules_per_string,Subarray 1 modules per string
+subarray1_monthly_tilt,Subarray 1 monthly tilt input for seasonal tilt arrays
+subarray1_mppt_input,Subarray 1 inverter MPPT input
+subarray1_nameplate_loss,Nameplate loss 1
+subarray1_nmodx,Number of modules along bottom of row 1
+subarray1_nmody,Number of modules along side of row 1
+subarray1_nstrings,Number of parallel strings 1
+subarray1_rack_shading,Rack shading 1
+subarray1_rear_soiling_loss,Rear soiling loss 1
+subarray1_rotlim,Tracker rotation limit 1
+subarray1_shade_mode,Self shading mode 1
+subarray1_shading,Shading losses 1
+subarray1_shading_azal,Shading losses by sun azimuth altitude 1
+subarray1_shading_diff,Shading losses diffuse 1
+subarray1_shading_en_azal,Shading losses by sun azimuth altitude enable 1
+subarray1_shading_en_diff,Shading losses diffuse enable 1
+subarray1_shading_en_mxh,Shading losses month by hour enable 1
+subarray1_shading_en_string_option,Shading losses partial shading model enable 1
+subarray1_shading_en_timestep,Shading losses by time step enable 1
+subarray1_shading_mxh,Shading losses month by hour 1
+subarray1_shading_string_option,Shading losses patial shading model number of strings 1
+subarray1_shading_timestep,Shading losses by time step 1
+subarray1_slope_azm,Slope azimuth 1
+subarray1_slope_tilt,Slope tilt 1
+subarray1_soiling,Monthly soiling losses array 1
+subarray1_tilt,Tilt 1
+subarray1_tilt_eq_lat,Set tilt to latitude 1
+subarray1_track_mode,Tracking mode 1
+subarray1_tracking_loss,Tracking error loss 1
+subarray1_ui_row_spacing,Row spacing 1
+subarray2_azimuth,Azimuth 2
+subarray2_backtrack,Enable backtracking 2
+subarray2_dcwiring_loss,DC wiring loss 2
+subarray2_diodeconn_loss,Diodes and connections loss 2
+subarray2_electrical_mismatch,Electrical mismatch 2
+subarray2_enable,Enable subarray 2
+subarray2_gcr,Ground coverage ratio 2
+subarray2_mismatch_loss,Module mismatch loss 2
+subarray2_mod_orient,Module orientation 2
+subarray2_modules_per_string,Subarray 2 modules per string
+subarray2_monthly_tilt,Subarray 2 monthly tilt input for seasonal tilt arrays
+subarray2_mppt_input,Subarray 2 inverter MPPT input
+subarray2_nameplate_loss,Nameplate loss 2
+subarray2_nmodx,Number of modules along bottom of row 2
+subarray2_nmody,Number of modules along side of row 2
+subarray2_nstrings,Number of parallel strings 2
+subarray2_rack_shading,Rack shading 2
+subarray2_rear_soiling_loss,Rear soiling loss 2
+subarray2_rotlim,Tracker rotation limit 2
+subarray2_shade_mode,Self shading mode 2
+subarray2_shading,Shading losses 2
+subarray2_shading_azal,Shading losses by sun azimuth altitude 2
+subarray2_shading_diff,Shading losses diffuse 2
+subarray2_shading_en_azal,Shading losses by sun azimuth altitude enable 2
+subarray2_shading_en_diff,Shading losses diffuse enable 2
+subarray2_shading_en_mxh,Shading losses month by hour enable 2
+subarray2_shading_en_string_option,Shading losses partial shading model enable 2
+subarray2_shading_en_timestep,Shading losses by time step enable 2
+subarray2_shading_mxh,Shading losses month by hour 2
+subarray2_shading_string_option,Shading losses patial shading model number of strings 2
+subarray2_shading_timestep,Shading losses by time step 2
+subarray2_slope_azm,Slope azimuth 2
+subarray2_slope_tilt,Slope tilt 2
+subarray2_soiling,Monthly soiling losses array 2
+subarray2_tilt,Tilt 2
+subarray2_tilt_eq_lat,Set tilt to latitude 2
+subarray2_track_mode,Tracking mode 2
+subarray2_tracking_loss,Tracking error loss 2
+subarray2_ui_row_spacing,Row spacing 2
+subarray3_azimuth,Azimuth 3
+subarray3_backtrack,Enable backtracking 3
+subarray3_dcwiring_loss,DC wiring loss 3
+subarray3_diodeconn_loss,Diodes and connections loss 3
+subarray3_electrical_mismatch,Electrical mismatch 3
+subarray3_enable,Enable subarray 3
+subarray3_gcr,Ground coverage ratio 3
+subarray3_mismatch_loss,Module mismatch loss 3
+subarray3_mod_orient,Module orientation 3
+subarray3_modules_per_string,Subarray 3 modules per string
+subarray3_monthly_tilt,Subarray 3 monthly tilt input for seasonal tilt arrays
+subarray3_mppt_input,Subarray 3 inverter MPPT input
+subarray3_nameplate_loss,Nameplate loss 3
+subarray3_nmodx,Number of modules along bottom of row 3
+subarray3_nmody,Number of modules along side of row 3
+subarray3_nstrings,Number of parallel strings 3
+subarray3_rack_shading,Rack shading 3
+subarray3_rear_soiling_loss,Rear soiling loss 3
+subarray3_rotlim,Tracker rotation limit 3
+subarray3_shade_mode,Self shading mode 3
+subarray3_shading,Shading losses 3
+subarray3_shading_azal,Shading losses by sun azimuth altitude 3
+subarray3_shading_diff,Shading losses diffuse 3
+subarray3_shading_en_azal,Shading losses by sun azimuth altitude enable 3
+subarray3_shading_en_diff,Shading losses diffuse enable 3
+subarray3_shading_en_mxh,Shading losses month by hour enable 3
+subarray3_shading_en_string_option,Shading losses partial shading model enable 3
+subarray3_shading_en_timestep,Shading losses by time step enable 3
+subarray3_shading_mxh,Shading losses month by hour 3
+subarray3_shading_string_option,Shading losses patial shading model number of strings 3
+subarray3_shading_timestep,Shading losses by time step 3
+subarray3_slope_azm,Slope azimuth 3
+subarray3_slope_tilt,Slope tilt 3
+subarray3_soiling,Monthly soiling losses array 3
+subarray3_tilt,Tilt 3
+subarray3_tilt_eq_lat,Set tilt to latitude 3
+subarray3_track_mode,Tracking mode 3
+subarray3_tracking_loss,Tracking error loss 3
+subarray3_ui_row_spacing,Row spacing 3
+subarray4_azimuth,Azimuth 4
+subarray4_backtrack,Enable backtracking 4
+subarray4_dcwiring_loss,DC wiring loss 4
+subarray4_diodeconn_loss,Diodes and connections loss 4
+subarray4_electrical_mismatch,Electrical mismatch 4
+subarray4_enable,Enable subarray 4
+subarray4_gcr,Ground coverage ratio 4
+subarray4_mismatch_loss,Module mismatch loss 4
+subarray4_mod_orient,Module orientation 4
+subarray4_modules_per_string,Subarray 4 modules per string
+subarray4_monthly_tilt,Subarray 4 monthly tilt input for seasonal tilt arrays
+subarray4_mppt_input,Subarray 4 inverter MPPT input
+subarray4_nameplate_loss,Nameplate loss 4
+subarray4_nmodx,Number of modules along bottom of row 4
+subarray4_nmody,Number of modules along side of row 4
+subarray4_nstrings,Number of parallel strings 4
+subarray4_rack_shading,Rack shading 4
+subarray4_rear_soiling_loss,Rear soiling loss 4
+subarray4_rotlim,Tracker rotation limit 4
+subarray4_shade_mode,Self shading mode 4
+subarray4_shading,Shading losses 4
+subarray4_shading_azal,Shading losses by sun azimuth altitude 4
+subarray4_shading_diff,Shading losses diffuse 4
+subarray4_shading_en_azal,Shading losses by sun azimuth altitude enable 4
+subarray4_shading_en_diff,Shading losses diffuse enable 4
+subarray4_shading_en_mxh,Shading losses month by hour enable 4
+subarray4_shading_en_string_option,Shading losses partial shading model enable 4
+subarray4_shading_en_timestep,Shading losses by time step enable 4
+subarray4_shading_mxh,Shading losses month by hour 4
+subarray4_shading_string_option,Shading losses patial shading model number of strings 4
+subarray4_shading_timestep,Shading losses by time step 4
+subarray4_slope_azm,Slope azimuth 4
+subarray4_slope_tilt,Slope tilt 4
+subarray4_soiling,Monthly soiling losses array 4
+subarray4_tilt,Tilt 4
+subarray4_tilt_eq_lat,Set tilt to latitude 4
+subarray4_track_mode,Tracking mode 4
+subarray4_tracking_loss,Tracking error loss 4
+subarray4_ui_row_spacing,Row spacing 4
+transformer_load_loss,Transformer load loss
+transformer_no_load_loss,Transformer no load loss
+transmission_loss,Transmission loss
+ui_array_land_area_multiplier,Land area multiplier
+ui_aspect_ratio,Module aspect ratio input
+ui_chkbox_nmodx_eq_mod_per_string,Set modules along bottom of row equal to modules per string
+ui_land_area_additional,Additional land area
+ui_land_area_additional_units,Additional and area units
+ui_land_area_per_mw,Land area per system capacity
+ui_use_acre_per_mw,Use acre per MW input
+use_snow_weather_file,Use snow data from weather file
+use_spatial_albedos,Use spatial albedos
+use_specific_weather_file,Use user-specified weather file
+use_wf_albedo,Use albedo in weather file if it exists
+user_specified_weather_file,Weather file on disk
+vdcmax_inverter,Vdc_max

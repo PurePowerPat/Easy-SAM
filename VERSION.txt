@@ -1,0 +1,17 @@
+PPE SAM Multi-Year Simulation
+Version: v0.2.8
+Date:    10/27/2026
+
+HOW TO RUN: double-click run_from_source.bat.
+
+Changes since v0.2.7:
+ - System design > Subarray: new required "Self-shading" selector: None / Standard / Thin film
+   (SAM subarray1_shade_mode 0 / 1 / 2). No pre-selected value.
+   Under the field: "PPE standard for this module: X" (bifacial -> Standard, Thin film for thin-film
+   cells; monofacial -> None). A warning appears when the selection differs from the PPE standard.
+ - Previously the app set self-shading automatically from the module; now the selection is used.
+ - Review screen, sidebar summary, modeling assumptions, Inputs used ("Self-shading", System design,
+   User entered, highlighted) and the SAM inputs browser export all show the selection, with the PPE
+   standard noted when it differs.
+
+Calculations unchanged when the PPE-standard option is selected (tests locked to the v0.1.6 values).
