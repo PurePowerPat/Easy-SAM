@@ -3,7 +3,7 @@
 Every version, newest first. Entries up to v0.2.8 are the release notes written with each version
 (VERSION.txt at the time), reformatted only.
 
-Not yet recorded here: v0.1.0–v0.1.2, v0.1.7, v0.2.4–v0.2.7.
+Release notes for v0.1.0–v0.1.2 and v0.1.7 were not kept.
 
 ## v0.3.0 — 2026-10-28
 
@@ -45,6 +45,83 @@ Calculations unchanged: the locked test results (v0.1.6 values) still match.
   standard noted when it differs.
 
 Calculations unchanged when the PPE-standard option is selected (tests locked to the v0.1.6 values).
+
+## v0.2.7 — 2026-10-27
+
+**Results > Inputs used**
+- CEC library module: the 17 database specs (Technology ... Single-diode parameter Adjust) sit in a
+  collapsible "CEC database module specs (17 items)" sub-section directly under "Module model",
+  collapsed by default and never highlighted. They print expanded.
+- "Module model" has a tooltip: "Module specs shown below are pulled directly from the CEC database..."
+- Custom module: unchanged (no sub-section, specs highlighted as before).
+
+**Configure > Module**
+- Same tooltip on the "CEC library" button (clicking the "?" does not select the button).
+
+**Configure > Site and weather**
+- "Retrieve weather" button next to "Verify location on map", shown once the latitude and longitude
+  are valid. Click it to download the weather in the background and keep filling out the page.
+  The button shows a loading icon, then "✓ Complete". The Results tab unlocks and shows the
+  Weather retrieval stage in progress, then done (Simulation: "Waiting for Run simulation").
+  Changing the location or time step resets the button for the new site.
+- Run simulation reads the cached files. If the background retrieval for the same site is still
+  running, the run waits for it (showing its progress) instead of downloading the same years twice.
+
+**Sidebar**
+- "Clear weather cache" button removed. (Cache folder: %LOCALAPPDATA%\PPE_SAM_MultiYear\weather)
+
+**About**
+- Rewritten: Version, Date updated, Engine, Modules, Inverters, Library, Weather, Address lookup,
+  and a two-line Method.
+
+Calculations unchanged (tests locked to the v0.1.6 values).
+
+## v0.2.6 — 2026-10-27
+
+- Pure Power Engineering logo added to the center of the header (ppe_sam\static\logo.png,
+  trimmed and resized from "PPE Logo 2023 (High Res PNG) (Transparent).png"). Also prints.
+
+Everything else is unchanged from v0.2.5 (mismatch warning, key-item highlights in Inputs used,
+collapsed sections with auto-expand). Calculations unchanged (tests locked to the v0.1.6 values).
+
+## v0.2.5 — 2026-10-27
+
+*Original release notes not kept. Summary from the v0.2.6 notes:*
+
+- Warning when "Calculate bifacial electrical mismatch" is checked.
+- Key items highlighted in Inputs used.
+- Sections start collapsed and expand automatically as the previous section is completed.
+
+## v0.2.4 — 2026-10-27
+
+**Site and weather**
+- "Address" / "Coordinates" buttons after Project name (same size as CEC library / Custom module).
+  Fields underneath: Address | Latitude | Longitude | Weather time step.
+- Address: type the address, then click Run (white button at the end of the field) or press Enter.
+  Latitude / Longitude are filled in, read-only and marked Calculated. Editing the address clears
+  them until Run is clicked again. Lookup: US Census Geocoder (US street addresses), then
+  OpenStreetMap Nominatim (any place); internet required.
+- Coordinates: Latitude / Longitude are entered; Address is read-only, marked Default, not used.
+- Verify location on map and the weather download always use the latitude / longitude.
+- Inputs used lists the location input, address, matched address and geocoder.
+
+**Module**
+- Checkboxes now print (checked state shown).
+
+**System design**
+- Rows modeled is an input (required; PPE standard 1). Strings are added (all on one inverter)
+  until SAM builds that many rows. Warning when more than 1 row: "Warning: PPE Standard is 1 row.
+  More than one row will cause self-shading, resulting in a lower & more aggressive Isc value."
+  If SAM cannot build exactly that many rows (a string longer than one subarray), the field says
+  the nearest possible value.
+- Layout illustration draws every row (up to 12) at the row pitch.
+- Module spacing is entered in inches.
+- Row pitch and ground clearance default to inches (m still selectable).
+
+**All**
+- Tab no longer stops on the "?" tooltips (still open on hover or click).
+
+Unchanged: all calculations for 1 row (tests locked to the v0.1.6 values).
 
 ## v0.2.3 — 2026-10-27
 
