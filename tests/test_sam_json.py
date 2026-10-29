@@ -51,3 +51,27 @@ def test_sam_case_json(design, expected, tmp_path):
     _, app = model.run_year((2003, str(path), inputs))
     for key, var in model.OUTPUT_VARS.items():
         assert list(getattr(m.Outputs, var)) == app[key], key
+
+
+def _errs(design):
+    try:
+        model.validate_design(design)
+    except model.DesignError as e:
+        return [x["field"] for x in e.errors]
+    return []
+
+
+@pytest.mark.parametrize(("field", "value", "units", "ok"), [
+    ("custom_bvoc", -1.5, "abs", False),     # entered value outside -1 to 1
+    ("custom_bvoc", -0.9, "abs", False),     # = -1.83 %/°C
+    ("custom_bvoc", -0.3, "pct", True),
+    ("custom_aisc", 1.2, "pct", False),
+    ("custom_aisc", 0.05, "pct", True),
+    ("custom_gpmp", -1.1, None, False),
+    ("custom_gpmp", -0.35, None, True),
+])
+def test_custom_temperature_coefficients_are_limited(field, value, units, ok):
+    design = {**BASE, **CUSTOM, field: value}
+    if units:
+        design[field + "_units"] = units
+    assert (field not in _errs(design)) == ok

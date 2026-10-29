@@ -14,8 +14,8 @@
   <div class="top-r">
     <div class="tabs" role="tablist" aria-label="Views">
       <button type="button" class="tab" role="tab" id="tabCfg" aria-selected="true" aria-controls="viewCfg">Configure</button>
-      <button type="button" class="tab" role="tab" id="tabSet" aria-selected="false" aria-controls="viewCfg">Advanced Settings</button>
       <button type="button" class="tab" role="tab" id="tabRes" aria-selected="false" aria-controls="viewRes" disabled>Results</button>
+      <button type="button" class="tab" role="tab" id="tabSet" aria-selected="false" aria-controls="viewCfg">Advanced Settings</button>
       <button type="button" class="tab" role="tab" id="tabAbout" aria-selected="false" aria-controls="viewAbout">About</button>
     </div>
   </div>
@@ -26,7 +26,6 @@
 <main>
 <div class="printonly" id="printStamp"></div>
 <div class="pagehead">
-  <span>All fields are required unless marked <span class="opt">optional</span>.</span>
   <span class="legend" aria-label="Value source legend (hover a field to see its source)">
     <span><i class="sw db"></i>Database</span><span><i class="sw user"></i>User entered</span>
     <span><i class="sw calc"></i>Calculated</span><span><i class="sw def"></i>Default</span>
@@ -41,7 +40,7 @@
 
 <!-- ============ 1. SITE ============ -->
 <section class="card" id="sec1" data-sec="1">
-  <div class="card-h"><span class="n">1</span><h2>Site and weather</h2><button type="button" class="sec-help" data-goto="setSite" title="Modeling assumptions (Advanced Settings)" aria-label="Site and weather modeling assumptions (Advanced Settings)">?</button><span class="chip" id="chip1"></span><span class="csum" id="csum1"></span>
+  <div class="card-h"><span class="n">1</span><h2>Site and weather</h2><span class="chip" id="chip1"></span><span class="csum" id="csum1"></span>
     <button type="button" class="btn btn-sm collapse" aria-expanded="true">Collapse</button></div>
   <div class="card-b">
     <div class="g4">
@@ -70,7 +69,7 @@
 
 <!-- ============ 2. MODULE ============ -->
 <section class="card" id="sec2" data-sec="2">
-  <div class="card-h"><span class="n">2</span><h2>Module</h2><button type="button" class="sec-help" data-goto="setMod" title="Module settings and modeling assumptions (Advanced Settings)" aria-label="Module settings and modeling assumptions (Advanced Settings)">?</button><span class="chip" id="chip2"></span><span class="csum" id="csum2"></span>
+  <div class="card-h"><span class="n">2</span><h2>Module</h2><span class="chip" id="chip2"></span><span class="csum" id="csum2"></span>
     <button type="button" class="btn btn-sm collapse" aria-expanded="true">Collapse</button></div>
   <div class="card-b">
     <div class="choice compact" role="radiogroup" aria-label="Module source" id="srcGroup">
@@ -90,7 +89,7 @@
         <div class="eqcard hidden" id="modcard" title="Source: Database (CEC module library)"></div>
       </div>
       <div class="g4 hidden" id="iscDsBox" style="margin-top:12px">
-        <div class="fld" data-field="isc_datasheet"><label for="isc_datasheet">Isc (datasheet)<span class="tip">?<span class="tiptext">Short-circuit current at STC from the module datasheet. Used for the NEC 70% floor: 0.70 × 1.25 × Isc. The simulation itself uses the CEC database values.</span></span></label><div class="inwrap"><input id="isc_datasheet" name="isc_datasheet" type="number" step="any" placeholder="e.g. 13.9"><span class="sfx">A</span></div><div class="note" id="iscDsNote"></div></div>
+        <div class="fld" data-field="isc_datasheet"><label for="isc_datasheet">Isc (datasheet)<span class="tip">?<span class="tiptext">Short-circuit current at STC from the module datasheet. Used for the NEC 70% floor: 0.70 × 1.25 × Isc. The simulation itself uses the CEC database values.</span></span></label><div class="inwrap"><input id="isc_datasheet" name="isc_datasheet" type="number" min="0" step="0.1" placeholder="e.g. 13.9"><span class="sfx">A</span></div><div class="note" id="iscDsNote"></div></div>
       </div>
       <div class="checkrow hidden" id="ovBox"><label><input type="checkbox" id="bifOverride">Module is bifacial (database says monofacial)</label></div>
     </div>
@@ -101,19 +100,19 @@
         <div class="g4">
           <div class="fld span2" data-field="custom_name"><label for="custom_name">Module name</label><input id="custom_name" name="custom_name" placeholder="e.g. Jinko JKM580N-72HL4-BDV"></div>
           <div class="fld" data-field="custom_celltech"><label for="custom_celltech">Cell type</label><select id="custom_celltech" name="custom_celltech"><option value="">Select…</option><option value="0">monoSi</option><option value="1">multiSi</option><option value="2">CdTe</option><option value="3">CIS</option><option value="4">CIGS</option><option value="5">Amorphous</option></select></div>
-          <div class="fld" data-field="custom_nser"><label for="custom_nser">Cells in series</label><div class="inwrap"><input id="custom_nser" name="custom_nser" type="number" step="1" placeholder="e.g. 72"><span class="sfx">cells</span></div></div>
+          <div class="fld" data-field="custom_nser"><label for="custom_nser">Cells in series</label><div class="inwrap"><input id="custom_nser" name="custom_nser" type="number" min="0" step="1" placeholder="e.g. 72"><span class="sfx">cells</span></div></div>
         </div>
       </div>
       <div class="group fld" data-field="custom_fit"><h3>Electrical at STC</h3>
         <div class="g4">
-          <div class="fld" data-field="custom_voc"><label for="custom_voc">Voc</label><div class="inwrap"><input id="custom_voc" name="custom_voc" type="number" step="any" placeholder="e.g. 52.1"><span class="sfx">V</span></div></div>
-          <div class="fld" data-field="custom_isc"><label for="custom_isc">Isc</label><div class="inwrap"><input id="custom_isc" name="custom_isc" type="number" step="any" placeholder="e.g. 14.0"><span class="sfx">A</span></div></div>
-          <div class="fld" data-field="custom_vmp"><label for="custom_vmp">Vmp</label><div class="inwrap"><input id="custom_vmp" name="custom_vmp" type="number" step="any" placeholder="e.g. 43.5"><span class="sfx">V</span></div></div>
-          <div class="fld" data-field="custom_imp"><label for="custom_imp">Imp</label><div class="inwrap"><input id="custom_imp" name="custom_imp" type="number" step="any" placeholder="e.g. 13.3"><span class="sfx">A</span></div></div>
-          <div class="fld" data-field="custom_bvoc"><label for="custom_bvoc">Voc temp. coefficient</label><div class="inwrap"><input id="custom_bvoc" name="custom_bvoc" type="number" step="any" placeholder="e.g. -0.25"><select class="unit" name="custom_bvoc_units" aria-label="Units"><option value="pct">%/°C</option><option value="abs">V/°C</option></select></div><div class="note" id="bvocEq"></div></div>
-          <div class="fld" data-field="custom_aisc"><label for="custom_aisc">Isc temp. coefficient</label><div class="inwrap"><input id="custom_aisc" name="custom_aisc" type="number" step="any" placeholder="e.g. 0.046"><select class="unit" name="custom_aisc_units" aria-label="Units"><option value="pct">%/°C</option><option value="abs">A/°C</option></select></div><div class="note" id="aiscEq"></div></div>
-          <div class="fld" data-field="custom_gpmp"><label for="custom_gpmp">Pmp temp. coefficient</label><div class="inwrap"><input id="custom_gpmp" name="custom_gpmp" type="number" step="any" placeholder="e.g. -0.30"><span class="sfx">%/°C</span></div></div>
-          <div class="fld" data-field="custom_tnoct"><label for="custom_tnoct">NOCT<span class="tip">?<span class="tiptext">From the datasheet, usually 40–45 °C (not the 25 °C STC temperature).</span></span></label><div class="inwrap"><input id="custom_tnoct" name="custom_tnoct" type="number" step="any" placeholder="e.g. 43"><span class="sfx">°C</span></div></div>
+          <div class="fld" data-field="custom_voc"><label for="custom_voc">Voc</label><div class="inwrap"><input id="custom_voc" name="custom_voc" type="number" min="0" step="0.1" placeholder="e.g. 52.1"><span class="sfx">V</span></div></div>
+          <div class="fld" data-field="custom_isc"><label for="custom_isc">Isc</label><div class="inwrap"><input id="custom_isc" name="custom_isc" type="number" min="0" step="0.1" placeholder="e.g. 14.0"><span class="sfx">A</span></div></div>
+          <div class="fld" data-field="custom_vmp"><label for="custom_vmp">Vmp</label><div class="inwrap"><input id="custom_vmp" name="custom_vmp" type="number" min="0" step="0.1" placeholder="e.g. 43.5"><span class="sfx">V</span></div></div>
+          <div class="fld" data-field="custom_imp"><label for="custom_imp">Imp</label><div class="inwrap"><input id="custom_imp" name="custom_imp" type="number" min="0" step="0.1" placeholder="e.g. 13.3"><span class="sfx">A</span></div></div>
+          <div class="fld" data-field="custom_bvoc"><label for="custom_bvoc">Voc temp. coefficient</label><div class="inwrap"><input id="custom_bvoc" name="custom_bvoc" type="number" min="-1" max="1" step="0.1" placeholder="e.g. -0.25"><select class="unit" name="custom_bvoc_units" aria-label="Units"><option value="pct">%/°C</option><option value="abs">V/°C</option></select></div><div class="note" id="bvocEq"></div><div class="fnote hidden" id="bvocWarn">Warning: the Voc temperature coefficient is normally negative. Check the sign.</div></div>
+          <div class="fld" data-field="custom_aisc"><label for="custom_aisc">Isc temp. coefficient</label><div class="inwrap"><input id="custom_aisc" name="custom_aisc" type="number" min="-1" max="1" step="0.1" placeholder="e.g. 0.046"><select class="unit" name="custom_aisc_units" aria-label="Units"><option value="pct">%/°C</option><option value="abs">A/°C</option></select></div><div class="note" id="aiscEq"></div><div class="fnote hidden" id="aiscWarn">Warning: the Isc temperature coefficient is normally positive. Check the sign.</div></div>
+          <div class="fld" data-field="custom_gpmp"><label for="custom_gpmp">Pmp temp. coefficient</label><div class="inwrap"><input id="custom_gpmp" name="custom_gpmp" type="number" min="-1" max="1" step="0.1" placeholder="e.g. -0.30"><span class="sfx">%/°C</span></div><div class="fnote hidden" id="gpmpWarn">Warning: the Pmp temperature coefficient is normally negative. Check the sign.</div></div>
+          <div class="fld" data-field="custom_tnoct"><label for="custom_tnoct">NOCT<span class="tip">?<span class="tiptext">From the datasheet, usually 40–45 °C (not the 25 °C STC temperature).</span></span></label><div class="inwrap"><input id="custom_tnoct" name="custom_tnoct" type="number" min="0" step="0.1" placeholder="e.g. 43"><span class="sfx">°C</span></div></div>
           <div class="fld ro" data-s="calc" title="Source: Calculated (Vmp × Imp)"><label for="cPmp">Pmp</label><div class="inwrap"><input id="cPmp" readonly tabindex="-1" placeholder="Needs Vmp, Imp"><span class="sfx">W</span></div></div>
           <div class="fld ro" data-s="calc" title="Source: Calculated (Pmp ÷ area ÷ 1000 W/m²)"><label for="cEff">Efficiency</label><div class="inwrap"><input id="cEff" readonly tabindex="-1" placeholder="Needs Pmp, dimensions"><span class="sfx">%</span></div></div>
           <div class="span2" style="align-self:end;margin-bottom:4px">
@@ -131,8 +130,8 @@
 
     <div class="group"><h3>Dimensions</h3>
       <div class="g4">
-        <div class="fld" data-field="module_length"><label for="module_length">Length</label><div class="inwrap"><input id="module_length" name="module_length" type="number" step="any" placeholder="e.g. 2278"><span class="sfx">mm</span></div></div>
-        <div class="fld" data-field="module_width"><label for="module_width">Width</label><div class="inwrap"><input id="module_width" name="module_width" type="number" step="any" placeholder="e.g. 1134"><span class="sfx">mm</span></div></div>
+        <div class="fld" data-field="module_length"><label for="module_length">Length</label><div class="inwrap"><input id="module_length" name="module_length" type="number" min="0" step="any" placeholder="e.g. 2278"><span class="sfx">mm</span></div></div>
+        <div class="fld" data-field="module_width"><label for="module_width">Width</label><div class="inwrap"><input id="module_width" name="module_width" type="number" min="0" step="any" placeholder="e.g. 1134"><span class="sfx">mm</span></div></div>
         <div class="fld ro" data-s="calc" title="Source: Calculated (length ÷ width)"><label for="cAr">Aspect ratio</label><input id="cAr" readonly tabindex="-1" placeholder="Needs length, width"></div>
         <div class="fld ro" data-s="calc" title="Source: Calculated (length × width)"><label for="cArea">Area</label><div class="inwrap"><input id="cArea" readonly tabindex="-1" placeholder="Needs length, width"><span class="sfx">m²</span></div></div>
       </div>
@@ -140,10 +139,10 @@
 
     <div class="group hidden" id="bifBox"><h3>Bifacial</h3>
       <div class="g4">
-        <div class="fld" data-field="bifaciality_base"><label for="bifaciality_base">Bifaciality</label><div class="inwrap"><input id="bifaciality_base" name="bifaciality_base" type="number" step="any" placeholder="e.g. 70"><span class="sfx">%</span></div></div>
-        <div class="fld" data-field="bifaciality_tol"><label for="bifaciality_tol">Tolerance</label><div class="inwrap"><input id="bifaciality_tol" name="bifaciality_tol" type="number" step="any" placeholder="e.g. 5"><span class="sfx">%</span></div></div>
+        <div class="fld" data-field="bifaciality_base"><label for="bifaciality_base">Bifaciality</label><div class="inwrap"><input id="bifaciality_base" name="bifaciality_base" type="number" min="0" step="any" placeholder="e.g. 70"><span class="sfx">%</span></div></div>
+        <div class="fld" data-field="bifaciality_tol"><label for="bifaciality_tol">Tolerance</label><div class="inwrap"><input id="bifaciality_tol" name="bifaciality_tol" type="number" min="0" step="any" placeholder="e.g. 5"><span class="sfx">%</span></div></div>
         <div class="fld ro" data-s="calc" title="Source: Calculated (bifaciality + tolerance)"><label for="cBif">Bifaciality used</label><input id="cBif" readonly tabindex="-1" placeholder="Needs bifaciality, tolerance"></div>
-        <div class="fld" data-field="bifacial_gain"><label for="bifacial_gain">Gain for NEC 70% check<span class="tip">?<span class="tiptext">Rear-side gain applied to the 70% floor: 0.70 × 1.25 × Isc × (1 + gain).</span></span></label><div class="inwrap"><input id="bifacial_gain" name="bifacial_gain" type="number" step="any" placeholder="e.g. 10"><span class="sfx">%</span></div></div>
+        <div class="fld" data-field="bifacial_gain"><label for="bifacial_gain">Gain for NEC 70% check<span class="tip">?<span class="tiptext">Rear-side gain applied to the 70% floor: 0.70 × 1.25 × Isc × (1 + gain).</span></span></label><div class="inwrap"><input id="bifacial_gain" name="bifacial_gain" type="number" min="0" step="any" placeholder="e.g. 10"><span class="sfx">%</span></div></div>
       </div>
     </div>
   </div>
@@ -151,7 +150,7 @@
 
 <!-- ============ 3. INVERTER ============ -->
 <section class="card" id="sec3" data-sec="3">
-  <div class="card-h"><span class="n">3</span><h2>Inverter</h2><button type="button" class="sec-help" data-goto="setInv" title="Inverter settings and modeling assumptions (Advanced Settings)" aria-label="Inverter settings and modeling assumptions (Advanced Settings)">?</button><span class="chip" id="chip3"></span><span class="csum" id="csum3"></span>
+  <div class="card-h"><span class="n">3</span><h2>Inverter</h2><span class="chip" id="chip3"></span><span class="csum" id="csum3"></span>
     <button type="button" class="btn btn-sm collapse" aria-expanded="true">Collapse</button></div>
   <div class="card-b">
     <div class="fld" data-field="inverter_name">
@@ -169,7 +168,7 @@
 
 <!-- ============ 4. SYSTEM DESIGN ============ -->
 <section class="card" id="sec4" data-sec="4">
-  <div class="card-h"><span class="n">4</span><h2>System design</h2><button type="button" class="sec-help" data-goto="setSys" title="System design settings and modeling assumptions (Advanced Settings)" aria-label="System design settings and modeling assumptions (Advanced Settings)">?</button><span class="chip" id="chip4"></span><span class="csum" id="csum4"></span>
+  <div class="card-h"><span class="n">4</span><h2>System design</h2><span class="chip" id="chip4"></span><span class="csum" id="csum4"></span>
     <button type="button" class="btn btn-sm collapse" aria-expanded="true">Collapse</button></div>
   <div class="card-b">
     <div class="fld" data-field="racking">
@@ -183,7 +182,7 @@
 
     <div class="group"><h3>Circuit</h3>
       <div class="g4">
-        <div class="fld" data-field="modules_per_string"><label for="modules_per_string">Modules per string</label><div class="inwrap"><input id="modules_per_string" name="modules_per_string" type="number" step="1" placeholder="e.g. 26"><span class="sfx">modules</span></div></div>
+        <div class="fld" data-field="modules_per_string"><label for="modules_per_string">Modules per string</label><div class="inwrap"><input id="modules_per_string" name="modules_per_string" type="number" min="0" step="1" placeholder="e.g. 26"><span class="sfx">modules</span></div></div>
         <div class="fld" data-field="system_voltage"><label for="system_voltage">System max. voltage<span class="tip">?<span class="tiptext">Select 1000V for rooftops, and 1500V otherwise.</span></span></label><select id="system_voltage" name="system_voltage"><option value="">Select…</option><option value="1500">1500 V</option><option value="1000">1000 V</option></select></div>
       </div>
     </div>
@@ -191,18 +190,18 @@
     <div id="rackFields" class="hidden">
       <div class="group"><h3>Orientation</h3>
         <div class="g4">
-          <div class="fld r-fixed r-carport" data-field="tilt"><label for="tilt">Tilt</label><div class="inwrap"><input id="tilt" name="tilt" type="number" step="any" placeholder="e.g. 20"><span class="sfx">°</span></div></div>
-          <div class="fld r-tracker" data-field="rotlim"><label for="rotlim">Rotation limit<span class="tip">?<span class="tiptext">Use 60° if unknown.</span></span></label><div class="inwrap"><input id="rotlim" name="rotlim" type="number" step="any" placeholder="e.g. 60"><span class="sfx">°</span></div></div>
-          <div class="fld" data-field="azimuth"><label for="azimuth">Azimuth<span class="tip">?<span class="tiptext">180° = due south. Fixed-tilt and carport: the direction the modules face. Tracker: the direction of the rotation axis (180 for a north–south axis). The layout illustration shows the result.</span></span></label><div class="inwrap"><input id="azimuth" name="azimuth" type="number" step="any" placeholder="e.g. 180"><span class="sfx">°</span></div></div>
+          <div class="fld r-fixed r-carport" data-field="tilt"><label for="tilt">Tilt</label><div class="inwrap"><input id="tilt" name="tilt" type="number" min="0" step="any" placeholder="e.g. 20"><span class="sfx">°</span></div></div>
+          <div class="fld r-tracker" data-field="rotlim"><label for="rotlim">Rotation limit<span class="tip">?<span class="tiptext">Use 60° if unknown.</span></span></label><div class="inwrap"><input id="rotlim" name="rotlim" type="number" min="0" step="any" placeholder="e.g. 60"><span class="sfx">°</span></div></div>
+          <div class="fld" data-field="azimuth"><label for="azimuth">Azimuth<span class="tip">?<span class="tiptext">180° = due south. Fixed-tilt and carport: the direction the modules face. Tracker: the direction of the rotation axis (180 for a north–south axis). The layout illustration shows the result.</span></span></label><div class="inwrap"><input id="azimuth" name="azimuth" type="number" min="0" step="any" placeholder="e.g. 180"><span class="sfx">°</span></div></div>
           <div class="fld" data-field="orientation"><label for="orientation">Module orientation</label><select id="orientation" name="orientation"><option value="">Select…</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div>
-          <div class="fld bif-only" data-field="ground_clearance"><label for="ground_clearance">Ground clearance<span class="tip">?<span class="tiptext">The height from the ground to the bottom of the PV array. For systems with no tracking, it is the distance between the ground and the bottom edge of modules closest to the ground. For systems with tracking, it is the distance between the ground and back of modules when they are horizontal.<br><br>If plans are unavailable: tracker 98 in (2.5 m; agricultural or landfill sites may be 118 in / 3 m or more), fixed-tilt ground mount 39 in (1 m), carport 197 in (5 m). Rooftop: from the drawings.</span></span></label><div class="inwrap"><input id="ground_clearance" name="ground_clearance" type="number" step="any" placeholder="e.g. 98"><select class="unit" name="ground_clearance_units" aria-label="Ground clearance units"><option value="in" selected>in</option><option value="m">m</option></select></div><div class="note" id="gcEq"></div></div>
+          <div class="fld bif-only" data-field="ground_clearance"><label for="ground_clearance">Ground clearance<span class="tip">?<span class="tiptext">The height from the ground to the bottom of the PV array. For systems with no tracking, it is the distance between the ground and the bottom edge of modules closest to the ground. For systems with tracking, it is the distance between the ground and back of modules when they are horizontal.<br><br>If plans are unavailable: tracker 98 in (2.5 m; agricultural or landfill sites may be 118 in / 3 m or more), fixed-tilt ground mount 39 in (1 m), carport 197 in (5 m). Rooftop: from the drawings.</span></span></label><div class="inwrap"><input id="ground_clearance" name="ground_clearance" type="number" min="0" step="0.1" placeholder="e.g. 98"><select class="unit" name="ground_clearance_units" aria-label="Ground clearance units"><option value="in" selected>in</option><option value="m">m</option></select></div><div class="note" id="gcEq"></div></div>
         </div>
       </div>
 
       <div class="group"><h3>Subarray</h3>
         <div class="g4">
-          <div class="fld" data-field="modules_high"><label for="modules_high">Modules High<span class="tip">?<span class="tiptext" id="highTip"></span></span></label><div class="inwrap"><input id="modules_high" name="modules_high" type="number" step="1" placeholder="e.g. 1"><span class="sfx">modules</span></div></div>
-          <div class="fld" data-field="modules_across"><label for="modules_across">Modules Across<span class="tip">?<span class="tiptext">Number of modules side by side along the length of one full subarray.<img src="/static/modules_across.png" alt="Diagram: Modules Across is the horizontal count, Modules High is the vertical count"></span></span></label><div class="inwrap"><input id="modules_across" name="modules_across" type="number" step="1" placeholder="e.g. 26"><span class="sfx">modules</span></div></div>
+          <div class="fld" data-field="modules_high"><label for="modules_high">Modules High<span class="tip">?<span class="tiptext" id="highTip"></span></span></label><div class="inwrap"><input id="modules_high" name="modules_high" type="number" min="0" step="1" placeholder="e.g. 1"><span class="sfx">modules</span></div></div>
+          <div class="fld" data-field="modules_across"><label for="modules_across">Modules Across<span class="tip">?<span class="tiptext">Number of modules side by side along the length of one full subarray.<img src="/static/modules_across.png" alt="Diagram: Modules Across is the horizontal count, Modules High is the vertical count"></span></span></label><div class="inwrap"><input id="modules_across" name="modules_across" type="number" min="0" step="1" placeholder="e.g. 26"><span class="sfx">modules</span></div></div>
           <div class="fld ro" data-s="calc" title="Source: Calculated (all strings on one inverter)"><label for="cStr">Strings modeled<span class="tip">?<span class="tiptext">Fewest strings that fill the rows modeled, all on one inverter. Results are per string.</span></span></label><div class="inwrap"><input id="cStr" readonly tabindex="-1" placeholder="Needs subarray, rows, modules per string"><span class="sfx">strings</span></div><div class="fnote hidden" id="strNote"></div></div>
         </div>
       </div>
@@ -213,9 +212,9 @@
           <button type="button" role="radio" aria-checked="false" data-g="gcr"><span class="ck"></span><span class="ct">GCR</span></button>
         </div>
         <div class="g4" style="margin-top:10px">
-          <div class="fld g-pitch" data-field="pitch"><label for="pitch">Row pitch</label><div class="inwrap"><input id="pitch" name="pitch" type="number" step="any" placeholder="e.g. 236"><select class="unit" name="pitch_units" aria-label="Row pitch units"><option value="in" selected>in</option><option value="m">m</option></select></div><div class="note" id="pitchEq"></div></div>
-          <div class="fld g-pitch" id="gapBox" data-field="gap"><label for="gap">Module spacing<span class="tip">?<span class="tiptext">Gap between modules stacked high.</span></span></label><div class="inwrap"><input id="gap" name="gap" type="number" step="any" placeholder="e.g. 0.8"><span class="sfx">in</span></div></div>
-          <div class="fld g-gcr hidden" data-field="gcr"><label for="gcr">GCR</label><input id="gcr" name="gcr" type="number" step="any" placeholder="e.g. 0.35"></div>
+          <div class="fld g-pitch" data-field="pitch"><label for="pitch">Row pitch</label><div class="inwrap"><input id="pitch" name="pitch" type="number" min="0" step="any" placeholder="e.g. 236"><select class="unit" name="pitch_units" aria-label="Row pitch units"><option value="in" selected>in</option><option value="m">m</option></select></div><div class="note" id="pitchEq"></div></div>
+          <div class="fld g-pitch" id="gapBox" data-field="gap"><label for="gap">Module spacing<span class="tip">?<span class="tiptext">Gap between modules stacked high.</span></span></label><div class="inwrap"><input id="gap" name="gap" type="number" min="0" step="any" placeholder="e.g. 0.8"><span class="sfx">in</span></div></div>
+          <div class="fld g-gcr hidden" data-field="gcr"><label for="gcr">GCR</label><input id="gcr" name="gcr" type="number" min="0" step="0.1" placeholder="e.g. 0.35"></div>
           <div class="fld ro g-pitch" data-s="calc" title="Source: Calculated ((Modules High × module dimension + spacing) ÷ row pitch)"><label for="cGcr">GCR</label><input id="cGcr" readonly tabindex="-1" placeholder="Needs dimensions, orientation, pitch"></div>
           <div class="fld ro g-gcr hidden" data-s="calc" title="Source: Calculated (Modules High × module dimension ÷ GCR)"><label for="cPitch">Equivalent row pitch</label><div class="inwrap"><input id="cPitch" readonly tabindex="-1" placeholder="Needs GCR, dimensions, orientation"><span class="sfx">m</span></div></div>
         </div>
@@ -238,13 +237,11 @@
 <section class="card" id="setSite" tabindex="-1">
   <div class="card-h"><h2>Site and weather</h2></div>
   <div class="card-b">
-    <div class="srow locked"><span class="lbl">Weather dataset</span><span class="lockval">NSRDB PSM v4 (GOES Aggregated), downloaded for the latitude and longitude</span></div>
-    <div class="srow locked"><span class="lbl">Weather years</span><span class="lockval" id="wxYears">—</span></div>
-    <div class="srow locked"><span class="lbl">Albedo</span><span class="lockval">From the weather file, every time step. Where it is missing or invalid (e.g. 0), SAM uses 0.2.</span></div>
+    <div class="srow locked"><span class="lbl">Weather dataset<span class="tip">?<span class="tiptext">Downloaded for the latitude and longitude</span></span></span><span class="lockval">NSRDB PSM v4 (GOES Aggregated)</span></div>
+    <div class="srow locked"><span class="lbl">Weather years<span class="tip">?<span class="tiptext" id="wxYearsTip">Missing years are skipped</span></span></span><span class="lockval" id="wxYears">—</span></div>
+    <div class="srow locked"><span class="lbl">Albedo</span><span class="lockval">From the weather file. Where it is missing or invalid (e.g. 0), SAM uses 0.2.</span></div>
     <div class="srow locked"><span class="lbl">Irradiance and sky model</span><span class="lockval">DNI and DHI, Perez sky diffuse model</span></div>
     <div class="srow locked"><span class="lbl">Time basis</span><span class="lockval">Local standard time, 365-day years</span></div>
-    <div class="srow locked"><span class="lbl">Address lookup</span><span class="lockval">US Census Geocoder, then OpenStreetMap (internet required). The coordinates found are used.</span></div>
-    <div class="srow locked"><span class="lbl">Weather cache</span><span class="lockval">Retrieved years are reused on this computer</span></div>
   </div>
 </section>
 
@@ -259,7 +256,7 @@
     </div>
     <div class="fld srow" data-field="self_shading">
       <label for="self_shading">Self-shading<span class="tip">?<span class="tiptext">SAM self-shading model (shading of one module row by the row in front of it).<br><br>None: no self-shading.<br>Standard: non-linear model for crystalline silicon modules.<br>Thin film: linear model for thin-film modules.<br><br>PPE standard: bifacial modules use Standard (Thin film for thin-film cells); monofacial modules use None.</span></span></label>
-      <select id="self_shading" name="self_shading"><option value="">PPE default</option><option value="none">None</option><option value="standard">Standard</option><option value="thin_film">Thin film</option></select>
+      <select id="self_shading" name="self_shading"><option value="none">None</option><option value="standard">Standard</option><option value="thin_film">Thin film</option></select>
       <div class="note" id="shadeStd"></div>
       <div class="fnote hidden" id="shadeWarn"></div>
     </div>
@@ -324,14 +321,12 @@
   <ul class="ready" id="ready"></ul>
   <button type="button" class="btn primary" id="runBtn">Run simulation</button>
   <div class="side-status" id="sideStatus" aria-live="polite"></div>
-  <div class="side-more"><div class="actions">
-    <button type="button" class="btn btn-sm" id="printBtn">Print</button>
-    <button type="button" class="btn btn-sm" id="resetBtn">Reset inputs</button>
-  </div><div class="actions" style="margin-top:8px">
-    <button type="button" class="btn btn-sm" id="saveInBtn">Save inputs (.json)</button>
-    <button type="button" class="btn btn-sm" id="loadInBtn">Load inputs (.json)</button>
+  <div class="side-more"><div class="side-btns">
+    <button type="button" class="btn btn-sm" id="resetBtn">Reset</button>
+    <button type="button" class="btn btn-sm" id="saveInBtn" title="Save every input to a file (.json)">Save inputs</button>
+    <button type="button" class="btn btn-sm" id="loadInBtn" title="Load inputs from a saved file (.json)">Load inputs</button>
     <input type="file" id="loadInFile" accept=".json,application/json" class="hidden">
-  </div><div class="note" id="inNote" style="margin-top:6px"></div><div class="note" id="cacheNote" style="margin-top:6px"></div></div>
+  </div><div class="note" id="inNote" style="margin-top:6px"></div></div>
 </div>
 </aside>
 </div>

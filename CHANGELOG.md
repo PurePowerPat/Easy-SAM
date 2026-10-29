@@ -5,6 +5,30 @@ Every version, newest first. Entries up to v0.2.8 are the release notes written 
 
 Release notes for v0.1.0–v0.1.2 and v0.1.7 were not kept.
 
+## v0.3.6 — 2026-10-29
+
+- Tabs reordered: Configure, Results, Advanced Settings, About.
+- Configure: the "All fields are required unless marked optional" note and the "?" links to Advanced
+  Settings by each section heading are removed.
+- Configure: a collapsed section with nothing entered shows only its Incomplete chip (no grey
+  "Location needed" / "No module selected" text).
+- Configure: number inputs cannot go below zero (latitude and longitude excepted). Steps of 0.1 for
+  ground clearance, GCR, Isc (datasheet) and the custom module electrical values.
+- Custom module: temperature coefficients are limited to -1 to 1 (and -1 to 1 %/°C when entered in
+  V/°C or A/°C). A positive Voc or Pmp coefficient, or a negative Isc coefficient, is now a warning
+  instead of an error.
+- Configuration panel: Readiness shows the section names only (no links). Print is removed (Results
+  still has Print); Reset, Save inputs and Load inputs are equal-size buttons. The weather cache
+  size moved to About.
+- Fix: Reset clears the "Loaded <file> (saved with vX)" message.
+- Advanced Settings: Bifacial electrical mismatch can be changed at any time (Default: Exclude; it
+  still only applies to bifacial modules). Self-shading always shows the value used, the default for
+  the module (None, Standard or Thin film), in the Default colour; the "PPE default" option is
+  removed. Weather dataset and Weather years show the value only, with the details in a tooltip;
+  Albedo text shortened; Address lookup and Weather cache rows removed.
+
+Calculations unchanged.
+
 ## v0.3.5 — 2026-10-29
 
 - **Easy-SAM.** The app is renamed Easy-SAM, with the subheading "Easily calculate your worst case Isc

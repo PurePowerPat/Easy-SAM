@@ -16,10 +16,10 @@
   const isThin = () => st.src==='custom' ? ['2','3','4','5'].includes(val('custom_celltech')) : !!(st.module && st.module.thin_film);
   const ppeShade = () => !isBif() ? 'none' : (isThin() ? 'thin_film' : 'standard');
   const haveModule = () => st.src==='custom' ? (!!val('custom_celltech') || $('#customBif').checked) : !!st.module;
-  // Self-shading follows the PPE standard for the module (Default) until the engineer picks another option.
-  function syncShade(){ if(st.shadeAuto) f.elements.self_shading.value = haveModule() ? ppeShade() : ''; }
+  // Self-shading follows the default for the module (Default) until the engineer picks another option.
+  function syncShade(){ if(st.shadeAuto) f.elements.self_shading.value = ppeShade(); }
   // 'input' fires before the form's own input handler re-renders (and would re-apply the default).
-  f.elements.self_shading.addEventListener('input', () => { const v = val('self_shading'); st.shadeAuto = !v || v===ppeShade(); });
+  f.elements.self_shading.addEventListener('input', () => { st.shadeAuto = val('self_shading')===ppeShade(); });
   const mm = m => (m===null||m===undefined) ? '' : String(Math.round(m*10000)/10);
   const RACK_NAME = {tracker:'Single-axis tracker', fixed:'Fixed-tilt', carport:'Carport'};
   const HIGH_TIP = {
@@ -54,8 +54,8 @@
     const v=val(name); if(name==='interval') return v==='60' ? 'def' : 'user'; if(name==='rows' && v==='1') return 'def';
     if(name==='bifacial_mismatch') return v==='1' ? 'user' : 'def';
     if(INV_LIMITS.includes(name) && v) return atDefault(name) ? 'def' : 'user';
-    if(!v) return null;
     if(name==='self_shading') return st.shadeAuto ? 'def' : 'user';
+    if(!v) return null;
     return (name in dbVals && same(v, dbVals[name])) ? 'db' : 'user'; }
   function renderSources(){
     $$('.fld[data-field]').forEach(box => { const n=box.dataset.field, el=f.elements[n]; if(!el || !el.tagName) return;
@@ -80,9 +80,6 @@
     Object.entries(TABS).forEach(([k,id]) => $(id).setAttribute('aria-selected', String(k===v)));
     if(changed) window.scrollTo({top:0}); }
   Object.entries(TABS).forEach(([k,id]) => $(id).onclick = () => showView(k)); $('#backBtn').onclick = () => showView('cfg');
-  // "?" next to each Configure section heading: that section's settings and assumptions on Advanced Settings.
-  $$('[data-goto]').forEach(b => b.onclick = () => { const card = $('#'+b.dataset.goto); showView('set');
-    card.scrollIntoView({block:'start'}); card.focus({preventScroll:true}); });
   $$('.lockval').forEach(el => el.title = 'Locked: PPE default');
   // Fields on the page not shown still count; only fields hidden because they do not apply are left out.
   const notApplicable = el => !!el.closest('.hidden:not(.page):not(.view)');
@@ -103,7 +100,7 @@
   fetch('/api/info').then(r=>r.json()).then(j=>{
     if(j.error){ $('#sideStatus').innerHTML = `<span class="bad">Library load failed: ${esc(j.error)}</span>`; return; }
     st.info = j; $$('[data-tip=cec]').forEach(el => el.textContent = j.cec_tip);   // text lives in report.py
-    $('#wxYears').textContent = `${j.weather.first}–${j.weather.last} (${j.weather.requested} requested; missing years are skipped)`;
+    $('#wxYears').textContent = `${j.weather.first}–${j.weather.last}`; $('#wxYearsTip').textContent = `${j.weather.requested} requested; missing years are skipped`;
     if(j.logo){ const im=$('#logoImg'); im.onload=()=>im.classList.remove('hidden'); im.onerror=()=>im.classList.add('hidden'); im.src=j.logo; }
     renderAbout(); update();
   }).catch(e => { $('#sideStatus').innerHTML = `<span class="bad">Could not reach the app: ${esc(e.message)}</span>`; });
@@ -117,13 +114,14 @@
       <dt>Inverters</dt><dd>${fnum(L.inverter_count)} (CEC Database)</dd>
       <dt>Library</dt><dd>SAM Github commit ${esc((L.commit||'').slice(0,12))}</dd>
       <dt>Weather</dt><dd>${esc(W.dataset||'')}, ${W.first||''}–${W.last||''}</dd>
-      <dt>Address lookup</dt><dd>US Census Geocoder, then OpenStreetMap Nominatim</dd></dl>
+      <dt>Address lookup</dt><dd>US Census Geocoder, then OpenStreetMap Nominatim</dd>
+      <dt>Weather cache</dt><dd>${st.cache ? `${fnum(st.cache.files)} files, ${st.cache.mb} MB` : '—'} (retrieved years are reused on this computer)</dd></dl>
       <h3 style="font-size:13px;margin:16px 0 4px">Method</h3>
       <ul class="note" style="margin:0 0 0 18px;padding:0">
         <li>Runs once per weather year. All strings are on one inverter; results are per string.</li>
         <li>Isc and Vmp: 3-hour average = mean of 3 consecutive hourly steps (6 for 30-minute data).</li>
         <li>Voc: maximum value of any single time step (not averaged).</li></ul>`; }
-  function refreshCache(){ fetch('/api/cache').then(r=>r.json()).then(c=>{ $('#cacheNote').textContent = `Weather cache: ${c.files} files, ${c.mb} MB`; }).catch(()=>{}); }
+  function refreshCache(){ fetch('/api/cache').then(r=>r.json()).then(c=>{ st.cache = c; renderAbout(); }).catch(()=>{}); }
   refreshCache();
 
   // ================= tooltips (delegated, capture phase so a "?" inside a button/label never activates it) =================
@@ -132,6 +130,11 @@
     if(t){ e.preventDefault(); e.stopPropagation(); const o=t.classList.contains('open'); $$('.tip.open').forEach(x=>x.classList.remove('open')); if(!o) t.classList.add('open'); return; }
     $$('.tip.open').forEach(x=>x.classList.remove('open'));
   }, true);
+  // Configure number inputs: no minus sign where the minimum is 0; a value outside min / max is pulled to the limit.
+  $$('#pageCfg input[type=number][min]').forEach(el => {
+    el.addEventListener('keydown', e => { if(e.key==='-' && Number(el.min)>=0) e.preventDefault(); });
+    el.addEventListener('change', () => { const x = parseFloat(el.value); if(isNaN(x)) return;   // runs before the form's change handler
+      if(x < Number(el.min)) el.value = el.min; else if(el.max!=='' && x > Number(el.max)) el.value = el.max; }); });
   $$('.collapse').forEach(b => b.addEventListener('click', () => setCollapsed(b.closest('.card'), b.getAttribute('aria-expanded')==='true')));
   function setCollapsed(card, c){ card.classList.toggle('collapsed', c); const b=card.querySelector('.collapse'); b.setAttribute('aria-expanded', String(!c)); b.textContent = c ? 'Expand' : 'Collapse'; }
   ['#sec2','#sec3','#sec4'].forEach(s => setCollapsed($(s), true));
@@ -388,6 +391,8 @@
       const a = units==='pct' ? x/100*ref : x; return units==='pct' ? `= ${a.toPrecision(4)} ${absUnit}` : `= ${(a/ref*100).toFixed(4)} %/°C`; };
     $('#bvocEq').textContent = eq(val('custom_bvoc'), val('custom_bvoc_units'), num('custom_voc'), 'V/°C');
     $('#aiscEq').textContent = eq(val('custom_aisc'), val('custom_aisc_units'), num('custom_isc'), 'A/°C');
+    [['#bvocWarn','custom_bvoc',1], ['#aiscWarn','custom_aisc',-1], ['#gpmpWarn','custom_gpmp',1]].forEach(([id,n,sign]) => {
+      const x = num(n); $(id).classList.toggle('hidden', !(x!==null && x*sign > 0)); });
     const leq = n => { const x=num(n); return (x!==null && val(n+'_units')==='in') ? `= ${(x*IN).toFixed(3)} m` : ''; };
     $('#pitchEq').textContent = leq('pitch'); $('#gcEq').textContent = leq('ground_clearance');
     if(st.racking!=='carport'){
@@ -407,7 +412,7 @@
     else sn.classList.add('hidden');
     // self-shading: PPE standard for the current module + warning when the selection differs
     const ppe = ppeShade(), sel = val('self_shading'), haveMod = haveModule();
-    $('#shadeStd').textContent = haveMod ? `PPE default for this module: ${SHADE_NAME[ppe]}` : 'PPE default: follows the module (select a module)';
+    $('#shadeStd').textContent = haveMod ? `Default for this module: ${SHADE_NAME[ppe]}` : `Default: ${SHADE_NAME[ppe]} (follows the module)`;
     const w = $('#shadeWarn');
     if(haveMod && sel && sel!==ppe){
       w.textContent = `Warning: PPE Standard for this module is ${SHADE_NAME[ppe]}. ` + (ppe==='none'
@@ -440,10 +445,7 @@
   let lastReady = null;
   const SEC_NAME = {1:'Site and weather', 2:'Module', 3:'Inverter', 4:'System design', 5:'Advanced Settings'};
   function renderReadiness(m){
-    // Rewrite only on change: leaving a field re-renders, and replacing a link mid-click loses the click.
-    const html = [1,2,3,4,5].map(s => { const L=m[s];
-      return `<li class="${L.length?'':'ok'}"><div class="rh"><span class="ri"></span>${SEC_NAME[s]}</div>`
-        + (L.length ? `<div class="rm">${L.slice(0,4).map(n=>`<button type="button" class="linkbtn" data-jump="${n}">${esc(LABELS[n]||n)}</button>`).join(', ')}${L.length>4?` +${L.length-4}`:''}</div>` : '') + '</li>'; }).join('');
+    const html = [1,2,3,4,5].map(s => `<li class="${m[s].length?'':'ok'}"><div class="rh"><span class="ri"></span>${SEC_NAME[s]}</div></li>`).join('');
     if(html !== lastReady){ lastReady = html; $('#ready').innerHTML = html; }
     [1,2,3,4].forEach(s => { const ch=$('#chip'+s); ch.classList.toggle('done', !m[s].length); ch.textContent = m[s].length ? 'Incomplete' : 'Complete'; });
     const now = [1,2,3,4].map(s => !m[s].length);
@@ -470,10 +472,10 @@
     $('#sString').innerHTML = (val('modules_per_string')||val('system_voltage')) ? `${val('modules_per_string')||'?'} modules · ${val('system_voltage')?val('system_voltage')+' V':'voltage?'}` : E('Not set');
     const r=st.racking, R=val('rows'), sh=val('self_shading');
     $('#sMount').innerHTML = r ? `${RACK_NAME[r]} · ${val('modules_high')||'?'} × ${val('modules_across')||'?'}${R?` · ${R} row${R==='1'?'':'s'}`:''}${c.gcr?` · GCR ${c.gcr.toFixed(3)}`:''}${sh?` · self-shading ${SHADE_NAME[sh]}`:''}` : E('Not chosen');
-    $('#csum1').textContent = site ? `${st.loc==='address'&&val('address')?val('address')+' · ':''}${site} · ${val('interval')}-min` : 'Location needed';
-    $('#csum2').textContent = st.src==='cec' ? (st.module ? `${st.module.name} · ${fnum(st.module.stc)} W` : 'No module selected') : (val('custom_name') || 'Custom module incomplete');
-    $('#csum3').textContent = st.inverter ? st.inverter.name : 'No inverter selected';
-    $('#csum4').textContent = r ? `${RACK_NAME[r]} · ${val('modules_per_string')||'?'} modules · ${val('system_voltage')||'?'} V · ${val('modules_high')||'?'} × ${val('modules_across')||'?'}${R?` · ${R} row(s)`:''}${c.gcr?` · GCR ${c.gcr.toFixed(3)}`:''}` : 'Not chosen';
+    $('#csum1').textContent = site ? `${st.loc==='address'&&val('address')?val('address')+' · ':''}${site} · ${val('interval')}-min` : '';
+    $('#csum2').textContent = st.src==='cec' ? (st.module ? `${st.module.name} · ${fnum(st.module.stc)} W` : '') : val('custom_name');
+    $('#csum3').textContent = st.inverter ? st.inverter.name : '';
+    $('#csum4').textContent = r ? `${RACK_NAME[r]} · ${val('modules_per_string')||'?'} modules · ${val('system_voltage')||'?'} V · ${val('modules_high')||'?'} × ${val('modules_across')||'?'}${R?` · ${R} row(s)`:''}${c.gcr?` · GCR ${c.gcr.toFixed(3)}`:''}` : '';
     $('#verifyLoc').disabled = !okLL; $('#locText').textContent = okLL ? site : '';
   }
   $('#verifyLoc').onclick = () => { const a=num('lat'), o=num('lon'); if(a===null||o===null) return;
@@ -494,7 +496,7 @@
     $('#copyBox').classList.toggle('hidden', !(custom && st.module));
     $('#ovBox').classList.toggle('hidden', !(st.module && !st.module.bifacial));
     $('#iscDsBox').classList.toggle('hidden', !st.module);
-    $('#bifMismatch').disabled = !bif; $('#mismatchNA').classList.toggle('hidden', bif);
+    $('#mismatchNA').classList.toggle('hidden', bif);
     $('#bifBox').classList.toggle('hidden', !bif);
     $('#rackFields').classList.toggle('hidden', !r); $('#rackPrompt').classList.toggle('hidden', !!r);
     $$('.r-tracker,.r-fixed,.r-carport').forEach(el => el.classList.toggle('hidden', !(r && el.classList.contains('r-'+r))));
@@ -640,17 +642,17 @@
   window.addEventListener('beforeprint',()=>{ const t=`Easy-SAM v${(st.info&&st.info.version)||''} · printed ${new Date().toLocaleString()}`;
     $('#printStamp').textContent=t; $('#printStamp2').textContent=t; openBefore=$$('details').map(d=>d.open); $$('details').forEach(d=>d.open=true); });
   window.addEventListener('afterprint',()=>{ $$('details').forEach((d,i)=>d.open=openBefore[i]); });
-  $('#printBtn').onclick = $('#printBtn2').onclick = () => window.print();
+  $('#printBtn2').onclick = () => window.print();
 
   // ================= reset =================
   function resetAll(){
     f.reset(); clearAllErrors(); st.touched.clear(); Object.keys(dbVals).forEach(k=>delete dbVals[k]);
     Object.assign(st,{src:'cec', loc:null, racking:null, gmode:'pitch', geo:null, complete:null, shadeAuto:true}); locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=pitch]'));
-    modPicker.reset(); invPicker.reset(); ['#customBif','#bifOverride'].forEach(s=>$(s).checked=false); ['#copyNote','#saveNote','#geoNote'].forEach(s=>$(s).textContent='');
+    modPicker.reset(); invPicker.reset(); ['#customBif','#bifOverride'].forEach(s=>$(s).checked=false); ['#copyNote','#saveNote','#geoNote','#inNote'].forEach(s=>$(s).textContent='');
     $('#cCarGcr').value='0.01';
     setCollapsed($('#sec1'), false); ['#sec2','#sec3','#sec4'].forEach(s=>setCollapsed($(s), true));
     $('#layoutBox').open=false; update(); window.scrollTo({top:0,behavior:'smooth'}); }
-  $('#resetBtn').onclick=()=>ask('Clear all inputs? Results and the weather cache are not affected.','Reset inputs',ok=>ok&&resetAll());
+  $('#resetBtn').onclick=()=>ask('Clear all inputs? Results and the weather cache are not affected.','Reset',ok=>ok&&resetAll());
 
   // ================= save / load inputs (.json) =================
   // File = {format, version, app_version, saved, inputs}; "inputs" is exactly what Run sends to the server,
@@ -685,10 +687,11 @@
     st.gmode = I.gcr_mode==='gcr' ? 'gcr' : 'pitch'; gcrG.sync($(`[data-g=${st.gmode}]`));
     $('#bifOverride').checked = I.bifacial_override==='1'; $('#customBif').checked = I.custom_bifacial==='1';
     [...f.elements].forEach(el => { if(!el.name || el.type==='checkbox' || !(el.name in I)) return; const v = String(I[el.name] ?? '');
+      if(el.name==='self_shading' && !v) return;                     // saved before v0.3.6: the default
       if(el.tagName==='SELECT' && ![...el.options].some(x => x.value===v)){ probs.push(`${LABELS[el.name]||el.name}: “${v}” is not one of the options.`); return; }
       el.value = v; st.touched.add(el.name.replace(/_units$/,'')); });
     Object.entries(I.db_values || {}).forEach(([n,v]) => { if(f.elements[n] && same(val(n), v)) dbVals[n] = String(v); });
-    st.shadeAuto = !val('self_shading') || val('self_shading')===ppeShade();
+    st.shadeAuto = val('self_shading')===ppeShade();
     if(st.loc==='address' && val('address') && val('lat') && val('lon')) st.geo = {address:val('address'), lat:num('lat'), lon:num('lon')};
     ['#sec2','#sec3','#sec4'].forEach(s => setCollapsed($(s), false)); st.complete = null;
     update(); scheduleValidate(); showView('cfg');

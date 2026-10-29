@@ -141,8 +141,9 @@ def _custom_module(d, c, length, width):
     if isc and imp and imp >= isc:
         c.fail("custom_imp", "Imp must be less than Isc. Check the datasheet values.")
 
-    def coef(key, label, ref, units_key, lo_pct, hi_pct, sign_txt, abs_unit):
-        raw = c.num(key, label, -1000, 1000)
+    # Temperature coefficients: -1 to 1 as entered, and -1 to 1 %/°C. An unusual sign is a warning on the page only.
+    def coef(key, label, ref, units_key, abs_unit):
+        raw = c.num(key, label, -1, 1)
         units = d.get(units_key) or "pct"
         if units not in ("pct", "abs"):
             units = "pct"
@@ -150,17 +151,15 @@ def _custom_module(d, c, length, width):
             return None, None, units
         absval = raw / 100.0 * ref if units == "pct" else raw
         pct = absval / ref * 100.0
-        if not lo_pct <= pct <= hi_pct:
-            c.fail(key, f"{label} = {pct:.3f} %/°C, outside the expected {lo_pct:g} to {hi_pct:g} %/°C "
-                        f"({sign_txt}). Check the value and the units (%/°C vs {abs_unit}).")
+        if not -1 <= pct <= 1:
+            c.fail(key, f"{label} = {pct:.3f} %/°C, outside -1 to 1 %/°C. "
+                        f"Check the value and the units (%/°C vs {abs_unit}).")
             return None, raw, units
         return absval, raw, units
 
-    bvoc, bvoc_raw, bvoc_units = coef("custom_bvoc", "Voc temperature coefficient", voc, "custom_bvoc_units",
-                                      -1.0, -0.01, "negative", "V/°C")
-    aisc, aisc_raw, aisc_units = coef("custom_aisc", "Isc temperature coefficient", isc, "custom_aisc_units",
-                                      0.0001, 0.2, "positive", "A/°C")
-    gpmp = c.num("custom_gpmp", "Pmp temperature coefficient", -1, -0.01)
+    bvoc, bvoc_raw, bvoc_units = coef("custom_bvoc", "Voc temperature coefficient", voc, "custom_bvoc_units", "V/°C")
+    aisc, aisc_raw, aisc_units = coef("custom_aisc", "Isc temperature coefficient", isc, "custom_aisc_units", "A/°C")
+    gpmp = c.num("custom_gpmp", "Pmp temperature coefficient", -1, 1)
     tnoct = c.num("custom_tnoct", "NOCT", 30, 70)
     bif = _truthy(d.get("custom_bifacial"))
 

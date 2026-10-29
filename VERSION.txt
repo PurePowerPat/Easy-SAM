@@ -1,25 +1,29 @@
 Easy-SAM (PPE SAM Multi-Year Simulation)
-Version: v0.3.5
+Version: v0.3.6
 Date:    10/29/2026
 
 HOW TO RUN: double-click run_from_source.bat.
 Full version history: CHANGELOG.md
 
-Changes since v0.3.4:
- - Renamed Easy-SAM ("Easily calculate your worst case Isc and Voc"), new title font.
- - Results: Voc is now the maximum single time-step value (was the max consecutive 3-hour average).
-   Isc and Vmp are unchanged (max 3-hour average).
- - Settings is now "Advanced Settings", with a permanent red "Advanced users only" warning, and is
-   organized by section (Site and weather, Module, Inverter, System design). Locked rows show the
-   PPE assumptions; the changeable rows show the PPE default and a warning when changed:
-   - Bifacial electrical mismatch: Include / Exclude dropdown (PPE default Exclude).
-   - Self-shading (PPE default for the module).
-   - NEW Inverter voltage limits: Vmppt low (0 V), Vmppt high (1500 V), Vdc max (1500 V).
-     Previously fixed at 0 V / system max voltage / system max voltage. Default results are
-     unchanged for 1500 V systems; Vmppt high and Vdc max no longer follow the system max voltage.
-   - Number of rows (PPE default 1).
- - Configure: the "Modeling assumptions" and "Weather source" dropdowns are removed; a "?" next to
-   each section heading opens that section of Advanced Settings.
- - Fix: the page no longer shifts sideways when moving between tabs or expanding sections.
+Changes since v0.3.5:
+ - Tabs reordered: Configure, Results, Advanced Settings, About.
+ - Configure: the "All fields are required unless marked optional" note and the "?" links to
+   Advanced Settings by each section heading are removed.
+ - Configure: a collapsed section with nothing entered shows only its Incomplete chip (no grey
+   "Location needed" / "No module selected" text).
+ - Configure: number inputs cannot go below zero (latitude and longitude excepted). Steps of 0.1 for
+   ground clearance, GCR, Isc (datasheet) and the custom module electrical values.
+ - Custom module: temperature coefficients are limited to -1 to 1 (and -1 to 1 %/°C when entered in
+   V/°C or A/°C). A positive Voc or Pmp coefficient, or a negative Isc coefficient, is now a warning
+   instead of an error.
+ - Configuration panel: Readiness shows the section names only (no links). Print is removed (Results
+   still has Print); Reset, Save inputs and Load inputs are equal-size buttons. The weather cache
+   size moved to About.
+ - Fix: Reset clears the "Loaded <file> (saved with vX)" message.
+ - Advanced Settings: Bifacial electrical mismatch can be changed at any time (Default: Exclude; it
+   still only applies to bifacial modules). Self-shading always shows the value used, the default
+   for the module (None, Standard or Thin film), in the Default colour; the "PPE default" option is
+   removed. Weather dataset and Weather years show the value only, with the details in a tooltip;
+   Albedo text shortened; Address lookup and Weather cache rows removed.
 
- Calculations otherwise unchanged (Isc and Vmp tests locked to the v0.1.6 values).
+ Calculations unchanged.
