@@ -1,8 +1,8 @@
-# PPE SAM Multi-Year Simulation
+# Easy-SAM (PPE SAM Multi-Year Simulation)
 
 Pure Power Engineering Inc. Downloads every NSRDB PSM v4 year for a site, runs SAM (NLR-PySAM 8.0.0)
-once per year, and reports the worst-case consecutive 3-hour averages of string Isc, Voc and Vmp, plus
-the NEC 70% floor check. Current version: see [VERSION.txt](VERSION.txt); history:
+once per year, and reports the worst-case string values: the maximum consecutive 3-hour average of Isc
+and Vmp, the maximum Voc (single time step), plus the NEC 70% floor check. Current version: see [VERSION.txt](VERSION.txt); history:
 [CHANGELOG.md](CHANGELOG.md).
 
 ## Run
@@ -35,16 +35,16 @@ page and a small JSON API. No third-party dependencies besides PySAM.
 | `jobs.py` | Background jobs: weather retrieval, then one SAM run per year (process pool), then analysis |
 | `model.py` | Input validation (`validate_design`) and the SAM model settings (`build_inputs`) |
 | `weather.py` | NSRDB download, throttling, and the per-grid-cell weather cache |
-| `analysis.py` | Rolling 3-hour windows and the NEC 70% floor |
+| `analysis.py` | Rolling 3-hour windows (Isc, Vmp), max Voc and the NEC 70% floor |
 | `report.py` | The "Inputs used" table |
 | `exports.py`, `inputs_export.py` | CSV / JSON downloads (incl. SAM's "JSON for inputs" format) |
 | `libraries.py` | CEC module and inverter libraries (`libraries/*.csv`) |
 | `config.py` | Fixed settings (NSRDB, PPE standards, folders) |
-| `static/` | The page: `index.html`, `app.css`, `app.js` |
+| `static/` | The page: `index.html`, `app.css`, `app.js`; `fonts/` holds the Orbitron title font (SIL OFL, `OFL.txt`) |
 
 Tests run offline (fixture libraries in `tests/fixtures`, synthetic NSRDB weather, a temporary data
-folder). The locked results in `tests/test_pipeline.py` are the v0.1.6 values: if they change, the
-calculation changed.
+folder). The locked results in `tests/test_pipeline.py` are the v0.1.6 values (Voc: v0.3.5, max single time
+step): if they change, the calculation changed.
 
 Outside Windows, or without the .bat files (on Windows use `.venv\Scripts\` instead of `.venv/bin/`):
 

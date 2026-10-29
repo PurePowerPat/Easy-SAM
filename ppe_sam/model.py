@@ -268,6 +268,13 @@ def validate_design(d: dict) -> dict:
         out["inverter"] = None
     else:
         out["inverter"] = dict(invs[d["inverter_name"]])
+    # Voltage limits (Advanced Settings); left empty or not sent = PPE default.
+    for key, (label, default) in config.INVERTER_LIMITS.items():
+        lo = 0.0 if key == "vmppt_low" else 1.0
+        out[key] = c.num(key, label, lo, config.INVERTER_LIMIT_MAX_V, required=False, default=default)
+    if out["vmppt_low"] is not None and out["vmppt_high"] is not None and out["vmppt_low"] >= out["vmppt_high"]:
+        c.fail("vmppt_high", "Vmppt high must be greater than Vmppt low.")
+    out["inverter_limits_default"] = all(out[k] == dflt for k, (_l, dflt) in config.INVERTER_LIMITS.items())
 
     # ---- system design: circuit -----------------------------------------------------------
     out["modules_per_string"] = c.num("modules_per_string", "Modules per string", 1, 100, integer=True)
@@ -396,7 +403,7 @@ def build_inputs(design: dict) -> dict:
     nstr = design["nstrings"]
     ninv = design.get("ninverters", 1)
     bif = design["bifacial"]
-    vmax = float(design["system_voltage"])
+    vdcmax = float(design["vdc_max"])
     zeros12 = [0.0] * 12
     shade_mode = config.SELF_SHADING[design["self_shading"]][0]
     p_mod = (m["v_mp_ref"] or 0) * (m["i_mp_ref"] or 0)
@@ -420,12 +427,13 @@ def build_inputs(design: dict) -> dict:
             "cec_temp_corr_mode": 0, "cec_standoff": 6, "cec_height": 0,
         },
         "Inverter": {"inverter_model": 0, "inverter_count": ninv, "inv_num_mppt": 1,
-                     "inv_snl_paco": inv["paco"], "mppt_low_inverter": 0.0, "mppt_hi_inverter": vmax},
+                     "inv_snl_paco": inv["paco"], "mppt_low_inverter": float(design["vmppt_low"]),
+                     "mppt_hi_inverter": float(design["vmppt_high"])},
         "InverterCECDatabase": {
             "inv_snl_c0": inv["c0"], "inv_snl_c1": inv["c1"], "inv_snl_c2": inv["c2"],
             "inv_snl_c3": inv["c3"], "inv_snl_paco": inv["paco"], "inv_snl_pdco": inv["pdco"],
             "inv_snl_pnt": inv["pnt"], "inv_snl_pso": inv["pso"], "inv_snl_vdco": inv["vdco"],
-            "inv_snl_vdcmax": vmax, "inv_tdc_cec_db": [[vmax, 50.0, -0.02, 53.0, -0.47]],
+            "inv_snl_vdcmax": vdcmax, "inv_tdc_cec_db": [[vdcmax, 50.0, -0.02, 53.0, -0.47]],
         },
         "SystemDesign": {
             "inverter_count": ninv, "subarray1_modules_per_string": n, "subarray1_nstrings": nstr,

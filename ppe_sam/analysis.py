@@ -4,11 +4,13 @@ Workbook logic reproduced (ISC sheet row 8764):
     BYCOL(year, MAX((x[i] + x[i+1] + x[i+2]) / 3))   -> per-year max consecutive 3-hr average
     Summary "Max Current" = MAX across all years
   - zeros are treated as zeros; windows never cross from one year into the next.
-The same rolling-window method is applied to Voc and Vmp.
+The same rolling-window method is applied to Vmp. Voc is the maximum single time-step value (no averaging).
 For minimum Vmp, a window only counts if every step in it is non-zero (inverter operating).
 """
 
-SPECS = [("isc", "max", False), ("voc", "max", False), ("vmp", "max", False), ("vmp", "min", True)]
+# (variable, max/min, non-zero windows only, 3-hour window: False = single time step)
+SPECS = [("isc", "max", False, True), ("voc", "max", False, False), ("vmp", "max", False, True),
+         ("vmp", "min", True, True)]
 
 
 def window_steps(interval_min: int) -> int:
@@ -38,23 +40,25 @@ def best_window(x, n, mode="max", nonzero=False):
 def summarize(per_year: dict, timestamps: dict, interval: int):
     n = window_steps(interval)
 
-    def stamp(year, i):
+    def stamp(year, i, steps):
         ts = timestamps[year]
         return {"year": year, "start": ts[i].strftime("%Y-%m-%d %H:%M"),
-                "end_step": ts[min(i + n - 1, len(ts) - 1)].strftime("%Y-%m-%d %H:%M"), "step_minutes": interval}
+                "end_step": ts[min(i + steps - 1, len(ts) - 1)].strftime("%Y-%m-%d %H:%M"), "step_minutes": interval,
+                "window_steps": steps}
 
     results, yearly = {}, []
     for year in sorted(per_year):
         row = {"year": year}
-        for var, mode, nz in SPECS:
-            b = best_window(per_year[year][var], n, mode, nz)
+        for var, mode, nz, windowed in SPECS:
+            steps = n if windowed else 1
+            b = best_window(per_year[year][var], steps, mode, nz)
             key = f"{var}_{mode}"
             row[key] = None if b is None else round(b[1], 4)
             if b is None:
                 continue
             cur = results.get(key)
             if cur is None or (b[1] > cur["value"] if mode == "max" else b[1] < cur["value"]):
-                results[key] = {"value": b[1], **stamp(year, b[0])}
+                results[key] = {"value": b[1], **stamp(year, b[0], steps)}
         yearly.append(row)
     return {"window_steps": n, "worst": results, "yearly": yearly}
 

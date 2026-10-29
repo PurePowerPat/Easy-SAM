@@ -1,6 +1,6 @@
 """Background jobs.
 
-Job         : weather retrieval -> multi-year simulation -> 3-hr analysis (progress per stage).
+Job         : weather retrieval -> multi-year simulation -> analysis (3-hr averages, max Voc; progress per stage).
 WeatherJob  : weather retrieval only, started early from the Configure page ("Retrieve weather").
               It fills the local cache; a later Job for the same site reads the cached files.
               If a Job starts while a WeatherJob for the same site is still running, the Job waits
@@ -282,7 +282,7 @@ class Job(_Base):
                     _done(*model.run_year(t))
 
             stage = "analysis"
-            self.status, self.message = "analyzing", "Calculating 3-hour averages"
+            self.status, self.message = "analyzing", "Calculating 3-hour averages and max Voc"
             self.ana["total"] = n_files + 1
             expected = weather.expected_rows(interval)
             for y, p in files:
@@ -293,7 +293,7 @@ class Job(_Base):
                 self.ana["done"] += 1
             summary = analysis.summarize(per_year, stamps, interval)
             self.ana["done"] += 1
-            self.log("3-hour averages calculated.")
+            self.log("3-hour averages and max Voc calculated.")
 
             floor = analysis.nec_floor(design["isc_datasheet"], design["bifacial"], design["bifacial_gain"])
             isc = summary["worst"]["isc_max"]["value"]
@@ -367,7 +367,7 @@ def review(raw):
     if d["bifacial"]:
         bif = f"Yes · bifaciality {d['bifaciality']:g} · gain {d['bifacial_gain']:g} %"
     mismatch = ("not applicable (monofacial)" if not d["bifacial"]
-                else "on ⚠ PPE standard is off" if d["bifacial_mismatch"] else "off")
+                else "Include ⚠ PPE default is Exclude" if d["bifacial_mismatch"] else "Exclude")
     site = f"{d['lat']}, {d['lon']}"
     if d["location_mode"] == "address":
         site = f"{d['address']} → {site}"
@@ -376,6 +376,10 @@ def review(raw):
     rows_txt = f"{d['rows']}" + ("" if d["rows"] == config.PPE_STANDARD_ROWS else " ⚠ PPE standard is 1 row")
     sel, ppe = (config.SELF_SHADING[d["self_shading"]][1], config.SELF_SHADING[d["self_shading_ppe"]][1])
     shade_txt = sel + ("" if sel == ppe else f" ⚠ PPE standard is {ppe}")
+    limits_txt = " · ".join(f"{label} {d[k]:g} V" for k, (label, _dflt) in config.INVERTER_LIMITS.items())
+    if not d["inverter_limits_default"]:
+        defaults = " · ".join(f"{dflt:g}" for _l, dflt in config.INVERTER_LIMITS.values())
+        limits_txt += f" ⚠ PPE default is {defaults} V"
     groups = [
         ["Site and weather", [
             ["Site", site],
@@ -391,9 +395,10 @@ def review(raw):
             ["Mounting", " · ".join(mount)],
             ["Subarray", f"{d['modules_high']} high × {d['modules_across']} across · {spacing}"],
             ["Modeled", f"{d['nstrings']} string(s) on 1 inverter"]]],
-        ["Settings", [
+        ["Advanced settings", [
             ["Bifacial electrical mismatch", mismatch],
             ["Self-shading", shade_txt],
+            ["Inverter voltage limits", limits_txt],
             ["Number of rows", rows_txt]]],
     ]
     return {"groups": groups}

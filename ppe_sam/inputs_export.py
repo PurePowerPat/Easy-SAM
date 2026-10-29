@@ -246,8 +246,14 @@ def classify(var, d, assigned):
     gc_note = (f"Ground clearance height ({d['ground_clearance_entered']:g} in entered x 0.0254)"
                if d.get("ground_clearance_units") == "in" else "Ground clearance height")
     bif_note = f"(base {d.get('bifaciality_base')}% + tolerance {d.get('bifaciality_tol')}%) / 100"
-    mism = ((U, "'Calculate bifacial electrical mismatch' checked on Settings") if d.get("bifacial_mismatch")
-            else (PD, "Off (PPE standard)") if d["bifacial"] else (PD, "Monofacial: off"))
+    mism = ((U, "Bifacial electrical mismatch: Include (Advanced Settings)") if d.get("bifacial_mismatch")
+            else (PD, "Exclude (PPE default)") if d["bifacial"] else (PD, "Monofacial: off"))
+
+    def limit(key):
+        label, default = config.INVERTER_LIMITS[key]
+        if d[key] == default:
+            return PD, f"{label} = {default:g} V (PPE default: the inverter never limits Vmp or clips)"
+        return U, f"{label} entered on Advanced Settings (PPE default {default:g} V)"
     if var == "subarray1_shade_mode":
         src = PD if d["self_shading"] == d["self_shading_ppe"] else U
         return src, f"Self-shading selected: {report.shading_text(d)}"
@@ -292,10 +298,9 @@ def classify(var, d, assigned):
         "subarray1_mod_orient": (U, f"Module orientation: {d['orientation']} (0 = portrait, 1 = landscape)"),
         "subarray1_track_mode": (U, f"Racking: {racking_txt} (0 = fixed, 1 = single-axis)"),
         "subarray1_backtrack": (PD, "Backtracking ON for trackers, OFF otherwise"),
-        "mppt_hi_inverter": (U, "= System maximum voltage"), "vdcmax_inverter": (U, "= System maximum voltage"),
-        "inv_snl_vdcmax": (U, "= System maximum voltage"),
-        "mppt_low_inverter": (PD, "MPPT low = 0 V (as low as possible)"),
-        "inv_tdc_cec_db": (PC, "Temperature-derate table with first value = System maximum voltage"),
+        "mppt_low_inverter": limit("vmppt_low"), "mppt_hi_inverter": limit("vmppt_high"),
+        "vdcmax_inverter": limit("vdc_max"), "inv_snl_vdcmax": limit("vdc_max"),
+        "inv_tdc_cec_db": (PC, "Temperature-derate table with first value = Vdc max (Advanced Settings)"),
         "cec_module_length": (U if "module_length" in e else SC,
                               f"{d['module_length_mm']:g} mm entered / 1000" if "module_length" in e
                               else f"CEC module database [Length] ({d['module_length_mm']:g} mm)"),

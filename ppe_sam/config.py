@@ -53,6 +53,11 @@ SYSTEM_VOLTAGES = (1000, 1500)
 BIFACIAL_TRANSMISSION_DEFAULT = 0.013     # SAM default, guide: "leave at default"
 INCH_TO_M = 0.0254
 PPE_STANDARD_ROWS = 1
+# Inverter voltage limits (Advanced Settings). PPE defaults: the MPPT window never limits Vmp and the
+# inverter never clips. Field name -> (label, PPE default in V).
+INVERTER_LIMITS = {"vmppt_low": ("Vmppt low", 0.0), "vmppt_high": ("Vmppt high", 1500.0),
+                   "vdc_max": ("Vdc max", 1500.0)}
+INVERTER_LIMIT_MAX_V = 2000.0
 
 # Self-shading (SAM subarray1_shade_mode): 0 = None, 1 = Standard (non-linear), 2 = Thin film (linear)
 SELF_SHADING = {"none": (0, "None"), "standard": (1, "Standard"), "thin_film": (2, "Thin film")}

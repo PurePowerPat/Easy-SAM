@@ -15,7 +15,7 @@ PORTS = range(8765, 8800)      # first free one is used
 # Explicit types: on Windows, mimetypes reads the registry, which can map .js to text/plain.
 CONTENT_TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
                  ".js": "text/javascript; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml",
-                 ".jpg": "image/jpeg"}
+                 ".jpg": "image/jpeg", ".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8"}
 
 
 class BadRequest(ValueError):

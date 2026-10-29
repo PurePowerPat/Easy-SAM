@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PPE SAM Multi-Year Simulation</title>
+<title>Easy-SAM</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
 <header class="top"><div class="top-in">
-  <div><h1>PPE SAM Multi-Year Simulation</h1><p class="sub">Worst-case string Isc, Voc and Vmp (consecutive 3-hour average)</p></div>
+  <div class="brand"><h1 class="wordmark"><span class="wm1">Easy</span><span class="wm2">-SAM</span></h1><p class="sub">Easily calculate your worst case Isc and Voc</p></div>
   <div class="logo" id="logoBox"><img id="logoImg" alt="Pure Power Engineering" class="hidden"></div>
   <div class="top-r">
     <div class="tabs" role="tablist" aria-label="Views">
       <button type="button" class="tab" role="tab" id="tabCfg" aria-selected="true" aria-controls="viewCfg">Configure</button>
-      <button type="button" class="tab" role="tab" id="tabSet" aria-selected="false" aria-controls="viewCfg">Settings</button>
+      <button type="button" class="tab" role="tab" id="tabSet" aria-selected="false" aria-controls="viewCfg">Advanced Settings</button>
       <button type="button" class="tab" role="tab" id="tabRes" aria-selected="false" aria-controls="viewRes" disabled>Results</button>
       <button type="button" class="tab" role="tab" id="tabAbout" aria-selected="false" aria-controls="viewAbout">About</button>
     </div>
@@ -41,7 +41,7 @@
 
 <!-- ============ 1. SITE ============ -->
 <section class="card" id="sec1" data-sec="1">
-  <div class="card-h"><span class="n">1</span><h2>Site and weather</h2><span class="chip" id="chip1"></span><span class="csum" id="csum1"></span>
+  <div class="card-h"><span class="n">1</span><h2>Site and weather</h2><button type="button" class="sec-help" data-goto="setSite" title="Modeling assumptions (Advanced Settings)" aria-label="Site and weather modeling assumptions (Advanced Settings)">?</button><span class="chip" id="chip1"></span><span class="csum" id="csum1"></span>
     <button type="button" class="btn btn-sm collapse" aria-expanded="true">Collapse</button></div>
   <div class="card-b">
     <div class="g4">
@@ -65,22 +65,12 @@
       <button type="button" class="btn btn-sm hidden" id="wxBtn">Retrieve weather</button>
       <span class="note" id="locText"></span>
     </div>
-    <details class="disc"><summary>Weather source</summary>
-      <dl class="kv">
-        <dt>Dataset</dt><dd>NSRDB PSM v4 (GOES Aggregated), downloaded for the latitude and longitude</dd>
-        <dt>Years</dt><dd id="wxYears">—</dd>
-        <dt>Albedo</dt><dd>From the weather file, every time step. Where it is missing or invalid (e.g. 0), SAM uses 0.2.</dd>
-        <dt>Time basis</dt><dd>Local standard time, 365-day years</dd>
-        <dt>Address lookup</dt><dd>US Census Geocoder, then OpenStreetMap (internet required). The coordinates found are used.</dd>
-        <dt>Cache</dt><dd>Retrieved years are reused on this computer</dd>
-      </dl>
-    </details>
   </div>
 </section>
 
 <!-- ============ 2. MODULE ============ -->
 <section class="card" id="sec2" data-sec="2">
-  <div class="card-h"><span class="n">2</span><h2>Module</h2><span class="chip" id="chip2"></span><span class="csum" id="csum2"></span>
+  <div class="card-h"><span class="n">2</span><h2>Module</h2><button type="button" class="sec-help" data-goto="setMod" title="Module settings and modeling assumptions (Advanced Settings)" aria-label="Module settings and modeling assumptions (Advanced Settings)">?</button><span class="chip" id="chip2"></span><span class="csum" id="csum2"></span>
     <button type="button" class="btn btn-sm collapse" aria-expanded="true">Collapse</button></div>
   <div class="card-b">
     <div class="choice compact" role="radiogroup" aria-label="Module source" id="srcGroup">
@@ -156,13 +146,12 @@
         <div class="fld" data-field="bifacial_gain"><label for="bifacial_gain">Gain for NEC 70% check<span class="tip">?<span class="tiptext">Rear-side gain applied to the 70% floor: 0.70 × 1.25 × Isc × (1 + gain).</span></span></label><div class="inwrap"><input id="bifacial_gain" name="bifacial_gain" type="number" step="any" placeholder="e.g. 10"><span class="sfx">%</span></div></div>
       </div>
     </div>
-    <details class="disc"><summary>Modeling assumptions</summary><div id="modAssume" style="margin-top:8px"></div></details>
   </div>
 </section>
 
 <!-- ============ 3. INVERTER ============ -->
 <section class="card" id="sec3" data-sec="3">
-  <div class="card-h"><span class="n">3</span><h2>Inverter</h2><span class="chip" id="chip3"></span><span class="csum" id="csum3"></span>
+  <div class="card-h"><span class="n">3</span><h2>Inverter</h2><button type="button" class="sec-help" data-goto="setInv" title="Inverter settings and modeling assumptions (Advanced Settings)" aria-label="Inverter settings and modeling assumptions (Advanced Settings)">?</button><span class="chip" id="chip3"></span><span class="csum" id="csum3"></span>
     <button type="button" class="btn btn-sm collapse" aria-expanded="true">Collapse</button></div>
   <div class="card-b">
     <div class="fld" data-field="inverter_name">
@@ -180,7 +169,7 @@
 
 <!-- ============ 4. SYSTEM DESIGN ============ -->
 <section class="card" id="sec4" data-sec="4">
-  <div class="card-h"><span class="n">4</span><h2>System design</h2><span class="chip" id="chip4"></span><span class="csum" id="csum4"></span>
+  <div class="card-h"><span class="n">4</span><h2>System design</h2><button type="button" class="sec-help" data-goto="setSys" title="System design settings and modeling assumptions (Advanced Settings)" aria-label="System design settings and modeling assumptions (Advanced Settings)">?</button><span class="chip" id="chip4"></span><span class="csum" id="csum4"></span>
     <button type="button" class="btn btn-sm collapse" aria-expanded="true">Collapse</button></div>
   <div class="card-b">
     <div class="fld" data-field="racking">
@@ -238,31 +227,85 @@
         <details class="disc" id="layoutBox"><summary>Layout illustration</summary><div class="note" id="layoutNote" style="margin-top:6px"></div><div id="layoutSvgWrap"></div></details>
       </div>
     </div>
-    <details class="disc"><summary>Modeling assumptions</summary><div id="sysAssume" style="margin-top:8px"></div></details>
   </div>
 </section>
 </div>
 
-<!-- ============ SETTINGS PAGE ============ -->
+<!-- ============ ADVANCED SETTINGS PAGE ============ -->
 <div class="page hidden" id="pageSet">
-<section class="card" id="secSet">
-  <div class="card-h"><h2>Settings</h2></div>
+<div class="adv-warn" role="note"><b>Advanced users only:</b> The settings within this page should NOT be changed without explicit PM approval. The settings and assumptions below are PPE default values, which provide a conservative estimate of Isc and Voc. Most rows and assumptions are locked, but a few can be changed if your site needs a get-out-of-jail free card, or to get over the hump on wire sizing.</div>
+
+<section class="card" id="setSite" tabindex="-1">
+  <div class="card-h"><h2>Site and weather</h2></div>
   <div class="card-b">
-    <div class="first group"><h3>Bifacial electrical mismatch</h3>
-      <div class="checkrow" id="mismatchRow" style="margin-top:0"><label><input type="checkbox" id="bifMismatch">Calculate bifacial electrical mismatch<span class="tip">?<span class="tiptext">SAM “Calculate bifacial electrical mismatch”: SAM estimates the mismatch loss caused by uneven rear-side irradiance. Leave unchecked for the worst case (no loss).</span></span></label>
-      <div class="note hidden" id="mismatchNA">Applies to bifacial modules only (the selected module is monofacial).</div>
-      <div class="fnote hidden" id="mismatchNote">Warning: PPE Standard is to ignore bifacial electrical mismatch. Including bifacial electrical mismatch will produce a lower &amp; more aggressive Isc value.</div></div>
+    <div class="srow locked"><span class="lbl">Weather dataset</span><span class="lockval">NSRDB PSM v4 (GOES Aggregated), downloaded for the latitude and longitude</span></div>
+    <div class="srow locked"><span class="lbl">Weather years</span><span class="lockval" id="wxYears">—</span></div>
+    <div class="srow locked"><span class="lbl">Albedo</span><span class="lockval">From the weather file, every time step. Where it is missing or invalid (e.g. 0), SAM uses 0.2.</span></div>
+    <div class="srow locked"><span class="lbl">Irradiance and sky model</span><span class="lockval">DNI and DHI, Perez sky diffuse model</span></div>
+    <div class="srow locked"><span class="lbl">Time basis</span><span class="lockval">Local standard time, 365-day years</span></div>
+    <div class="srow locked"><span class="lbl">Address lookup</span><span class="lockval">US Census Geocoder, then OpenStreetMap (internet required). The coordinates found are used.</span></div>
+    <div class="srow locked"><span class="lbl">Weather cache</span><span class="lockval">Retrieved years are reused on this computer</span></div>
+  </div>
+</section>
+
+<section class="card" id="setMod" tabindex="-1">
+  <div class="card-h"><h2>Module</h2></div>
+  <div class="card-b">
+    <div class="fld srow" data-field="bifacial_mismatch">
+      <label for="bifMismatch">Bifacial electrical mismatch<span class="tip">?<span class="tiptext">SAM “Calculate bifacial electrical mismatch”: SAM estimates the mismatch loss caused by uneven rear-side irradiance. PPE default: Exclude, for the worst case (no loss).</span></span></label>
+      <select id="bifMismatch" name="bifacial_mismatch"><option value="0" selected>Exclude</option><option value="1">Include</option></select>
+      <div class="note">PPE default: Exclude<span class="hidden" id="mismatchNA"><br>Applies to bifacial modules only (the selected module is monofacial).</span></div>
+      <div class="fnote hidden" id="mismatchNote">Warning: PPE Standard is to ignore bifacial electrical mismatch. Including bifacial electrical mismatch will produce a lower &amp; more aggressive Isc value.</div>
     </div>
-    <div class="group"><h3>Self-shading</h3>
-      <div class="g4">
-        <div class="fld span2" data-field="self_shading"><label for="self_shading">Self-shading<span class="tip">?<span class="tiptext">SAM self-shading model (shading of one module row by the row in front of it).<br><br>None: no self-shading.<br>Standard: non-linear model for crystalline silicon modules.<br>Thin film: linear model for thin-film modules.<br><br>PPE standard: bifacial modules use Standard (Thin film for thin-film cells); monofacial modules use None.</span></span></label><select id="self_shading" name="self_shading"><option value="">Select…</option><option value="none">None</option><option value="standard">Standard</option><option value="thin_film">Thin film</option></select><div class="note" id="shadeStd"></div><div class="fnote hidden" id="shadeWarn"></div></div>
-      </div>
+    <div class="fld srow" data-field="self_shading">
+      <label for="self_shading">Self-shading<span class="tip">?<span class="tiptext">SAM self-shading model (shading of one module row by the row in front of it).<br><br>None: no self-shading.<br>Standard: non-linear model for crystalline silicon modules.<br>Thin film: linear model for thin-film modules.<br><br>PPE standard: bifacial modules use Standard (Thin film for thin-film cells); monofacial modules use None.</span></span></label>
+      <select id="self_shading" name="self_shading"><option value="">PPE default</option><option value="none">None</option><option value="standard">Standard</option><option value="thin_film">Thin film</option></select>
+      <div class="note" id="shadeStd"></div>
+      <div class="fnote hidden" id="shadeWarn"></div>
     </div>
-    <div class="group"><h3>Rows</h3>
-      <div class="g4">
-        <div class="fld span2" data-field="rows"><label for="rows">Number of rows<span class="tip">?<span class="tiptext">Number of identical subarrays (rows) SAM models. PPE standard is 1 row.</span></span></label><div class="inwrap"><input id="rows" name="rows" type="number" step="1" value="1"><span class="sfx">rows</span></div><div class="fnote hidden" id="rowsNote">Warning: PPE Standard is 1 row. More than one row will cause self-shading, resulting in a lower &amp; more aggressive Isc value.</div></div>
-      </div>
+    <div class="srow locked"><span class="lbl">Temperature correction</span><span class="lockval">Nominal operating cell temperature (NOCT) method</span></div>
+    <div class="srow locked"><span class="lbl">Mounting standoff</span><span class="lockval">Ground or rack mounted</span></div>
+    <div class="srow locked"><span class="lbl">Array height</span><span class="lockval">One story building height or lower</span></div>
+    <div class="srow locked"><span class="lbl">Module losses (soiling, mismatch, diodes, nameplate)</span><span class="lockval">0 %</span></div>
+    <div class="srow locked"><span class="lbl">Bifacial transmission fraction</span><span class="lockval">0.013</span></div>
+  </div>
+</section>
+
+<section class="card" id="setInv" tabindex="-1">
+  <div class="card-h"><h2>Inverter</h2></div>
+  <div class="card-b">
+    <h3 class="sgh">Inverter voltage limits<span class="tip">?<span class="tiptext">The inverter MPPT voltage window and maximum DC voltage SAM uses. The PPE defaults are not the inverter datasheet values: they keep SAM from limiting Vmp or clipping, so the results show the string’s own worst-case values.</span></span></h3>
+    <div class="fld srow" data-field="vmppt_low">
+      <label for="vmppt_low">Vmppt low<span class="tip">?<span class="tiptext">Inverter window never limits Vmp, and the inverter never clips</span></span></label>
+      <div class="inwrap"><input id="vmppt_low" name="vmppt_low" type="number" step="any" value="0"><span class="sfx">V</span></div>
+      <div class="note" id="libVmpptLow"></div>
     </div>
+    <div class="fld srow" data-field="vmppt_high">
+      <label for="vmppt_high">Vmppt high<span class="tip">?<span class="tiptext">Inverter window never limits Vmp, and the inverter never clips</span></span></label>
+      <div class="inwrap"><input id="vmppt_high" name="vmppt_high" type="number" step="any" value="1500"><span class="sfx">V</span></div>
+      <div class="note" id="libVmpptHigh"></div>
+    </div>
+    <div class="fld srow" data-field="vdc_max">
+      <label for="vdc_max">Vdc max<span class="tip">?<span class="tiptext">Maximum DC input voltage of the inverter in SAM. At the PPE default the inverter never limits the string voltage.</span></span></label>
+      <div class="inwrap"><input id="vdc_max" name="vdc_max" type="number" step="any" value="1500"><span class="sfx">V</span></div>
+      <div class="note" id="libVdcMax"></div>
+      <div class="fnote hidden" id="invLimNote">Warning: SAM caps the Vmp in the simulation based on the Vmppt low and high. So if you use the datasheet Vmp you will never know the real Vmp because SAM clips it.</div>
+    </div>
+    <div class="srow locked sgap"><span class="lbl">Number of inverters</span><span class="lockval">1 (all strings on one inverter)</span></div>
+  </div>
+</section>
+
+<section class="card" id="setSys" tabindex="-1">
+  <div class="card-h"><h2>System design</h2></div>
+  <div class="card-b">
+    <div class="fld srow" data-field="rows">
+      <label for="rows">Number of rows<span class="tip">?<span class="tiptext">Number of identical subarrays (rows) SAM models. PPE standard is 1 row.</span></span></label>
+      <div class="inwrap"><input id="rows" name="rows" type="number" step="1" value="1"><span class="sfx">rows</span></div>
+      <div class="note">PPE default: 1</div>
+      <div class="fnote hidden" id="rowsNote">Warning: PPE Standard is 1 row. More than one row will cause self-shading, resulting in a lower &amp; more aggressive Isc value.</div>
+    </div>
+    <div class="srow locked"><span class="lbl">Backtracking</span><span class="lockval">Enabled (single-axis trackers)</span></div>
+    <div class="srow locked"><span class="lbl">Grid limits</span><span class="lockval">None</span></div>
   </div>
 </section>
 </div>

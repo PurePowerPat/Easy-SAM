@@ -84,6 +84,7 @@ def test_static_files_have_explicit_types(app):
     assert b"/static/app.js" in html and b"/static/app.css" in html
     assert request(app, "GET", "/static/app.js")[2]["Content-Type"].startswith("text/javascript")
     assert request(app, "GET", "/static/app.css")[2]["Content-Type"].startswith("text/css")
+    assert request(app, "GET", "/static/fonts/orbitron-700.woff2")[2]["Content-Type"] == "font/woff2"
     assert request(app, "GET", "/static/../server.py")[0] == 404
 
 
@@ -116,7 +117,7 @@ def test_run_reads_weather_retrieved_earlier(app):
     assert not any("Parallel run unavailable" in line for line in s["log"])  # the process pool worked
     assert s["result"]["nec"]["isc_stc_module"] == 13.9 and round(s["result"]["nec"]["floor_70pct"], 4) == 13.3788
     sh = [r for r in s["result"]["inputs_used"] if r["input"] == "Self-shading"][0]
-    assert sh["value"] == "Standard" and sh["section"] == "Settings"
+    assert sh["value"] == "Standard" and sh["section"] == "Advanced settings"
     again = call(app, "POST", "/api/weather", {"lat": 33.4, "lon": -112.0, "interval": 60})[1]["job"]
     assert again != jw and wait(app, again)["weather"]["cached"] == len(YEARS)   # finished jobs are not reused
 

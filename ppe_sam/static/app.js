@@ -35,7 +35,11 @@
     inverter_name:'Inverter', modules_per_string:'Modules per string', system_voltage:'System voltage', racking:'Mounting type',
     tilt:'Tilt', rotlim:'Rotation limit', azimuth:'Azimuth', orientation:'Orientation', ground_clearance:'Ground clearance',
     modules_high:'Modules High', modules_across:'Modules Across', rows:'Number of rows', self_shading:'Self-shading',
-    pitch:'Row pitch', gap:'Module spacing', gcr:'GCR'};
+    pitch:'Row pitch', gap:'Module spacing', gcr:'GCR', bifacial_mismatch:'Bifacial electrical mismatch',
+    vmppt_low:'Vmppt low', vmppt_high:'Vmppt high', vdc_max:'Vdc max'};
+  // Advanced Settings that start at the PPE default (the value written in the page) and may be changed.
+  const INV_LIMITS = ['vmppt_low','vmppt_high','vdc_max'];
+  const atDefault = n => same(val(n), f.elements[n].defaultValue);
 
   // ================= source indicator =================
   const SRC_TXT = {db:'Database', user:'User entered', def:'Default', calc:'Calculated'};
@@ -47,7 +51,10 @@
   function srcOf(name){
     if(name==='lat' || name==='lon'){ if(st.loc==='address') return 'calc'; }
     if(name==='address'){ if(st.loc==='coords') return 'def'; }
-    const v=val(name); if(name==='interval') return v==='60' ? 'def' : 'user'; if(name==='rows' && v==='1') return 'def'; if(!v) return null;
+    const v=val(name); if(name==='interval') return v==='60' ? 'def' : 'user'; if(name==='rows' && v==='1') return 'def';
+    if(name==='bifacial_mismatch') return v==='1' ? 'user' : 'def';
+    if(INV_LIMITS.includes(name) && v) return atDefault(name) ? 'def' : 'user';
+    if(!v) return null;
     if(name==='self_shading') return st.shadeAuto ? 'def' : 'user';
     return (name in dbVals && same(v, dbVals[name])) ? 'db' : 'user'; }
   function renderSources(){
@@ -65,14 +72,18 @@
   const dbFields = () => Object.keys(dbVals).filter(n => srcOf(n)==='db');
 
   // ================= views =================
-  // 'cfg' and 'set' are two pages of the same form (Configure / Settings) beside the summary panel.
+  // 'cfg' and 'set' are two pages of the same form (Configure / Advanced Settings) beside the summary panel.
   const TABS = {cfg:'#tabCfg', set:'#tabSet', res:'#tabRes', about:'#tabAbout'};
-  function showView(v){ st.view = v; const form = v==='cfg' || v==='set';
+  function showView(v){ const changed = st.view!==v; st.view = v; const form = v==='cfg' || v==='set';
     $('#viewCfg').classList.toggle('hidden', !form); $('#pageCfg').classList.toggle('hidden', v!=='cfg'); $('#pageSet').classList.toggle('hidden', v!=='set');
     $('#viewRes').classList.toggle('hidden', v!=='res'); $('#viewAbout').classList.toggle('hidden', v!=='about');
     Object.entries(TABS).forEach(([k,id]) => $(id).setAttribute('aria-selected', String(k===v)));
-    window.scrollTo({top:0}); }
+    if(changed) window.scrollTo({top:0}); }
   Object.entries(TABS).forEach(([k,id]) => $(id).onclick = () => showView(k)); $('#backBtn').onclick = () => showView('cfg');
+  // "?" next to each Configure section heading: that section's settings and assumptions on Advanced Settings.
+  $$('[data-goto]').forEach(b => b.onclick = () => { const card = $('#'+b.dataset.goto); showView('set');
+    card.scrollIntoView({block:'start'}); card.focus({preventScroll:true}); });
+  $$('.lockval').forEach(el => el.title = 'Locked: PPE default');
   // Fields on the page not shown still count; only fields hidden because they do not apply are left out.
   const notApplicable = el => !!el.closest('.hidden:not(.page):not(.view)');
 
@@ -110,7 +121,8 @@
       <h3 style="font-size:13px;margin:16px 0 4px">Method</h3>
       <ul class="note" style="margin:0 0 0 18px;padding:0">
         <li>Runs once per weather year. All strings are on one inverter; results are per string.</li>
-        <li>3-hour average = mean of 3 consecutive hourly steps (6 for 30-minute data).</li></ul>`; }
+        <li>Isc and Vmp: 3-hour average = mean of 3 consecutive hourly steps (6 for 30-minute data).</li>
+        <li>Voc: maximum value of any single time step (not averaged).</li></ul>`; }
   function refreshCache(){ fetch('/api/cache').then(r=>r.json()).then(c=>{ $('#cacheNote').textContent = `Weather cache: ${c.files} files, ${c.mb} MB`; }).catch(()=>{}); }
   refreshCache();
 
@@ -385,13 +397,17 @@
     }
     setCalc('#cStr', c.ns || null);
     $('#rowsNote').classList.toggle('hidden', !(parseInt(val('rows'))>1));
-    $('#mismatchNote').classList.toggle('hidden', !(isBif() && $('#bifMismatch').checked));
+    $('#mismatchNote').classList.toggle('hidden', !(isBif() && val('bifacial_mismatch')==='1'));
+    $('#invLimNote').classList.toggle('hidden', INV_LIMITS.every(atDefault));
+    const inv = st.inverter, libV = x => (x===null||x===undefined) ? 'n/a' : `${fnum(x)} V`;
+    [['#libVmpptLow','vmppt_low','mppt_low'], ['#libVmpptHigh','vmppt_high','mppt_high'], ['#libVdcMax','vdc_max','vdcmax']].forEach(([id,n,k]) =>
+      $(id).textContent = `PPE default: ${fnum(Number(f.elements[n].defaultValue))} V` + (inv ? ` · Selected inverter (CEC library): ${libV(inv[k])}` : ''));
     const sn = $('#strNote');
     if(c.ns && c.rowsActual!==c.R){ sn.textContent = `SAM cannot model exactly ${c.R} row(s) with these values; the nearest is ${c.rowsActual}.`; sn.classList.remove('hidden'); }
     else sn.classList.add('hidden');
     // self-shading: PPE standard for the current module + warning when the selection differs
     const ppe = ppeShade(), sel = val('self_shading'), haveMod = haveModule();
-    $('#shadeStd').textContent = haveMod ? `PPE standard for this module: ${SHADE_NAME[ppe]}` : '';
+    $('#shadeStd').textContent = haveMod ? `PPE default for this module: ${SHADE_NAME[ppe]}` : 'PPE default: follows the module (select a module)';
     const w = $('#shadeWarn');
     if(haveMod && sel && sel!==ppe){
       w.textContent = `Warning: PPE Standard for this module is ${SHADE_NAME[ppe]}. ` + (ppe==='none'
@@ -400,35 +416,6 @@
                         : `${SHADE_NAME[sel]} is meant for ${sel==='thin_film'?'thin-film':'crystalline silicon'} modules.`));
       w.classList.remove('hidden');
     } else w.classList.add('hidden');
-  }
-
-  // ================= modeling assumptions (config page) =================
-  const T3 = rows => `<table><tr><th>Item</th><th>Simulation</th><th>Why</th></tr>`
-    + rows.map(r => `<tr><td>${esc(r[0])}</td><td><b>${esc(r[1])}</b></td><td class="why">${esc(r[2])}</td></tr>`).join('') + '</table>';
-  function renderAssumptions(c){
-    const bif=isBif();
-    const mrows = [
-      ['Module model', st.src==='custom' ? 'CEC User Entered Specifications' : 'CEC Module Database', st.src==='custom' ? 'SAM calculates the single-diode parameters from the datasheet values' : 'Uses the library’s single-diode parameters'],
-      ['Temperature model', 'NOCT, ground or rack mounted, one story', 'PPE decision'],
-      ['Module losses', '0 % (soiling, mismatch, diodes, nameplate)', 'Worst case (PPE guide 7–8)']];
-    if(bif){ mrows.push(['Bifaciality used', 'Bifaciality + tolerance', 'Upper end of the range (worst case)']);
-             mrows.push(['Bifacial electrical mismatch', $('#bifMismatch').checked ? 'Calculated by SAM (not PPE standard)' : 'Off (PPE standard)', 'Ignoring it gives the worst-case (higher) Isc']);
-             mrows.push(['Bifacial transmission fraction', '0.013', 'SAM default (PPE guide 4.3)']); }
-    $('#modAssume').innerHTML = T3(mrows);
-    const inv = st.inverter, sv = val('system_voltage'), V = x => (x===null||x===undefined) ? 'n/a' : `${fnum(x)} V`, svT = sv ? `${Number(sv).toLocaleString()} V` : 'system max. voltage';
-    const sel = val('self_shading');
-    const srows = [
-      ['Inverter MPPT low', `0 V${inv?` (library ${V(inv.mppt_low)})`:''}`, 'Inverter window never limits Vmp (PPE guide 6.5)'],
-      ['Inverter MPPT high', `${svT}${inv?` (library ${V(inv.mppt_high)})`:''}`, 'System maximum voltage (PPE guide 6.5)'],
-      ['Inverter max DC voltage', `${svT}${inv?` (library ${V(inv.vdcmax)})`:''}`, 'System maximum voltage (PPE guide 6.5)'],
-      ['Strings and inverters', c.ns ? `${c.ns} string(s) on one inverter` : 'All strings on one inverter', 'Fills the rows modeled; results per string'],
-      ['Number of rows', 'As entered on Settings (PPE standard 1)', 'More than 1 row adds row-to-row self-shading (lower Isc)'],
-      ['Self-shading', sel ? SHADE_NAME[sel] : 'PPE standard for the module', 'PPE guide 7.3: bifacial → Standard (Thin film for thin-film cells); monofacial → None'],
-      ['Tracker', 'Tilt 0°, backtracking on', 'PPE guide 6.3'],
-      ['Wiring and system losses', '0 %', 'Worst case'],
-      ['Albedo', 'Weather file (0.2 where missing or invalid)', 'PPE guide 3.4'],
-      ['Sky model', 'DNI + DHI, Perez', 'PPE guide 3.4'], ['Grid limits', 'None', 'PPE guide 9']];
-    $('#sysAssume').innerHTML = T3(srows);
   }
 
   // ================= readiness + auto-expand =================
@@ -447,11 +434,11 @@
     if(st.racking){ need(4,'tilt',st.racking!=='tracker'); need(4,'rotlim',st.racking==='tracker'); need(4,'azimuth'); need(4,'orientation');
       if(isBif()) need(4,'ground_clearance'); need(4,'modules_high'); need(4,'modules_across');
       if(st.racking!=='carport'){ if(st.gmode==='gcr') need(4,'gcr'); else { need(4,'pitch'); need(4,'gap', (parseInt(val('modules_high'))||1)>=2); } } }
-    need(5,'self_shading', haveModule()); need(5,'rows');
+    need(5,'self_shading', haveModule()); INV_LIMITS.forEach(n => need(5,n)); need(5,'rows');
     return m;
   }
   let lastReady = null;
-  const SEC_NAME = {1:'Site and weather', 2:'Module', 3:'Inverter', 4:'System design', 5:'Settings'};
+  const SEC_NAME = {1:'Site and weather', 2:'Module', 3:'Inverter', 4:'System design', 5:'Advanced Settings'};
   function renderReadiness(m){
     // Rewrite only on change: leaving a field re-renders, and replacing a link mid-click loses the click.
     const html = [1,2,3,4,5].map(s => { const L=m[s];
@@ -520,7 +507,7 @@
     if(st.gmode==='pitch') $('#gapBox').classList.toggle('hidden', (parseInt(val('modules_high'))||1) < 2);
   }
   function update(){ applyVisibility(); syncShade(); const c = calcState(); renderCalc(c); drawLayout(c); renderSources();
-    renderAssumptions(c); renderSummary(c); renderReadiness(missing()); renderWxBtn(); }
+    renderSummary(c); renderReadiness(missing()); renderWxBtn(); }
   f.addEventListener('input', e => { clearFieldError(e.target); update(); });
   f.addEventListener('change', e => { clearFieldError(e.target); update(); });
 
@@ -539,7 +526,7 @@
     o.location_mode=st.loc||''; o.module_source=st.src; o.module_name=st.module&&st.module.name; o.inverter_name=st.inverter&&st.inverter.name; o.racking=st.racking;
     o.gcr_mode=st.gmode; o.bifacial_override=(st.src==='cec'&&st.module&&!st.module.bifacial&&$('#bifOverride').checked)?'1':'0';
     o.custom_bifacial=(st.src==='custom'&&$('#customBif').checked)?'1':'0';
-    o.bifacial_mismatch=(isBif() && $('#bifMismatch').checked)?'1':'0';
+    o.bifacial_mismatch=(isBif() && val('bifacial_mismatch')==='1')?'1':'0';
     o.db_fields = dbFields(); o.db_values = Object.fromEntries(o.db_fields.map(n => [n, dbVals[n]]));
     if(st.loc!=='address'){ delete o.address; delete o.geocode_match; delete o.geocode_source; }
     if(!isBif()){ delete o.ground_clearance; delete o.ground_clearance_units; }
@@ -594,7 +581,7 @@
     $('#stSb').style.width = (s.total ? s.done/s.total*100 : 0) + '%';
     $('#stSd').innerHTML = s.total ? `${s.done} of ${s.total} years simulated` + ((s.failed_years||[]).length ? ` · <span class="bad">failed: ${s.failed_years.join(', ')}</span>` : '') : '';
     $('#stAb').style.width = (S==='done' ? 100 : a.total ? a.done/a.total*100 : 0) + '%';
-    $('#stAd').textContent = S==='done' ? '3-hour averages calculated' : (a.total ? `${Math.min(a.done, a.total-1)} of ${a.total-1} years read` : '');
+    $('#stAd').textContent = S==='done' ? '3-hour averages and max Voc calculated' : (a.total ? `${Math.min(a.done, a.total-1)} of ${a.total-1} years read` : '');
     if(after!==undefined){
       stage('W', after>0 ? 'done' : 'active', after>0 ? 'Done' : (S==='confirm' ? 'Waiting for you' : 'In progress'));
       stage('S', after>1 ? 'done' : after===1 ? 'active' : '', after>1 ? 'Done' : after===1 ? 'In progress' : 'Waiting');
@@ -650,7 +637,7 @@
       a.href=URL.createObjectURL(blob); a.download=m?m[1]:'export'; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
     }catch(e){ $('#exportErr').textContent='Download failed: '+e; } finally{ b.disabled=false; } }));
   let openBefore=[];
-  window.addEventListener('beforeprint',()=>{ const t=`PPE SAM Multi-Year Simulation v${(st.info&&st.info.version)||''} · printed ${new Date().toLocaleString()}`;
+  window.addEventListener('beforeprint',()=>{ const t=`Easy-SAM v${(st.info&&st.info.version)||''} · printed ${new Date().toLocaleString()}`;
     $('#printStamp').textContent=t; $('#printStamp2').textContent=t; openBefore=$$('details').map(d=>d.open); $$('details').forEach(d=>d.open=true); });
   window.addEventListener('afterprint',()=>{ $$('details').forEach((d,i)=>d.open=openBefore[i]); });
   $('#printBtn').onclick = $('#printBtn2').onclick = () => window.print();
@@ -659,7 +646,7 @@
   function resetAll(){
     f.reset(); clearAllErrors(); st.touched.clear(); Object.keys(dbVals).forEach(k=>delete dbVals[k]);
     Object.assign(st,{src:'cec', loc:null, racking:null, gmode:'pitch', geo:null, complete:null, shadeAuto:true}); locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=pitch]'));
-    modPicker.reset(); invPicker.reset(); ['#customBif','#bifMismatch','#bifOverride'].forEach(s=>$(s).checked=false); ['#copyNote','#saveNote','#geoNote'].forEach(s=>$(s).textContent='');
+    modPicker.reset(); invPicker.reset(); ['#customBif','#bifOverride'].forEach(s=>$(s).checked=false); ['#copyNote','#saveNote','#geoNote'].forEach(s=>$(s).textContent='');
     $('#cCarGcr').value='0.01';
     setCollapsed($('#sec1'), false); ['#sec2','#sec3','#sec4'].forEach(s=>setCollapsed($(s), true));
     $('#layoutBox').open=false; update(); window.scrollTo({top:0,behavior:'smooth'}); }
@@ -679,7 +666,7 @@
   $('#loadInFile').addEventListener('change', async e => { const file=e.target.files[0]; e.target.value=''; if(!file) return;
     let o; try{ o = JSON.parse(await file.text()); if(!o || o.format!==INPUTS_FORMAT || typeof o.inputs!=='object') throw new Error('not a PPE SAM inputs file'); }
     catch(err){ $('#inNote').innerHTML = `<span class="bad">Could not load ${esc(file.name)}: ${esc(err.message)}</span>`; return; }
-    ask(`Load ${file.name}? This replaces every input on the Configure and Settings pages.`, 'Load inputs', async ok => { if(!ok) return;
+    ask(`Load ${file.name}? This replaces every input on the Configure and Advanced Settings pages.`, 'Load inputs', async ok => { if(!ok) return;
       const probs = await applyInputs(o.inputs);
       $('#inNote').innerHTML = `<span class="ok">Loaded ${esc(file.name)}</span>${o.app_version?` (saved with v${esc(o.app_version)})`:''}.`
         + (probs.length ? `<ul class="bad" style="margin:4px 0 0 18px;padding:0">${probs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>` : ''); }); });
@@ -696,7 +683,7 @@
     st.src = I.module_source==='custom' ? 'custom' : 'cec'; srcG.sync($(`[data-src=${st.src}]`));
     if(RACK_NAME[I.racking]){ st.racking = I.racking; rackG.sync($(`[data-r=${st.racking}]`)); }
     st.gmode = I.gcr_mode==='gcr' ? 'gcr' : 'pitch'; gcrG.sync($(`[data-g=${st.gmode}]`));
-    $('#bifOverride').checked = I.bifacial_override==='1'; $('#customBif').checked = I.custom_bifacial==='1'; $('#bifMismatch').checked = I.bifacial_mismatch==='1';
+    $('#bifOverride').checked = I.bifacial_override==='1'; $('#customBif').checked = I.custom_bifacial==='1';
     [...f.elements].forEach(el => { if(!el.name || el.type==='checkbox' || !(el.name in I)) return; const v = String(I[el.name] ?? '');
       if(el.tagName==='SELECT' && ![...el.options].some(x => x.value===v)){ probs.push(`${LABELS[el.name]||el.name}: “${v}” is not one of the options.`); return; }
       el.value = v; st.touched.add(el.name.replace(/_units$/,'')); });
@@ -717,7 +704,7 @@
     $('#resTitle').textContent = `Results${res.project?`: ${res.project}`:''}`;
     $('#kpis').innerHTML =
         kpi('Isc · max 3-hr avg', W.isc_max, 'A', 2, `70% of Isc = ${fmt(n.floor_70pct,2)} A <span class="mark ${pass?'yes':'no'}" title="${pass?'Simulated Isc is at or above the 70% floor':'Simulated Isc is below the 70% floor: the floor governs'}">${pass?'✓':'✕'}</span>`)
-      + kpi('Voc · max 3-hr avg', W.voc_max, 'V', 1, '')
+      + kpi('Voc · max', W.voc_max, 'V', 1, W.voc_max ? 'Highest single time step (not averaged)' : '')
       + kpi('Vmp · max 3-hr avg', W.vmp_max, 'V', 1, W.vmp_min ? `Min (operating) = ${fmt(W.vmp_min.value,1)} V` : '');
     $('#nec').innerHTML = `<table><tr><th>Item</th><th class="num">Value</th></tr><tr><td>Module Isc at STC (datasheet)</td><td class="num">${fmt(n.isc_stc_module,3)} A</td></tr>
       ${n.bifacial_gain_pct!==null?`<tr><td>Bifacial gain</td><td class="num">${fmt(n.bifacial_gain_pct,1)} %</td></tr>`:''}

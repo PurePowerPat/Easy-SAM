@@ -22,7 +22,7 @@ KEY_INPUTS = {
     "Isc (datasheet) for NEC 70% check",
     "Inverter", "Mounting type", "Modules per string", "System max voltage", "Tilt", "Azimuth",
     "Module orientation", "Ground clearance", "Modules High", "Modules Across", "Strings modeled",
-    "Number of rows", "GCR", "Equivalent row pitch",
+    "Number of rows", "GCR", "Equivalent row pitch", "Vmppt low", "Vmppt high", "Vdc max",
     "Losses (soiling, mismatch, wiring, diodes, nameplate, tracking, rack shading)",
 }
 
@@ -169,9 +169,6 @@ def build(d: dict, weather: dict | None = None) -> list:
         add(S, label, inv.get(key), unit, DB)
     add(S, "Library MPPT range", f"{_n(inv.get('mppt_low'))}-{_n(inv.get('mppt_high'))}", "V", DB)
     add(S, "Library max DC voltage", inv.get("vdcmax"), "V", DB)
-    add(S, "Modeled MPPT low", 0, "V", DEF)
-    add(S, "Modeled MPPT high (= system max voltage)", sv, "V", CALC)
-    add(S, "Modeled max DC voltage (= system max voltage)", sv, "V", CALC)
     add(S, "Temperature derate", "SAM CEC database derate curve", "", DEF)
 
     # ---------------- System design ----------------
@@ -212,13 +209,15 @@ def build(d: dict, weather: dict | None = None) -> list:
     add(S, "Snow model", "Off", "", DEF)
     add(S, "Grid limits", "None", "", DEF)
 
-    # ---------------- Settings (same order as the Settings page) ----------------
-    S = "Settings"
+    # ---------------- Advanced settings (same order as the Advanced Settings page) ----------------
+    S = "Advanced settings"
     if bif:
-        add(S, "Calculate bifacial electrical mismatch", "On" if d.get("bifacial_mismatch") else "Off", "",
+        add(S, "Calculate bifacial electrical mismatch", "Include" if d.get("bifacial_mismatch") else "Exclude", "",
             USER if d.get("bifacial_mismatch") else DEF)
     else:
         add(S, "Calculate bifacial electrical mismatch", "Not applicable (monofacial module)", "", DEF)
     add(S, "Self-shading", shading_text(d), "", DEF if d["self_shading"] == d["self_shading_ppe"] else USER)
+    for key, (label, default) in config.INVERTER_LIMITS.items():
+        add(S, label, d[key], "V", DEF if d[key] == default else USER)
     add(S, "Number of rows", d["rows"], "rows", DEF if d["rows"] == config.PPE_STANDARD_ROWS else USER)
     return rows

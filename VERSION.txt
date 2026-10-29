@@ -1,18 +1,25 @@
-PPE SAM Multi-Year Simulation
-Version: v0.3.4
+Easy-SAM (PPE SAM Multi-Year Simulation)
+Version: v0.3.5
 Date:    10/29/2026
 
 HOW TO RUN: double-click run_from_source.bat.
 Full version history: CHANGELOG.md
 
-Changes since v0.3.3 (code review clean-up):
- - Fixes: inputs such as "nan" or "inf" are rejected (before, "nan" could make the NEC 70% floor
-   meaningless); system voltage and time step must be exactly a listed value; the 70% floor
-   check mark agrees with the NEC table when the values are equal; thread-safe job list;
-   "Retrieve weather" notices cache files deleted since; no wait after the last NSRDB retry;
-   clear 400 errors for malformed requests; safer port selection and library download.
- - Housekeeping: one copy of shared text and mappings; page split into HTML / CSS / JS;
-   tests moved to pytest (run_tests.bat); version number kept in one place; lint settings;
-   developer notes in README.md.
+Changes since v0.3.4:
+ - Renamed Easy-SAM ("Easily calculate your worst case Isc and Voc"), new title font.
+ - Results: Voc is now the maximum single time-step value (was the max consecutive 3-hour average).
+   Isc and Vmp are unchanged (max 3-hour average).
+ - Settings is now "Advanced Settings", with a permanent red "Advanced users only" warning, and is
+   organized by section (Site and weather, Module, Inverter, System design). Locked rows show the
+   PPE assumptions; the changeable rows show the PPE default and a warning when changed:
+   - Bifacial electrical mismatch: Include / Exclude dropdown (PPE default Exclude).
+   - Self-shading (PPE default for the module).
+   - NEW Inverter voltage limits: Vmppt low (0 V), Vmppt high (1500 V), Vdc max (1500 V).
+     Previously fixed at 0 V / system max voltage / system max voltage. Default results are
+     unchanged for 1500 V systems; Vmppt high and Vdc max no longer follow the system max voltage.
+   - Number of rows (PPE default 1).
+ - Configure: the "Modeling assumptions" and "Weather source" dropdowns are removed; a "?" next to
+   each section heading opens that section of Advanced Settings.
+ - Fix: the page no longer shifts sideways when moving between tabs or expanding sections.
 
- Calculations unchanged (tests locked to the v0.1.6 values).
+ Calculations otherwise unchanged (Isc and Vmp tests locked to the v0.1.6 values).

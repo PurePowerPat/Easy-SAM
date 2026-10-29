@@ -1,6 +1,7 @@
 """Offline end-to-end: fixture libraries + synthetic NSRDB-format weather -> PySAM -> analysis.
 
 The locked results are the v0.1.6 values; a change to them means the calculation changed.
+Exception: since v0.3.5, Voc is the maximum single time-step value (was the max 3-hour average).
 """
 from pathlib import Path
 
@@ -63,12 +64,16 @@ def test_self_shading_input():
     s = by["Self-shading"]
     assert s["value"] == "None (PPE standard: Standard)" and s["method"] == "User entered" and s["key"]
     assert by["Calculate bifacial electrical mismatch"]["method"] == "Default"            # off = PPE standard
-    assert s["section"] == "Settings"
-    settings = dict(jobs.review({**TRACKER_BIFACIAL, "self_shading": "none"})["groups"][4][1])
+    assert s["section"] == "Advanced settings"
+    group, settings = jobs.review({**TRACKER_BIFACIAL, "self_shading": "none"})["groups"][4]
+    settings = dict(settings)
+    assert group == "Advanced settings"
     assert settings["Self-shading"] == "None ⚠ PPE standard is Standard" and settings["Number of rows"] == "1"
-    assert settings["Bifacial electrical mismatch"] == "off"
-    assert [r["input"] for r in report.build(d) if r["section"] == "Settings"] == [
-        "Calculate bifacial electrical mismatch", "Self-shading", "Number of rows"]          # Settings page order
+    assert settings["Bifacial electrical mismatch"] == "Exclude"
+    assert settings["Inverter voltage limits"] == "Vmppt low 0 V · Vmppt high 1500 V · Vdc max 1500 V"
+    assert [r["input"] for r in report.build(d) if r["section"] == "Advanced settings"] == [
+        "Calculate bifacial electrical mismatch", "Self-shading", "Vmppt low", "Vmppt high", "Vdc max",
+        "Number of rows"]                                                       # Advanced Settings page order
     assert by["Number of rows"]["method"] == "Default"
     mono = model.validate_design({**BASE, **TRK, "module_name": "TEST Mono 400W", "pitch": 6, "self_shading": "none"})
     assert mono["self_shading_ppe"] == "none"
@@ -112,17 +117,17 @@ def test_make_model_rejects_unknown_inputs():
 def test_locked_results_with_ppe_standard_shading(tmp_path):
     d, s, inputs, files = run({**TRACKER_BIFACIAL, "pitch": 6.0, "self_shading": "standard",
                                "module_length": "2277.2", "module_width": "1132.9"}, tmp_path)
-    assert rounded(s) == {"isc_max": 15.19, "voc_max": 1401.42, "vmp_max": 1218.93, "vmp_min": 1034.2}
+    assert rounded(s) == {"isc_max": 15.19, "voc_max": 1403.34, "vmp_max": 1218.93, "vmp_min": 1034.2}
     exp = {r[0]: r for r in inputs_export.build_rows(d, inputs, files)[1]}
     assert exp["subarray1_shade_mode"][2] == "PPE default" and exp["subarray1_shade_mode"][5].startswith("Standard")
     _, s, *_ = run({**BASE, **BIF, "racking": "carport", "tilt": 7, "ground_clearance": 5.0, "self_shading": "standard",
                     "modules_per_string": 26, "modules_high": 14, "modules_across": 7, "orientation": "landscape"},
                    tmp_path, years=(2003,))
-    assert rounded(s) == {"isc_max": 14.39, "voc_max": 1300.95, "vmp_max": 1131.82, "vmp_min": 968.69}
+    assert rounded(s) == {"isc_max": 14.39, "voc_max": 1302.14, "vmp_max": 1131.82, "vmp_min": 968.69}
     _, s, *_ = run({**BASE, "module_name": "TEST Mono 400W", "racking": "fixed", "tilt": 25, "self_shading": "none",
                     "gcr_mode": "gcr", "gcr": 0.45, "modules_high": 2, "modules_across": 14,
                     "inverter_name": "TEST String 125kW", "interval": 30}, tmp_path, years=(2003,), interval=30)
-    assert rounded(s) == {"isc_max": 10.28, "voc_max": 1328.47, "vmp_max": 1156.14, "vmp_min": 984.94}
+    assert rounded(s) == {"isc_max": 10.28, "voc_max": 1331.42, "vmp_max": 1156.14, "vmp_min": 984.94}
 
 
 def test_shading_choice_changes_results(tmp_path):
@@ -131,3 +136,51 @@ def test_shading_choice_changes_results(tmp_path):
     out = {k: rounded(run({**common, "self_shading": k}, tmp_path, years=(2003,))[1])
            for k in ("none", "standard", "thin_film")}
     assert len({v["isc_max"] for v in out.values()}) >= 2     # the choice reaches SAM
+
+
+def test_voc_is_the_max_single_time_step():
+    per = {2001: {"isc": [0, 1, 1, 1, 0], "voc": [0, 10, 40, 10, 0], "vmp": [0, 5, 5, 5, 0]},
+           2002: {"isc": [0, 2, 2, 2, 0], "voc": [0, 30, 30, 30, 0], "vmp": [0, 6, 6, 6, 0]}}
+    import datetime as dt
+    ts = [dt.datetime(2001, 1, 1, h) for h in range(5)]
+    s = analysis.summarize(per, {2001: ts, 2002: ts}, 60)["worst"]
+    assert s["voc_max"]["value"] == 40 and s["voc_max"]["year"] == 2001 and s["voc_max"]["window_steps"] == 1
+    assert s["isc_max"]["value"] == 2 and s["isc_max"]["window_steps"] == 3          # still the 3-hour average
+
+
+def test_inverter_voltage_limits():
+    d = model.validate_design(TRACKER_BIFACIAL)                                   # not sent: PPE defaults
+    assert (d["vmppt_low"], d["vmppt_high"], d["vdc_max"]) == (0, 1500, 1500) and d["inverter_limits_default"]
+    inv = model.build_inputs(d)
+    assert inv["Inverter"]["mppt_low_inverter"] == 0 and inv["Inverter"]["mppt_hi_inverter"] == 1500
+    assert inv["InverterCECDatabase"]["inv_snl_vdcmax"] == 1500
+    by = {r["input"]: r for r in report.build(d)}
+    assert all(by[k]["method"] == "Default" for k in ("Vmppt low", "Vmppt high", "Vdc max"))
+    # the PPE default does not follow the system voltage
+    assert model.build_inputs(model.validate_design({**TRACKER_BIFACIAL, "system_voltage": 1000}))[
+        "Inverter"]["mppt_hi_inverter"] == 1500
+
+    d = model.validate_design({**TRACKER_BIFACIAL, "vmppt_low": "500", "vmppt_high": "1300", "vdc_max": "1400"})
+    inv = model.build_inputs(d)
+    assert inv["Inverter"]["mppt_low_inverter"] == 500 and inv["Inverter"]["mppt_hi_inverter"] == 1300
+    assert inv["InverterCECDatabase"]["inv_snl_vdcmax"] == 1400
+    assert inv["InverterCECDatabase"]["inv_tdc_cec_db"][0][0] == 1400
+    assert not d["inverter_limits_default"]
+    by = {r["input"]: r for r in report.build(d)}
+    assert by["Vmppt low"]["method"] == "User entered" and by["Vdc max"]["value"] == "1,400"
+    review = dict(jobs.review({**TRACKER_BIFACIAL, "vmppt_low": "500"})["groups"][4][1])
+    assert review["Inverter voltage limits"].endswith("⚠ PPE default is 0 · 1500 · 1500 V")
+
+    assert errs({**TRACKER_BIFACIAL, "vmppt_low": "1500"}) == ["vmppt_high"]       # low must be below high
+    assert errs({**TRACKER_BIFACIAL, "vmppt_high": "0"}) == ["vmppt_high"]
+    assert errs({**TRACKER_BIFACIAL, "vdc_max": "nan"}) == ["vdc_max"]
+    assert errs({**TRACKER_BIFACIAL, "vdc_max": "2500"}) == ["vdc_max"]
+    assert errs({**TRACKER_BIFACIAL, "vmppt_low": "-1"}) == ["vmppt_low"]
+
+
+def test_inverter_limits_reach_sam(tmp_path):
+    common = {**TRACKER_BIFACIAL, "self_shading": "standard"}
+    _, s, *_ = run(common, tmp_path, years=(2003,))
+    _, low, *_ = run({**common, "vmppt_low": "1250"}, tmp_path, years=(2003,))
+    assert rounded(s)["vmp_min"] < 1250 and rounded(low)["vmp_min"] == 1250       # SAM holds Vmp at Vmppt low
+    assert rounded(low)["voc_max"] == rounded(s)["voc_max"]                        # Voc is not limited

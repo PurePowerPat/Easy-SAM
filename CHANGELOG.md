@@ -5,6 +5,36 @@ Every version, newest first. Entries up to v0.2.8 are the release notes written 
 
 Release notes for v0.1.0–v0.1.2 and v0.1.7 were not kept.
 
+## v0.3.5 — 2026-10-29
+
+- **Easy-SAM.** The app is renamed Easy-SAM, with the subheading "Easily calculate your worst case Isc
+  and Voc". The title uses the Orbitron font (bundled in static/fonts, SIL Open Font License) in
+  #000040 and #00AAFF.
+- **Max Voc.** Results now report the maximum Voc of any single time step (previously the maximum
+  consecutive 3-hour average). Isc and Vmp are still the maximum 3-hour averages.
+- **Advanced Settings** (was Settings), with a permanent red "Advanced users only" warning at the top.
+  Organized by section; locked rows show the PPE assumptions, the changeable rows show the PPE default
+  and a warning when changed:
+  - Site and weather (locked): weather dataset, years, albedo, irradiance and sky model, time basis,
+    address lookup, weather cache (moved from Configure > Weather source).
+  - Module: Bifacial electrical mismatch is an Include / Exclude dropdown (PPE default Exclude);
+    Self-shading (PPE default for the module); locked: temperature correction (NOCT), mounting
+    standoff, array height, module losses 0 %, bifacial transmission fraction 0.013.
+  - Inverter: **new** Inverter voltage limits Vmppt low (0 V), Vmppt high (1500 V), Vdc max (1500 V),
+    with the selected inverter's library values for reference; locked: number of inverters 1.
+    Previously fixed at 0 V / system max voltage / system max voltage, so default results are
+    unchanged for 1500 V systems; Vmppt high and Vdc max no longer follow the system max voltage.
+  - System design: Number of rows (PPE default 1); locked: backtracking enabled, grid limits none.
+  - Review screen, Inputs used and the SAM inputs browser export list the inverter voltage limits
+    (Default / User entered). Their group is now "Advanced settings".
+- **Configure:** the "Modeling assumptions" and "Weather source" dropdowns are removed. A "?" next to
+  each section heading opens the matching section of Advanced Settings.
+- Fix: the page no longer shifts sideways when switching tabs or expanding a section (the scrollbar
+  space is always reserved). Clicking the tab already shown no longer jumps to the top.
+- Narrow windows: the tabs and section headings wrap instead of running off the page.
+
+Calculations otherwise unchanged (Isc and Vmp tests locked to the v0.1.6 values).
+
 ## v0.3.4 — 2026-10-29
 
 Code review clean-up. No visible changes to the pages, apart from the fixes below.
