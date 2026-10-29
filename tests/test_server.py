@@ -66,7 +66,7 @@ DESIGN = {"location_mode": "coords", "lat": "33.4", "lon": "-112.0", "interval":
 if __name__ == "__main__":
     threading.Thread(target=server.serve, kwargs={"open_browser": False, "port": PORT}, daemon=True).start()
     time.sleep(1)
-    assert call("GET", "/api/info")[1]["version"] == "0.3.1"
+    assert call("GET", "/api/info")[1]["version"] == "0.3.2"
     assert [r["name"] for r in call("GET", "/api/modules?name=TEST%20Mono%20400W")[1]] == ["TEST Mono 400W"]
     assert call("GET", "/api/modules?name=TEST%20Mono")[1] == []                      # exact names only
     assert len(call("GET", "/api/inverters?name=TEST%20Central%202500kW")[1]) == 1
@@ -94,9 +94,14 @@ if __name__ == "__main__":
     assert len([r for r in REQUESTS if r[1] == 35.0]) == 3
     assert wait(jw2)["status"] == "done"
     code, (data, hdr) = call("GET", f"/api/job/{jr}/export/all", raw=True)
-    assert code == 200 and len(zipfile.ZipFile(io.BytesIO(data)).namelist()) == 6
+    assert code == 200 and len(zipfile.ZipFile(io.BytesIO(data)).namelist()) == 7
+    code, (data, hdr) = call("GET", f"/api/job/{jr}/export/sam_json", raw=True)
+    sam = json.loads(data)
+    assert code == 200 and sam["compute_module_0"] == "pvsamv1" and sam["subarray1_shade_mode"] == 0
+    assert sam["solar_resource_file"].endswith(f"/{s['result']['sam_json_year']}.csv")
+    assert f"SAM_case_inputs_{s['result']['sam_json_year']}.json" in hdr["Content-Disposition"]
     code, (data, hdr) = call("GET", f"/api/job/{jr}/export/inputs_json", raw=True)
     saved = json.loads(data)
-    assert code == 200 and saved["format"] == "PPE SAM inputs" and saved["app_version"] == "0.3.1"
+    assert code == 200 and saved["format"] == "PPE SAM inputs" and saved["app_version"] == "0.3.2"
     assert saved["inputs"] == {**DESIGN, "lat": "35.0", "lon": "-110.0", "self_shading": "none"}   # exactly what was run
     print("SERVER TEST PASSED")

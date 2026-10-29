@@ -9,6 +9,7 @@ WeatherJob  : weather retrieval only, started early from the Configure page ("Re
 import concurrent.futures as cf
 from concurrent.futures.process import BrokenProcessPool
 import io
+import json
 import os
 import threading
 import time
@@ -165,6 +166,10 @@ class Job(_Base):
                     exports.series_csv(kind, self.per_year, self.stamps), "text/csv")
         if kind == "inputs_used":
             return f"{base}_inputs_used.csv", exports.inputs_used_csv(self.result["inputs_used"]), "text/csv"
+        if kind == "sam_json":
+            year = self.result["sam_json_year"]
+            data = exports.sam_case_json(self.inputs, dict(self.files)[year])
+            return f"{base}_SAM_case_inputs_{year}.json", json.dumps(data, indent=1).encode("utf-8"), "application/json"
         if kind == "inputs_json":
             return f"{base}_inputs.json", exports.inputs_json(self.raw, self.started), "application/json"
         if kind == "inputs":
@@ -173,7 +178,7 @@ class Job(_Base):
         if kind == "all":
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-                for k in list(exports.KINDS) + ["inputs_used", "inputs_json", "inputs"]:
+                for k in list(exports.KINDS) + ["inputs_used", "inputs_json", "sam_json", "inputs"]:
                     name, data, _ = self.export(k)
                     z.writestr(name, data)
             return f"{base}_exports.zip", buf.getvalue(), "application/zip"
@@ -293,6 +298,7 @@ class Job(_Base):
                 "inputs_used": report.build(design, wx),
                 "cec_tip": report.CEC_SPECS_TIP,
                 "weather": wx,
+                "sam_json_year": summary["worst"]["isc_max"]["year"],   # SAM case export uses the worst-case Isc year
                 "elapsed_s": round(time.time() - self.started, 1),
             }
             self.status, self.message = "done", "Complete"

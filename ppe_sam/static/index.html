@@ -585,8 +585,10 @@
         <button type="button" class="btn" data-export="vmp">Vmp (.csv)</button>
         <button type="button" class="btn" data-export="inputs_used">Inputs used (.csv)</button>
         <button type="button" class="btn" data-export="inputs_json">Inputs (.json)</button>
+        <button type="button" class="btn" data-export="sam_json">SAM case inputs (.json)</button>
         <button type="button" class="btn" data-export="all">All files (.zip)</button>
       </div>
+      <div class="note" id="samJsonNote" style="margin-top:6px"></div>
       <div class="note" style="margin-top:12px"><b>Testing only:</b> every SAM input variable, with its source.</div>
       <div class="actions" style="margin-top:6px"><button type="button" class="btn" data-export="inputs">SAM inputs browser (.csv)</button></div>
       <div class="note bad" id="exportErr"></div>
@@ -1355,6 +1357,7 @@
       const cls = r.sub ? ` class="subrow" data-sub="${esc(r.sub)}"` : (r.key ? ' class="key"' : '');
       h += `<tr${cls}><td>${esc(r.input)}${tip}</td><td>${esc(r.value)}</td><td>${esc(r.units)}</td><td><span class="meth ${METH[r.method]||'user'}">${esc(r.method)}</span></td></tr>`; });
     $('#inputsUsed').innerHTML = h + '</table>';
+    $('#samJsonNote').textContent = res.sam_json_year ? `SAM case inputs (.json): every SAM input for ${res.sam_json_year} (the worst-case Isc year), in SAM's own "JSON for inputs" format, with that year's weather file.` : '';
     $('#exportErr').textContent=''; $('#results').classList.remove('hidden');
   }
   $('#inputsUsed').addEventListener('click', e => { const b=e.target.closest('.subtog'); if(!b) return;

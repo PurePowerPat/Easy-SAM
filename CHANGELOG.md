@@ -5,6 +5,21 @@ Every version, newest first. Entries up to v0.2.8 are the release notes written 
 
 Release notes for v0.1.0–v0.1.2 and v0.1.7 were not kept.
 
+## v0.3.2 — 2026-10-29
+
+- **SAM case inputs (.json)** download on the Results page (also in All files .zip): every SAM input of
+  the run for the worst-case Isc year, in SAM's own "Generate code > JSON for inputs" format, pointing
+  at that year's cached weather file.
+  - Checked against a file exported from SAM 2026.7.3: the same 386 entries with the same value types.
+  - Loading the file into a fresh SAM model (the PySAM way) gives results identical to the app's run.
+- Checked with the same SAM 2026.7.3 file: the 279 SAM inputs the app leaves at their defaults match
+  SAM 2026.7.3 (4 differences: rounding, unused inverter models, and the inverter's displayed CEC
+  efficiency, which was confirmed to have no effect on Isc, Voc or Vmp). Every setting the app makes
+  reaches SAM (none silently skipped).
+- New automated test (tests/test_sam_json.py, run by run_tests.bat).
+
+Calculations unchanged (tests locked to the v0.1.6 values).
+
 ## v0.3.1 — 2026-10-29
 
 - **Settings page** (new tab next to Configure; the summary panel and Run simulation stay beside it):
