@@ -3,7 +3,7 @@
 Every version, newest first. Entries up to v0.2.8 are the release notes written with each version
 (VERSION.txt at the time), reformatted only.
 
-Not yet recorded here: v0.1.0–v0.1.2, v0.1.7, v0.1.9–v0.2.7.
+Not yet recorded here: v0.1.0–v0.1.2, v0.1.7, v0.2.4–v0.2.7.
 
 ## v0.3.0 — 2026-10-28
 
@@ -45,6 +45,157 @@ Calculations unchanged: the locked test results (v0.1.6 values) still match.
   standard noted when it differs.
 
 Calculations unchanged when the PPE-standard option is selected (tests locked to the v0.1.6 values).
+
+## v0.2.3 — 2026-10-27
+
+1. Number of inverters = 1. All modeled strings sit on a single inverter (was one inverter per string).
+   Verified: Isc / Voc / Vmp are identical, including with inverter clipping (SAM applies clipping on
+   the AC side and keeps each string at its DC operating point).
+2. Row pitch and ground clearance: units selector (m / in). Inches are converted to metres
+   (x 0.0254) for SAM; the metre value is shown under the field. Inputs used lists the entered value
+   in its units plus a "(converted)" metre row (Calculated).
+3. Layout illustration is a plan view (north up) rotated by the azimuth, with a north arrow, a blue
+   arrow for the direction the modules face (fixed-tilt / carport) or the axis direction (tracker),
+   and the azimuth value. The drawing area resizes to fit the rotated array; labels stay readable.
+4. Albedo: SAM uses the weather-file albedo where it is present and valid. Where the column is
+   missing or a value is invalid (e.g. 0), SAM falls back to its monthly albedo, 0.2 every month
+   (verified). Now stated in the Weather source dropdown, the modeling assumptions and Inputs used.
+5. "Calculate bifacial electrical mismatch" checkbox under the "bifacial" checkbox (CEC override or
+   custom "Module is bifacial"). Shown for every bifacial module; hidden for monofacial modules
+   unless "bifacial" is checked. Unchecked = off (worst case, no loss).
+
+Unchanged: all other calculations (tests locked to the v0.1.6 values).
+
+## v0.2.2 — 2026-10-26
+
+**All**
+- Section tags read "Incomplete" / "Complete".
+- Calculated and Default values use the same field layout as user inputs (label, box, unit), with a
+  darker gray, read-only box and a green (Calculated) or amber (Default) left edge.
+- Horizontal dividers between subsections removed (headings and spacing kept).
+- Imp 3-hour average removed everywhere (calculation, KPI, tables, downloads).
+
+**Module**
+- CEC module card and search results show Power / Isc / Voc / Imp / Vmp only.
+- New "Modeling assumptions" dropdown (module model, temperature model, self-shading, losses, bifacial).
+- "Copy model name" removed.
+
+**Inverter** (renamed from "Inverter and string")
+- Only the inverter selection. "Copy model name" removed.
+
+**System design** (renamed from "Racking and layout")
+- New "Circuit" subsection (modules per string, system max voltage) after the mounting type.
+- Carport button no longer shows "GCR 0.01". Carport GCR shows as a read-only Default field.
+- Inverter / string assumptions moved to a "Modeling assumptions" dropdown here.
+- Strings modeled and Rows modeled are separate read-only Calculated fields.
+
+**Run simulation**
+- Review shows only the configuration, grouped Site and weather / Module / Inverter / System design.
+
+**Results**
+- Three KPI cards: Isc (with "70% of Isc = x A" and a check / X mark vs the simulated value),
+  Voc, Vmp (with operating minimum). Year/window text removed.
+- Dropdowns: NEC 70% minimum, Inputs used, Downloads, Log.
+- Inputs used: one table of every input, ordered like the configuration page:
+  Input | Value | Units | Method (Database, User entered, Calculated, Default). It includes the
+  modeling assumptions, replacing the separate assumptions table and file. Downloadable (.csv),
+  also in All files (.zip).
+- Per-year and single time-step tables removed.
+- Run status is replaced by the Log once the run finishes.
+
+Unchanged: Isc / Voc / Vmp calculations (tests locked to the v0.1.6 values).
+
+## v0.2.1 — 2026-10-26
+
+1. Source labels: badges under fields removed. Each field shows its source as a coloured left
+   edge (Database blue, User entered gray, Calculated green, Default amber) with the full label on
+   hover. Legend at the top of the page. "Overridden" and the reset links are removed: an edited
+   database value simply becomes User entered.
+2. No pre-filled values for user inputs. Rotation limit, azimuth (tracker), module orientation,
+   ground clearance (bifacial) and module spacing must be entered; fields show "e.g." placeholders
+   only. The app no longer fills hidden defaults for these. Weather time step stays 60-minute.
+   CEC library values (module dimensions, copied custom specs) are still filled and marked Database.
+3. Text trimmed: racking notes removed (guidance lives in the tooltips: rotation limit "use 60°
+   if unknown", ground clearance typical values), shorter labels, messages and descriptions.
+4. Field grid: fixed 4-column grid (2 / 1 columns on narrow screens), every unit in a fixed-width
+   unit column, larger spacing between subgroups (General, Electrical, Dimensions, Bifacial,
+   String, Orientation, Subarray, Row spacing) than between fields.
+5. Results tab: the run opens the Results view. It starts with four KPI cards (Isc, Voc, Vmp with
+   min, Imp), then collapsible NEC 70% check (open), Modeling assumptions, Per-year, Single
+   time step, Inputs used, Downloads and Run status.
+   NEW OUTPUT - Imp: SAM has no string Imp output, so Imp = SAM subarray DC power / (strings x Vmp)
+   per time step, then the same max 3-hour average. Added to the per-year table, single-step table,
+   downloads (Imp .csv) and the modeling assumptions.
+6. Analysis stage has its own progress bar (green when done).
+
+Unchanged: Isc / Voc / Vmp calculations (tests locked to the v0.1.6 values).
+
+## v0.2.0 — 2026-10-26
+
+GUI rework per PPE_SAM_GUI_Review.md. No calculation changes (automated tests are locked to the
+v0.1.6 / v0.1.9 results).
+
+1. Page structure: main configuration column + 330 px sticky summary panel (project, site,
+   module, inverter, string, mounting, readiness, Run simulation). Single column below 1080 px.
+   Card gaps 16 px. Each section can be collapsed and then shows a one-line summary
+   (e.g. "Module: <model> · 530 W · Database") and a Complete / "n remaining" chip.
+2. Input states: editable fields are white with a clear border; calculated values (aspect ratio,
+   bifaciality used, GCR, strings modeled, Pmp / area / efficiency) are read-only blocks labelled
+   "Calculated" that say what is needed until they can be calculated; invalid fields get a red
+   border, "!" icon and specific text; strong keyboard focus outline.
+3. Source labels next to values: Database, User entered, Default, Calculated, Overridden.
+   Overridden values offer "Reset to <source> value (x)". A selected module with no library
+   dimensions says "Not available from selected source. Enter datasheet dimensions."
+   A Default (e.g. ground clearance) follows the mounting type unless the user changed it.
+4. Equipment pickers: after selection a card shows manufacturer, full model name (selectable)
+   and key specs, with Change, Clear and Copy model name. Search shows Searching / No matches /
+   Search failed states; search text is separate from the confirmed selection (Change keeps the
+   current selection until another is picked). Arrow keys move through the result list.
+5. Modeling assumptions: always-visible statement in section 3 plus a "Modeling assumptions"
+   table (selected equipment value vs simulation value and why). The same table is shown before
+   every run and with the results, and exported as "<project>_modeling_assumptions.csv"
+   (also included in All files .zip).
+6. Selection states: module source, mounting type and row-spacing mode use one radio-card
+   pattern with a checkmark and border (arrow keys supported). "Choose a mounting type." until
+   one is chosen; mounting fields appear only after a choice.
+7. Validation: "All fields are required unless marked optional." Units beside every numeric
+   field. Placeholders lighter than values. Fields are checked when you leave them and again
+   before running; messages say what to enter (e.g. "Modules per string: enter a whole number.").
+   The error list at the top links to each field.
+8. Site and weather: "Verify location on map" (Bing Maps, new tab) and formatted coordinates.
+   "Weather source and assumptions" shows the years requested (1998-last year), albedo policy,
+   time basis, minimum years and caching. After a run, the NSRDB grid point used and the years
+   actually used / not available are shown.
+9. Run: Run simulation in the sticky panel -> validation -> "Review before running"
+   (configuration + equipment vs simulation values) -> run. Run status shows three stages
+   (weather retrieval, simulation, analysis) with years checked / downloaded / cached /
+   not available / failed, years simulated, and cancel. On failure the failed stage is marked,
+   inputs are unchanged and cached weather years are kept.
+10. Visual hierarchy: blue reserved for primary actions, selection and focus; neutral section
+    badges and tooltips; shorter subtitle; library counts, version, weather dataset and the
+    methodology moved to "About".
+
+## v0.1.9 — 2026-10-26
+
+Approved fixes 1 and 3 only:
+
+1. Pmp temperature coefficient now copies from the CEC library.
+   - The library column is "gamma_pmp" (confirmed); the app was reading the old name "gamma_r".
+     It now reads gamma_pmp, with gamma_r as a fallback for older library files.
+   - If a library module has no Pmp coefficient, "Copy specs" shows a warning and highlights the
+     field instead of leaving it silently blank.
+   - run_tests.bat now fails if the Pmp coefficient column is missing or most modules have no value,
+     and prints the column it found and how many modules have a value.
+3. Custom modules: the six single-diode parameters SAM calculates from the datasheet values
+   (a, I_L, I_o, R_s, R_sh, Adjust) are listed at the bottom of the SAM inputs browser export
+   (Source = SAM calculated), labelled with the matching CEC Modules.csv column
+   (a_ref, I_L_ref, I_o_ref, R_s, R_sh_ref, Adjust) for direct comparison.
+
+Wording: the custom-module error now says SAM "could not calculate the module model" (was "fit").
+
+Not changed (per review): no automatic switch to the library parameters for copied modules,
+no change to the unused-model rows, no new comparison tests.
+Unchanged: all calculations and results (automated tests locked to v0.1.6 / v0.1.8 values).
 
 ## v0.1.8 — 2026-10-26
 
