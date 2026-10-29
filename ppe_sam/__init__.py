@@ -1,3 +1,3 @@
 """PPE Multi-Year SAM Simulation app (PySAM / NLR-PySAM 8.0.0)."""
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 __date__ = "10/29/2026"

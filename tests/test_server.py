@@ -66,7 +66,7 @@ DESIGN = {"location_mode": "coords", "lat": "33.4", "lon": "-112.0", "interval":
 if __name__ == "__main__":
     threading.Thread(target=server.serve, kwargs={"open_browser": False, "port": PORT}, daemon=True).start()
     time.sleep(1)
-    assert call("GET", "/api/info")[1]["version"] == "0.3.2"
+    assert call("GET", "/api/info")[1]["version"] == "0.3.3"
     assert [r["name"] for r in call("GET", "/api/modules?name=TEST%20Mono%20400W")[1]] == ["TEST Mono 400W"]
     assert call("GET", "/api/modules?name=TEST%20Mono")[1] == []                      # exact names only
     assert len(call("GET", "/api/inverters?name=TEST%20Central%202500kW")[1]) == 1
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     assert status_with("POST", "/api/cache/clear", {"Origin": "https://evil.example"}) == 403
     assert status_with("GET", "/api/info", {"Host": f"evil.example:{PORT}"}) == 403
     v = call("POST", "/api/validate", {k: v for k, v in DESIGN.items() if k != "self_shading"})[1]
-    assert not v["ok"] and [e["field"] for e in v["errors"]] == ["self_shading"], v
+    assert v["ok"] and dict(v["groups"][4][1])["Self-shading"] == "Standard", v      # defaults to the PPE standard
     jw = call("POST", "/api/weather", {"lat": 33.4, "lon": -112.0, "interval": 60})[1]["job"]
     assert wait(jw)["status"] == "done"
     n0 = len(REQUESTS)
@@ -102,6 +102,6 @@ if __name__ == "__main__":
     assert f"SAM_case_inputs_{s['result']['sam_json_year']}.json" in hdr["Content-Disposition"]
     code, (data, hdr) = call("GET", f"/api/job/{jr}/export/inputs_json", raw=True)
     saved = json.loads(data)
-    assert code == 200 and saved["format"] == "PPE SAM inputs" and saved["app_version"] == "0.3.2"
+    assert code == 200 and saved["format"] == "PPE SAM inputs" and saved["app_version"] == "0.3.3"
     assert saved["inputs"] == {**DESIGN, "lat": "35.0", "lon": "-110.0", "self_shading": "none"}   # exactly what was run
     print("SERVER TEST PASSED")

@@ -629,7 +629,7 @@
   const f = $('#f');
   const st = {src:'cec', loc:null, module:null, inverter:null, racking:null, gmode:'pitch', job:null, doneJob:null,
               info:null, jobPrompted:false, touched:new Set(), running:false, geo:null, complete:null,
-              wx:null, showing:null, view:'cfg'};
+              wx:null, showing:null, view:'cfg', shadeAuto:true};
   const IN = 0.0254;
   const CEC_TIP = 'Module specs shown below are pulled directly from the CEC database. These values will likely differ from values shown on the module datasheet. These differences are NOT errors. If your module name is correct, you do not need to rerun your analysis with custom settings.';
   const SHADE_NAME = {none:'None', standard:'Standard', thin_film:'Thin film'};
@@ -643,6 +643,11 @@
   const isBif = () => st.src==='custom' ? $('#customBif').checked : !!(st.module && (st.module.bifacial || $('#bifOverride').checked));
   const isThin = () => st.src==='custom' ? ['2','3','4','5'].includes(val('custom_celltech')) : !!(st.module && st.module.thin_film);
   const ppeShade = () => !isBif() ? 'none' : (isThin() ? 'thin_film' : 'standard');
+  const haveModule = () => st.src==='custom' ? (!!val('custom_celltech') || $('#customBif').checked) : !!st.module;
+  // Self-shading follows the PPE standard for the module (Default) until the engineer picks another option.
+  function syncShade(){ if(st.shadeAuto) f.elements.self_shading.value = haveModule() ? ppeShade() : ''; }
+  // 'input' fires before the form's own input handler re-renders (and would re-apply the default).
+  f.elements.self_shading.addEventListener('input', () => { const v = val('self_shading'); st.shadeAuto = !v || v===ppeShade(); });
   const mm = m => (m===null||m===undefined) ? '' : String(Math.round(m*10000)/10);
   const RACK_NAME = {tracker:'Single-axis tracker', fixed:'Fixed-tilt', carport:'Carport'};
   const HIGH_TIP = {
@@ -671,6 +676,7 @@
     if(name==='lat' || name==='lon'){ if(st.loc==='address') return 'calc'; }
     if(name==='address'){ if(st.loc==='coords') return 'def'; }
     const v=val(name); if(name==='interval') return v==='60' ? 'def' : 'user'; if(name==='rows' && v==='1') return 'def'; if(!v) return null;
+    if(name==='self_shading') return st.shadeAuto ? 'def' : 'user';
     return (name in dbVals && same(v, dbVals[name])) ? 'db' : 'user'; }
   function renderSources(){
     $$('.fld[data-field]').forEach(box => { const n=box.dataset.field, el=f.elements[n]; if(!el || !el.tagName) return;
@@ -1014,7 +1020,7 @@
     if(c.ns && c.rowsActual!==c.R){ sn.textContent = `SAM cannot model exactly ${c.R} row(s) with these values; the nearest is ${c.rowsActual}.`; sn.classList.remove('hidden'); }
     else sn.classList.add('hidden');
     // self-shading: PPE standard for the current module + warning when the selection differs
-    const ppe = ppeShade(), sel = val('self_shading'), haveMod = st.src==='custom' ? !!val('custom_celltech') || $('#customBif').checked : !!st.module;
+    const ppe = ppeShade(), sel = val('self_shading'), haveMod = haveModule();
     $('#shadeStd').textContent = haveMod ? `PPE standard for this module: ${SHADE_NAME[ppe]}` : '';
     const w = $('#shadeWarn');
     if(haveMod && sel && sel!==ppe){
@@ -1047,7 +1053,7 @@
       ['Inverter max DC voltage', `${svT}${inv?` (library ${V(inv.vdcmax)})`:''}`, 'System maximum voltage (PPE guide 6.5)'],
       ['Strings and inverters', c.ns ? `${c.ns} string(s) on one inverter` : 'All strings on one inverter', 'Fills the rows modeled; results per string'],
       ['Number of rows', 'As entered on Settings (PPE standard 1)', 'More than 1 row adds row-to-row self-shading (lower Isc)'],
-      ['Self-shading', sel ? SHADE_NAME[sel] : 'As selected on Settings', 'PPE guide 7.3: bifacial → Standard (Thin film for thin-film cells); monofacial → None'],
+      ['Self-shading', sel ? SHADE_NAME[sel] : 'PPE standard for the module', 'PPE guide 7.3: bifacial → Standard (Thin film for thin-film cells); monofacial → None'],
       ['Tracker', 'Tilt 0°, backtracking on', 'PPE guide 6.3'],
       ['Wiring and system losses', '0 %', 'Worst case'],
       ['Albedo', 'Weather file (0.2 where missing or invalid)', 'PPE guide 3.4'],
@@ -1071,7 +1077,7 @@
     if(st.racking){ need(4,'tilt',st.racking!=='tracker'); need(4,'rotlim',st.racking==='tracker'); need(4,'azimuth'); need(4,'orientation');
       if(isBif()) need(4,'ground_clearance'); need(4,'modules_high'); need(4,'modules_across');
       if(st.racking!=='carport'){ if(st.gmode==='gcr') need(4,'gcr'); else { need(4,'pitch'); need(4,'gap', (parseInt(val('modules_high'))||1)>=2); } } }
-    need(5,'self_shading'); need(5,'rows');
+    need(5,'self_shading', haveModule()); need(5,'rows');
     return m;
   }
   let lastReady = null;
@@ -1143,7 +1149,7 @@
     $$('.g-pitch').forEach(el=>el.classList.toggle('hidden', st.gmode!=='pitch')); $$('.g-gcr').forEach(el=>el.classList.toggle('hidden', st.gmode!=='gcr'));
     if(st.gmode==='pitch') $('#gapBox').classList.toggle('hidden', (parseInt(val('modules_high'))||1) < 2);
   }
-  function update(){ applyVisibility(); const c = calcState(); renderCalc(c); drawLayout(c); renderSources();
+  function update(){ applyVisibility(); syncShade(); const c = calcState(); renderCalc(c); drawLayout(c); renderSources();
     renderAssumptions(c); renderSummary(c); renderReadiness(missing()); renderWxBtn(); }
   f.addEventListener('input', e => { clearFieldError(e.target); update(); });
   f.addEventListener('change', e => { clearFieldError(e.target); update(); });
@@ -1282,7 +1288,7 @@
   // ================= reset =================
   function resetAll(){
     f.reset(); clearAllErrors(); st.touched.clear(); Object.keys(dbVals).forEach(k=>delete dbVals[k]);
-    Object.assign(st,{src:'cec', loc:null, racking:null, gmode:'pitch', geo:null, complete:null}); locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=pitch]'));
+    Object.assign(st,{src:'cec', loc:null, racking:null, gmode:'pitch', geo:null, complete:null, shadeAuto:true}); locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=pitch]'));
     modPicker.reset(); invPicker.reset(); ['#customBif','#bifMismatch','#bifOverride'].forEach(s=>$(s).checked=false); ['#copyNote','#saveNote','#geoNote'].forEach(s=>$(s).textContent='');
     $('#cCarGcr').value='0.01';
     setCollapsed($('#sec1'), false); ['#sec2','#sec3','#sec4'].forEach(s=>setCollapsed($(s), true));
@@ -1325,6 +1331,7 @@
       if(el.tagName==='SELECT' && ![...el.options].some(x => x.value===v)){ probs.push(`${LABELS[el.name]||el.name}: “${v}” is not one of the options.`); return; }
       el.value = v; st.touched.add(el.name.replace(/_units$/,'')); });
     Object.entries(I.db_values || {}).forEach(([n,v]) => { if(f.elements[n] && same(val(n), v)) dbVals[n] = String(v); });
+    st.shadeAuto = !val('self_shading') || val('self_shading')===ppeShade();
     if(st.loc==='address' && val('address') && val('lat') && val('lon')) st.geo = {address:val('address'), lat:num('lat'), lon:num('lon')};
     ['#sec2','#sec3','#sec4'].forEach(s => setCollapsed($(s), false)); st.complete = null;
     update(); scheduleValidate(); showView('cfg');

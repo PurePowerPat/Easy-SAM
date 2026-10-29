@@ -214,9 +214,10 @@ def build(d: dict, weather: dict | None = None) -> list:
     # ---------------- Settings (same order as the Settings page) ----------------
     S = "Settings"
     if bif:
-        add(S, "Calculate bifacial electrical mismatch", "On" if d.get("bifacial_mismatch") else "Off")
+        add(S, "Calculate bifacial electrical mismatch", "On" if d.get("bifacial_mismatch") else "Off", "",
+            USER if d.get("bifacial_mismatch") else DEF)
     else:
         add(S, "Calculate bifacial electrical mismatch", "Not applicable (monofacial module)", "", DEF)
-    add(S, "Self-shading", shading_text(d))
+    add(S, "Self-shading", shading_text(d), "", DEF if d["self_shading"] == d["self_shading_ppe"] else USER)
     add(S, "Number of rows", d["rows"], "rows", DEF if d["rows"] == config.PPE_STANDARD_ROWS else USER)
     return rows

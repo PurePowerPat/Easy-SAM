@@ -5,6 +5,22 @@ Every version, newest first. Entries up to v0.2.8 are the release notes written 
 
 Release notes for v0.1.0–v0.1.2 and v0.1.7 were not kept.
 
+## v0.3.3 — 2026-10-29
+
+- **Settings need no visit.** Every setting starts at the PPE standard:
+  - Calculate bifacial electrical mismatch: unchecked (as before).
+  - Self-shading: now filled in automatically with the PPE standard for the selected module
+    (bifacial -> Standard, Thin film for thin-film cells; monofacial -> None) and follows the module
+    when it changes. Marked Default. Choosing another option keeps that choice (marked User entered,
+    with the warning as before); choosing "Select..." returns to the PPE standard.
+    Previously (v0.2.8 - v0.3.2) it had to be selected for every run.
+  - Number of rows: 1 (as before).
+- Inputs used and the SAM inputs browser export mark settings left at the PPE standard as
+  Default / PPE default, and changed settings as User entered / User input.
+- A run (or the API) without a self-shading value uses the PPE standard for the module.
+
+Calculations unchanged (tests locked to the v0.1.6 values).
+
 ## v0.3.2 — 2026-10-29
 
 - **SAM case inputs (.json)** download on the Results page (also in All files .zip): every SAM input of

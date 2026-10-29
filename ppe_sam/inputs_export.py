@@ -246,10 +246,10 @@ def classify(var, d, assigned, found):
     racking_txt = {"tracker": "Single-axis tracker", "fixed": "Fixed-tilt", "carport": "Carport"}[rk]
     gc_note = (f"Ground clearance height ({d['ground_clearance_entered']:g} in entered x 0.0254)"
                if d.get("ground_clearance_units") == "in" else "Ground clearance height")
-    mism = ((U, "'Calculate bifacial electrical mismatch' checkbox") if d["bifacial"]
-            else (PD, "Monofacial: off"))
+    mism = ((U, "'Calculate bifacial electrical mismatch' checked on Settings") if d.get("bifacial_mismatch")
+            else (PD, "Off (PPE standard)") if d["bifacial"] else (PD, "Monofacial: off"))
     if var == "subarray1_shade_mode":
-        return U, _shade_note(d)
+        return (PD if d["self_shading"] == d["self_shading_ppe"] else U), _shade_note(d)
 
     if d.get("module_source") == "custom":
         if var.startswith("cec_"):

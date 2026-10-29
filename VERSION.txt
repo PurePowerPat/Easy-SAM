@@ -1,20 +1,21 @@
 PPE SAM Multi-Year Simulation
-Version: v0.3.2
+Version: v0.3.3
 Date:    10/29/2026
 
 HOW TO RUN: double-click run_from_source.bat.
 Full version history: CHANGELOG.md
 
-Changes since v0.3.1:
- - SAM case inputs (.json) download on the Results page (also in All files .zip): every SAM input of
-   the run for the worst-case Isc year, in SAM's own "Generate code > JSON for inputs" format, pointing
-   at that year's cached weather file.
-   - Checked against a file exported from SAM 2026.7.3: the same 386 entries with the same value types.
-   - Loading the file into a fresh SAM model (the PySAM way) gives results identical to the app's run.
- - Checked with the same SAM 2026.7.3 file: the 279 SAM inputs the app leaves at their defaults match
-   SAM 2026.7.3 (4 differences: rounding, unused inverter models, and the inverter's displayed CEC
-   efficiency, which was confirmed to have no effect on Isc, Voc or Vmp). Every setting the app makes
-   reaches SAM (none silently skipped).
- - New automated test (tests/test_sam_json.py, run by run_tests.bat).
+Changes since v0.3.2:
+ - Settings need no visit. Every setting starts at the PPE standard:
+   - Calculate bifacial electrical mismatch: unchecked (as before).
+   - Self-shading: now filled in automatically with the PPE standard for the selected module
+     (bifacial -> Standard, Thin film for thin-film cells; monofacial -> None) and follows the module
+     when it changes. Marked Default. Choosing another option keeps that choice (marked User entered,
+     with the warning as before); choosing "Select..." returns to the PPE standard.
+     Previously (v0.2.8 - v0.3.2) it had to be selected for every run.
+   - Number of rows: 1 (as before).
+ - Inputs used and the SAM inputs browser export mark settings left at the PPE standard as
+   Default / PPE default, and changed settings as User entered / User input.
+ - A run (or the API) without a self-shading value uses the PPE standard for the module.
 
  Calculations unchanged (tests locked to the v0.1.6 values).

@@ -340,10 +340,10 @@ def validate_design(d: dict) -> dict:
         out["nstrings"], out["rows"] = n, actual
     out["ninverters"] = 1
 
-    # Self-shading: chosen by the engineer (None / Standard / Thin film). PPE standard shown for reference.
+    # Self-shading: defaults to the PPE standard for the module; the engineer may choose another option.
     out["self_shading_ppe"] = ppe_self_shading(bif, bool(mod and mod.get("thin_film")))
     shade = d.get("self_shading") or ""
-    if racking:
+    if racking and shade:
         if shade not in config.SELF_SHADING:
             c.fail("self_shading", "Self-shading: select None, Standard or Thin film.")
             shade = out["self_shading_ppe"]

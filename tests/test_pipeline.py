@@ -30,7 +30,9 @@ def test_basics():
 
 def test_self_shading_input():
     base = {**BASE, **TRK, **BIF, "pitch": 6}
-    assert errs(base) == ["self_shading"]                                   # required, no hidden default
+    d = model.validate_design(base)                                         # not given: PPE standard for the module
+    assert d["self_shading"] == "standard" and "self_shading" not in d["_entered"]
+    assert {r["input"]: r for r in report.build(d)}["Self-shading"]["method"] == "Default"
     assert errs({**base, "self_shading": "bogus"}) == ["self_shading"]
     for key, code in (("none", 0), ("standard", 1), ("thin_film", 2)):
         d = model.validate_design({**base, "self_shading": key})
@@ -40,6 +42,7 @@ def test_self_shading_input():
     by = {r["input"]: r for r in report.build(d)}
     s = by["Self-shading"]
     assert s["value"] == "None (PPE standard: Standard)" and s["method"] == "User entered" and s["key"]
+    assert by["Calculate bifacial electrical mismatch"]["method"] == "Default"            # off = PPE standard
     assert s["section"] == "Settings"
     settings = dict(jobs.review({**base, "self_shading": "none"})["groups"][4][1])
     assert settings["Self-shading"] == "None ⚠ PPE standard is Standard" and settings["Number of rows"] == "1"
@@ -89,7 +92,7 @@ def test_locked_results_with_ppe_standard_shading():
     print("tracker/bifacial standard:", rounded(s))
     assert rounded(s) == {"isc_max": 15.19, "voc_max": 1401.42, "vmp_max": 1218.93, "vmp_min": 1034.2}
     exp = {r[0]: r for r in inputs_export.build_rows(d, inputs, files)[1]}
-    assert exp["subarray1_shade_mode"][2] == "User input" and exp["subarray1_shade_mode"][5].startswith("Standard")
+    assert exp["subarray1_shade_mode"][2] == "PPE default" and exp["subarray1_shade_mode"][5].startswith("Standard")
     _, s, *_ = run({**BASE, **BIF, "racking": "carport", "tilt": 7, "ground_clearance": 5.0, "self_shading": "standard",
                     "modules_per_string": 26, "modules_high": 14, "modules_across": 7, "orientation": "landscape"},
                    years=(2003,))

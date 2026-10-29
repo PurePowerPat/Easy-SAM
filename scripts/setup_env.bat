@@ -1,5 +1,5 @@
 @echo off
-REM PPE SAM Multi-Year - shared environment setup (v0.3.2). Sets VPY to the project's .venv python.
+REM PPE SAM Multi-Year - shared environment setup (v0.3.3). Sets VPY to the project's .venv python.
 set "PYLAUNCH="
 for %%V in (3.14 3.13 3.12) do (
   if not defined PYLAUNCH (

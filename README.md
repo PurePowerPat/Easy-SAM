@@ -1,4 +1,4 @@
-# PPE SAM Multi-Year Simulation — v0.3.2
+# PPE SAM Multi-Year Simulation — v0.3.3
 
 Pure Power Engineering Inc. Downloads every NSRDB PSM v4 year, runs SAM (NLR-PySAM 8.0.0) once per year, and reports the worst-case consecutive 3-hour averages of string Isc, Voc and Vmp, plus the NEC 70% floor check.
 
