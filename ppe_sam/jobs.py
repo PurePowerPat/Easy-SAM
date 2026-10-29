@@ -391,7 +391,7 @@ def review(raw):
             ["Bifacial", bif]]],
         ["Inverter", [["Inverter", inv["name"]]]],
         ["System design", [
-            ["Circuit", f"{d['modules_per_string']} modules per string · {d['system_voltage']} V max"],
+            ["Circuit", f"{d['modules_per_string']} modules per string"],
             ["Mounting", " · ".join(mount)],
             ["Subarray", f"{d['modules_high']} high × {d['modules_across']} across · {spacing}"],
             ["Modeled", f"{d['nstrings']} string(s) on 1 inverter"]]],

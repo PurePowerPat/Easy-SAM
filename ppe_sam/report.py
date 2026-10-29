@@ -20,7 +20,7 @@ KEY_INPUTS = {
     "Bifacial", "Calculate bifacial electrical mismatch", "Module length", "Module width",
     "Bifaciality", "Bifaciality tolerance", "Bifacial gain for NEC 70% check", "Self-shading",
     "Isc (datasheet) for NEC 70% check",
-    "Inverter", "Mounting type", "Modules per string", "System max voltage", "Tilt", "Azimuth",
+    "Inverter", "Mounting type", "Modules per string", "Tilt", "Azimuth",
     "Module orientation", "Ground clearance", "Modules High", "Modules Across", "Strings modeled",
     "Number of rows", "GCR", "Equivalent row pitch", "Vmppt low", "Vmppt high", "Vdc max",
     "Losses (soiling, mismatch, wiring, diodes, nameplate, tracking, rack shading)",
@@ -57,7 +57,6 @@ def build(d: dict, weather: dict | None = None) -> list:
     m, inv = d["module"], d["inverter"]
     custom = d.get("module_source") == "custom"
     bif = d["bifacial"]
-    sv = d["system_voltage"]
 
     def add(section, name, value, units="", method=USER, sub=None, tip=None):
         rows.append({"section": section, "input": name, "value": _n(value) if not isinstance(value, str) else value,
@@ -176,7 +175,6 @@ def build(d: dict, weather: dict | None = None) -> list:
     rk = d["racking"]
     add(S, "Mounting type", config.RACKING_LABELS[rk])
     add(S, "Modules per string", d["modules_per_string"], "modules")
-    add(S, "System max voltage", sv, "V")
     if rk == "tracker":
         add(S, "Tilt", 0, "°", DEF)
         add(S, "Rotation limit", d["rotlim"], "°")

@@ -49,7 +49,6 @@ RACKING_TYPES = tuple(RACKING_LABELS)
 # Used only for MONOFACIAL runs, where SAM ignores ground clearance.
 GROUND_CLEARANCE_DEFAULT_M = {"tracker": 2.5, "fixed": 1.0, "carport": 5.0}
 CARPORT_GCR = 0.01
-SYSTEM_VOLTAGES = (1000, 1500)
 BIFACIAL_TRANSMISSION_DEFAULT = 0.013     # SAM default, guide: "leave at default"
 INCH_TO_M = 0.0254
 PPE_STANDARD_ROWS = 1

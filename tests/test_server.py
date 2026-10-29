@@ -16,7 +16,7 @@ YEARS = [2010, 2011, 2012]
 
 DESIGN = {"location_mode": "coords", "lat": "33.4", "lon": "-112.0", "interval": "60", "module_source": "cec",
           "module_name": "TEST Bifacial 530W", "isc_datasheet": "13.9", "inverter_name": "TEST Central 2500kW",
-          "modules_per_string": "26", "system_voltage": "1500",
+          "modules_per_string": "26",
           "racking": "tracker", "azimuth": "180", "rotlim": "60", "orientation": "portrait",
           "modules_high": "1", "modules_across": "26", "rows": "1", "self_shading": "standard",
           "gcr_mode": "pitch", "pitch": "236.22",

@@ -10,7 +10,7 @@ import pytest
 from ppe_sam import analysis, inputs_export, jobs, libraries, model, report, weather
 
 BASE = dict(lat=39.18886, lon=-76.600953, interval=60, inverter_name="TEST Central 2500kW",
-            modules_per_string=28, system_voltage=1500, modules_high=1, modules_across=28,
+            modules_per_string=28, modules_high=1, modules_across=28,
             orientation="portrait", azimuth=180, rows=1, isc_datasheet=13.9)
 TRK = dict(racking="tracker", rotlim=60, ground_clearance=2.5)
 BIF = dict(module_name="TEST Bifacial 530W", bifaciality_base=70, bifaciality_tol=5, bifacial_gain=10)
@@ -99,8 +99,7 @@ def test_non_finite_numbers_are_rejected(field, text):
     assert errs({**TRACKER_BIFACIAL, field: text}) == [field]
 
 
-@pytest.mark.parametrize(("field", "value"), [("system_voltage", "1500.7"), ("interval", "30.5"),
-                                              ("system_voltage", "1200"), ("interval", "15")])
+@pytest.mark.parametrize(("field", "value"), [("interval", "30.5"), ("interval", "15")])
 def test_select_values_must_match_exactly(field, value):
     assert errs({**TRACKER_BIFACIAL, field: value}) == [field]
 
@@ -156,9 +155,6 @@ def test_inverter_voltage_limits():
     assert inv["InverterCECDatabase"]["inv_snl_vdcmax"] == 1500
     by = {r["input"]: r for r in report.build(d)}
     assert all(by[k]["method"] == "Default" for k in ("Vmppt low", "Vmppt high", "Vdc max"))
-    # the PPE default does not follow the system voltage
-    assert model.build_inputs(model.validate_design({**TRACKER_BIFACIAL, "system_voltage": 1000}))[
-        "Inverter"]["mppt_hi_inverter"] == 1500
 
     d = model.validate_design({**TRACKER_BIFACIAL, "vmppt_low": "500", "vmppt_high": "1300", "vdc_max": "1400"})
     inv = model.build_inputs(d)

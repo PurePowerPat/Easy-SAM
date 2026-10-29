@@ -10,7 +10,7 @@ from ppe_sam import exports, model, weather
 
 SAM_FILE = json.loads((Path(__file__).parent / "fixtures" / "SAM 2026.7.3 JSON for inputs.json").read_text())
 BASE = dict(lat=33.4, lon=-112.0, interval=60, inverter_name="TEST Central 2500kW", modules_per_string=28,
-            system_voltage=1500, racking="tracker", rotlim=60, azimuth=180, orientation="portrait", modules_high=1,
+            racking="tracker", rotlim=60, azimuth=180, orientation="portrait", modules_high=1,
             modules_across=28, rows=1, self_shading="standard", pitch=6, pitch_units="m")
 CEC = dict(module_name="TEST Bifacial 530W", isc_datasheet=13.9, ground_clearance=2.5, ground_clearance_units="m",
            bifaciality_base=70, bifaciality_tol=5, bifacial_gain=10)

@@ -32,7 +32,7 @@
     bifacial_gain:'Bifacial gain', custom_name:'Module name', custom_celltech:'Cell type', custom_nser:'Cells in series',
     custom_voc:'Voc', custom_isc:'Isc', custom_vmp:'Vmp', custom_imp:'Imp', custom_bvoc:'Voc coefficient',
     custom_aisc:'Isc coefficient', custom_gpmp:'Pmp coefficient', custom_tnoct:'NOCT', custom_fit:'Datasheet values',
-    inverter_name:'Inverter', modules_per_string:'Modules per string', system_voltage:'System voltage', racking:'Mounting type',
+    inverter_name:'Inverter', modules_per_string:'Modules per string', racking:'Mounting type',
     tilt:'Tilt', rotlim:'Rotation limit', azimuth:'Azimuth', orientation:'Orientation', ground_clearance:'Ground clearance',
     modules_high:'Modules High', modules_across:'Modules Across', rows:'Number of rows', self_shading:'Self-shading',
     pitch:'Row pitch', gap:'Module spacing', gcr:'GCR', bifacial_mismatch:'Bifacial electrical mismatch',
@@ -435,7 +435,7 @@
     if(isBif()){ need(2,'bifaciality_base'); need(2,'bifaciality_tol'); need(2,'bifacial_gain'); }
     if(!st.inverter) m[3].push('inverter_name');
     if(!st.racking) m[4].push('racking');
-    need(4,'modules_per_string'); need(4,'system_voltage');
+    need(4,'modules_per_string');
     if(st.racking){ need(4,'tilt',st.racking!=='tracker'); need(4,'rotlim',st.racking==='tracker'); need(4,'azimuth'); need(4,'orientation');
       if(isBif()) need(4,'ground_clearance'); need(4,'modules_high'); need(4,'modules_across');
       if(st.racking!=='carport'){ if(st.gmode==='gcr') need(4,'gcr'); else { need(4,'pitch'); need(4,'gap', (parseInt(val('modules_high'))||1)>=2); } } }
@@ -469,13 +469,13 @@
     if(st.src==='custom' && val('custom_name')) mod = `${esc(val('custom_name'))}${c.pmp?` · ${c.pmp.toFixed(0)} W`:''}${isBif()?' · bifacial':''}`;
     $('#sModule').innerHTML = mod || E('Not selected');
     $('#sInverter').innerHTML = st.inverter ? `${esc(st.inverter.name)} · ${fmt(st.inverter.paco/1000,1)} kWac` : E('Not selected');
-    $('#sString').innerHTML = (val('modules_per_string')||val('system_voltage')) ? `${val('modules_per_string')||'?'} modules · ${val('system_voltage')?val('system_voltage')+' V':'voltage?'}` : E('Not set');
+    $('#sString').innerHTML = val('modules_per_string') ? `${val('modules_per_string')} modules per string` : E('Not set');
     const r=st.racking, R=val('rows'), sh=val('self_shading');
     $('#sMount').innerHTML = r ? `${RACK_NAME[r]} · ${val('modules_high')||'?'} × ${val('modules_across')||'?'}${R?` · ${R} row${R==='1'?'':'s'}`:''}${c.gcr?` · GCR ${c.gcr.toFixed(3)}`:''}${sh?` · self-shading ${SHADE_NAME[sh]}`:''}` : E('Not chosen');
     $('#csum1').textContent = site ? `${st.loc==='address'&&val('address')?val('address')+' · ':''}${site} · ${val('interval')}-min` : '';
     $('#csum2').textContent = st.src==='cec' ? (st.module ? `${st.module.name} · ${fnum(st.module.stc)} W` : '') : val('custom_name');
     $('#csum3').textContent = st.inverter ? st.inverter.name : '';
-    $('#csum4').textContent = r ? `${RACK_NAME[r]} · ${val('modules_per_string')||'?'} modules · ${val('system_voltage')||'?'} V · ${val('modules_high')||'?'} × ${val('modules_across')||'?'}${R?` · ${R} row(s)`:''}${c.gcr?` · GCR ${c.gcr.toFixed(3)}`:''}` : '';
+    $('#csum4').textContent = r ? `${RACK_NAME[r]} · ${val('modules_per_string')||'?'} modules · ${val('modules_high')||'?'} × ${val('modules_across')||'?'}${R?` · ${R} row(s)`:''}${c.gcr?` · GCR ${c.gcr.toFixed(3)}`:''}` : '';
     $('#verifyLoc').disabled = !okLL; $('#locText').textContent = okLL ? site : '';
   }
   $('#verifyLoc').onclick = () => { const a=num('lat'), o=num('lon'); if(a===null||o===null) return;
@@ -651,7 +651,7 @@
     modPicker.reset(); invPicker.reset(); ['#customBif','#bifOverride'].forEach(s=>$(s).checked=false); ['#copyNote','#saveNote','#geoNote','#inNote'].forEach(s=>$(s).textContent='');
     $('#cCarGcr').value='0.01';
     setCollapsed($('#sec1'), false); ['#sec2','#sec3','#sec4'].forEach(s=>setCollapsed($(s), true));
-    $('#layoutBox').open=false; update(); window.scrollTo({top:0,behavior:'smooth'}); }
+    $('#layoutBox').open=true; update(); window.scrollTo({top:0,behavior:'smooth'}); }
   $('#resetBtn').onclick=()=>ask('Clear all inputs? Results and the weather cache are not affected.','Reset',ok=>ok&&resetAll());
 
   // ================= save / load inputs (.json) =================

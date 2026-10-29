@@ -277,11 +277,6 @@ def validate_design(d: dict) -> dict:
 
     # ---- system design: circuit -----------------------------------------------------------
     out["modules_per_string"] = c.num("modules_per_string", "Modules per string", 1, 100, integer=True)
-    sv = c.num("system_voltage", "System maximum voltage")
-    if sv is not None and sv not in config.SYSTEM_VOLTAGES:
-        c.fail("system_voltage", "System maximum voltage: select 1000 V or 1500 V.")
-        sv = None
-    out["system_voltage"] = int(sv) if sv else None
 
     # ---- system design: racking ---------------------------------------------------------
     racking = d.get("racking")

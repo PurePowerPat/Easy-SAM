@@ -5,6 +5,18 @@ Every version, newest first. Entries up to v0.2.8 are the release notes written 
 
 Release notes for v0.1.0–v0.1.2 and v0.1.7 were not kept.
 
+## v0.3.7 — 2026-10-29
+
+- Configure: the section headings line up. The Complete / Incomplete chips and the summaries of the
+  collapsed sections sit in fixed columns.
+- Configure: the Layout illustration in System design is open by default (also after Reset).
+- System max. voltage is removed from System design, the configuration panel, the review screen and
+  Inputs used. It was no longer used by the calculation (the inverter voltage limits in Advanced
+  Settings replaced it in v0.3.5). Older input files that contain it still load; the value is
+  ignored.
+
+Calculations unchanged.
+
 ## v0.3.6 — 2026-10-29
 
 - Tabs reordered: Configure, Results, Advanced Settings, About.

@@ -55,7 +55,11 @@
   .chip.done{color:var(--ok);background:var(--ok-bg);border-color:#b7dfc3}
   .csum{flex:1;min-width:0;color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;visibility:hidden}
   .card.collapsed .csum{visibility:visible}
-  @media (max-width:560px){ .card-h{flex-wrap:wrap} .csum{display:none} }
+  /* Configure sections: number | title | status chip | summary | Expand, in fixed columns so the chips and summaries line up. */
+  .card[data-sec] > .card-h{display:grid;grid-template-columns:22px 140px 92px minmax(0,1fr) auto;column-gap:12px}
+  .card[data-sec] .chip{justify-self:start;min-width:84px;text-align:center}
+  .card[data-sec] .collapse{grid-column:5}
+  @media (max-width:560px){ .card-h{flex-wrap:wrap} .csum{display:none} .card[data-sec] > .card-h{display:flex} }
   .card.collapsed .card-b{display:none}
   .card-b{margin-top:12px}
 

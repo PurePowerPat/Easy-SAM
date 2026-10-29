@@ -1,29 +1,17 @@
 Easy-SAM (PPE SAM Multi-Year Simulation)
-Version: v0.3.6
+Version: v0.3.7
 Date:    10/29/2026
 
 HOW TO RUN: double-click run_from_source.bat.
 Full version history: CHANGELOG.md
 
-Changes since v0.3.5:
- - Tabs reordered: Configure, Results, Advanced Settings, About.
- - Configure: the "All fields are required unless marked optional" note and the "?" links to
-   Advanced Settings by each section heading are removed.
- - Configure: a collapsed section with nothing entered shows only its Incomplete chip (no grey
-   "Location needed" / "No module selected" text).
- - Configure: number inputs cannot go below zero (latitude and longitude excepted). Steps of 0.1 for
-   ground clearance, GCR, Isc (datasheet) and the custom module electrical values.
- - Custom module: temperature coefficients are limited to -1 to 1 (and -1 to 1 %/°C when entered in
-   V/°C or A/°C). A positive Voc or Pmp coefficient, or a negative Isc coefficient, is now a warning
-   instead of an error.
- - Configuration panel: Readiness shows the section names only (no links). Print is removed (Results
-   still has Print); Reset, Save inputs and Load inputs are equal-size buttons. The weather cache
-   size moved to About.
- - Fix: Reset clears the "Loaded <file> (saved with vX)" message.
- - Advanced Settings: Bifacial electrical mismatch can be changed at any time (Default: Exclude; it
-   still only applies to bifacial modules). Self-shading always shows the value used, the default
-   for the module (None, Standard or Thin film), in the Default colour; the "PPE default" option is
-   removed. Weather dataset and Weather years show the value only, with the details in a tooltip;
-   Albedo text shortened; Address lookup and Weather cache rows removed.
+Changes since v0.3.6:
+ - Configure: the section headings line up. The Complete / Incomplete chips and the summaries of the
+   collapsed sections sit in fixed columns.
+ - Configure: the Layout illustration in System design is open by default (also after Reset).
+ - System max. voltage is removed from System design, the configuration panel, the review screen and
+   Inputs used. It was no longer used by the calculation (the inverter voltage limits in Advanced
+   Settings replaced it in v0.3.5). Older input files that contain it still load; the value is
+   ignored.
 
  Calculations unchanged.
