@@ -3,6 +3,7 @@ Version: v0.3.0
 Date:    10/28/2026
 
 HOW TO RUN: double-click run_from_source.bat.
+Full version history: CHANGELOG.md
 
 Changes since v0.2.8:
  - NEC 70% check now uses the module's DATASHEET Isc (previously the CEC library Isc).

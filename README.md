@@ -17,3 +17,5 @@ Weather cache folder: `%LOCALAPPDATA%\PPE_SAM_MultiYear\weather` (delete it to f
 | `run_from_source.bat` | Runs the app |
 | `run_tests.bat` | Automated tests + real CEC library check |
 | `build_exe.bat` | Optional .exe (may be blocked by company policy) |
+
+Version history: [CHANGELOG.md](CHANGELOG.md).
