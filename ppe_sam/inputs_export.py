@@ -1,4 +1,6 @@
-"""TESTING ONLY: 'Inputs browser' export, matching the variable list of a SAM Inputs Browser export.
+"""SAM inputs browser export (Results > Downloads > "SAM inputs browser (.csv)"), for checking a run against SAM.
+
+Matches the variable list of a SAM Inputs Browser export.
 
 Rows 1..356: every variable from the PPE sample SAM Inputs Browser export (data/inputs_browser_vars.csv).
 Then: CEC database / simulation-core values the run uses that SAM's Inputs Browser does not list.
@@ -10,7 +12,8 @@ import csv
 import io
 from pathlib import Path
 
-from . import config, model as model_mod
+from . import config, libraries, report
+from . import model as model_mod
 
 _LOCAL = Path(__file__).resolve().parent / "data" / "inputs_browser_vars.csv"
 _BUNDLED = config.bundle_dir() / "ppe_sam" / "data" / "inputs_browser_vars.csv"
@@ -26,7 +29,7 @@ HEIGHT_TEXT = {0: "One story building height or lower", 1: "Two story building h
 TEXT_MAPS = {
     "cec_standoff": STANDOFF_TEXT, "cec_height": HEIGHT_TEXT,
     "sixpar_standoff": STANDOFF_TEXT, "sixpar_mounting": HEIGHT_TEXT,
-    "sixpar_celltech": model_mod.CELLTECH_TEXT,
+    "sixpar_celltech": libraries.CELLTECH_TEXT,
     "sd11par_standoff": STANDOFF_TEXT, "sd11par_mounting": HEIGHT_TEXT,
     "sd11par_glass": {0: "Standard glass", 1: "Anti-reflective glass"},
     "snl_module_structure": {0: "Use Database Values", 1: "Glass/Cell/Polymer Sheet - Open Rack",
@@ -190,15 +193,16 @@ UNIT_TEXT = {"bvoc": {"pct": "%/°C", "abs": "V/°C"}, "aisc": {"pct": "%/°C", 
 
 def _custom_ui_value(d, var):
     m, cu = d["module"], d["custom"]
+    aisc_unit, bvoc_unit = UNIT_TEXT["aisc"][cu["aisc_units"]], UNIT_TEXT["bvoc"][cu["bvoc_units"]]
     return {
         "module_name": (m["name"], U, "Custom module name"),
         "6par_module_name": (m["name"], U, "Custom module name"),
         "6par_celltech": (m["technology"], U, "Cell type selected"),
         "6par_aspect_ratio": (d["aspect_ratio"], PC, "Module length / width"),
-        "6par_aisc_display": (cu["aisc_entered"], U, f"Entered as {cu['aisc_entered']:g} {UNIT_TEXT['aisc'][cu['aisc_units']]}"),
-        "6par_aisc_units": (UNIT_TEXT["aisc"][cu["aisc_units"]], U, "Units selected for the Isc temperature coefficient"),
-        "6par_bvoc_display": (cu["bvoc_entered"], U, f"Entered as {cu['bvoc_entered']:g} {UNIT_TEXT['bvoc'][cu['bvoc_units']]}"),
-        "6par_bvoc_units": (UNIT_TEXT["bvoc"][cu["bvoc_units"]], U, "Units selected for the Voc temperature coefficient"),
+        "6par_aisc_display": (cu["aisc_entered"], U, f"Entered as {cu['aisc_entered']:g} {aisc_unit}"),
+        "6par_aisc_units": (aisc_unit, U, "Units selected for the Isc temperature coefficient"),
+        "6par_bvoc_display": (cu["bvoc_entered"], U, f"Entered as {cu['bvoc_entered']:g} {bvoc_unit}"),
+        "6par_bvoc_units": (bvoc_unit, U, "Units selected for the Voc temperature coefficient"),
     }.get(var)
 
 
@@ -209,8 +213,9 @@ def _ui_value(d, var, path):
             return cv
     pitch_note = (f"Row pitch ({d['pitch_entered']:g} in entered x 0.0254)" if d.get("pitch_units") == "in"
                   else "Row pitch (m)")
-    loc = ((d["address"], U, f"Address; coordinates from {d.get('geocode_source') or 'geocoder'}: {d['lat']},{d['lon']}")
-           if d.get("location_mode") == "address" else (f"{d['lat']},{d['lon']}", U, "Latitude, longitude"))
+    coords = f"{d['lat']},{d['lon']}"
+    loc = ((d["address"], U, f"Address; coordinates from {d.get('geocode_source') or 'geocoder'}: {coords}")
+           if d.get("location_mode") == "address" else (coords, U, "Latitude, longitude"))
     return {
         "module_name": (d["module"]["name"], U, "Selected from the CEC module library"),
         "inv_cec_name": (d["inverter"]["name"], U, "Selected from the CEC inverter library"),
@@ -233,23 +238,19 @@ def _ui_value(d, var, path):
     }.get(var)
 
 
-def _shade_note(d):
-    sel = config.SELF_SHADING[d["self_shading"]][1]
-    ppe = config.SELF_SHADING[d["self_shading_ppe"]][1]
-    return f"Self-shading selected: {sel}" + ("" if sel == ppe else f" (PPE standard: {ppe})")
-
-
-def classify(var, d, assigned, found):
+def classify(var, d, assigned):
     e = set(d["_entered"])
     rk = d["racking"]
     m = d["module"]
-    racking_txt = {"tracker": "Single-axis tracker", "fixed": "Fixed-tilt", "carport": "Carport"}[rk]
+    racking_txt = config.RACKING_LABELS[rk]
     gc_note = (f"Ground clearance height ({d['ground_clearance_entered']:g} in entered x 0.0254)"
                if d.get("ground_clearance_units") == "in" else "Ground clearance height")
+    bif_note = f"(base {d.get('bifaciality_base')}% + tolerance {d.get('bifaciality_tol')}%) / 100"
     mism = ((U, "'Calculate bifacial electrical mismatch' checked on Settings") if d.get("bifacial_mismatch")
             else (PD, "Off (PPE standard)") if d["bifacial"] else (PD, "Monofacial: off"))
     if var == "subarray1_shade_mode":
-        return (PD if d["self_shading"] == d["self_shading_ppe"] else U), _shade_note(d)
+        src = PD if d["self_shading"] == d["self_shading_ppe"] else U
+        return src, f"Self-shading selected: {report.shading_text(d)}"
 
     if d.get("module_source") == "custom":
         if var.startswith("cec_"):
@@ -267,8 +268,7 @@ def classify(var, d, assigned, found):
                            else (PC, f"{cu['bvoc_entered']:g} %/°C entered x Voc / 100 = V/°C"),
             "sixpar_area": (PC, "Module length x width"),
             "sixpar_is_bifacial": (U, "'Module is bifacial' checkbox"),
-            "sixpar_bifaciality": (PC, f"(base {d.get('bifaciality_base')}% + tolerance {d.get('bifaciality_tol')}%) / 100")
-                                  if d["bifacial"] else (PD, "Monofacial module: 0"),
+            "sixpar_bifaciality": (PC, bif_note) if d["bifacial"] else (PD, "Monofacial module: 0"),
             "sixpar_bifacial_ground_clearance_height": (U, gc_note) if "ground_clearance" in e
                                                       else (PD, "Monofacial: not used by SAM"),
             "sixpar_bifacial_transmission_factor": (PD, "SAM default kept per PPE guide"),
@@ -306,8 +306,7 @@ def classify(var, d, assigned, found):
         "inverter_count": (PD, f"One inverter for all {d['nstrings']} string(s)"),
         "subarray1_nstrings": (PC, f"Fewest strings that fill {d['rows']} row(s) of Modules High x Modules Across"),
         "system_capacity": (PC, "Strings x modules per string x Vmp x Imp (CEC) / 1000"),
-        "cec_bifaciality": (PC, f"(base {d.get('bifaciality_base')}% + tolerance {d.get('bifaciality_tol')}%) / 100")
-                           if d["bifacial"] else (PD, "Monofacial module: 0"),
+        "cec_bifaciality": (PC, bif_note) if d["bifacial"] else (PD, "Monofacial module: 0"),
         "cec_is_bifacial": (U, "Bifacial override checked") if d["bifacial_source"] == "user override"
                            else (SC, f"CEC module database [Bifacial] ({1 if d['bifacial'] else 0})"),
         "cec_bifacial_ground_clearance_height": (U, gc_note) if "ground_clearance" in e
@@ -338,17 +337,18 @@ def classify(var, d, assigned, found):
 
 def _celltech(d):
     tech = d["module"]["technology"]
-    code = model_mod.celltech_code(tech)
+    code = libraries.celltech_code(tech)
     if code is None:
         return None, ER, f"CEC module database [Technology] = '{tech}' has no matching SAM cell type"
-    return (model_mod.CELLTECH_TEXT[code], SC,
-            f"CEC module database [Technology] = '{tech}' -> SAM cell type {model_mod.CELLTECH_TEXT[code]}")
+    return (libraries.CELLTECH_TEXT[code], SC,
+            f"CEC module database [Technology] = '{tech}' -> SAM cell type {libraries.CELLTECH_TEXT[code]}")
 
 
 def _sixpar_rows(d, n_years):
     params = (d.get("custom") or {}).get("sixpar") or {}
-    rows = [["--- Custom module: single-diode parameters calculated by SAM from the datasheet values "
-             "(compare with the a_ref ... Adjust columns of a CEC library module) ---", "", "", "", ""] + [""] * n_years]
+    title = ("--- Custom module: single-diode parameters calculated by SAM from the datasheet values "
+             "(compare with the a_ref ... Adjust columns of a CEC library module) ---")
+    rows = [[title, "", "", "", ""] + [""] * n_years]
     for key, lib_col, label in model_mod.SIXPAR_OUTPUTS:
         v = params.get(key)
         rows.append([f"sixpar_calc_{key}", f"{label} [CEC Modules.csv column: {lib_col}]",
@@ -383,7 +383,7 @@ def build_rows(design, inputs, files):
                 if not found:
                     v, src, nt = None, ER, "Not set by the app and not a simulation-core value"
                 else:
-                    src, nt = classify(ssc_name, d, assigned, found)
+                    src, nt = classify(ssc_name, d, assigned)
                     v = _text(ssc_name, v)
             vals.append(_fmt(v))
             source = source or src

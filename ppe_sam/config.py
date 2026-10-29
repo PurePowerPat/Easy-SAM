@@ -44,7 +44,8 @@ MODULE_LIB_FILE = "CEC Modules.csv"
 INVERTER_LIB_FILE = "CEC Inverters.csv"
 
 # --- Racking ----------------------------------------------------------------
-RACKING_TYPES = ("tracker", "fixed", "carport")
+RACKING_LABELS = {"tracker": "Single-axis tracker", "fixed": "Fixed-tilt", "carport": "Carport"}
+RACKING_TYPES = tuple(RACKING_LABELS)
 # Used only for MONOFACIAL runs, where SAM ignores ground clearance.
 GROUND_CLEARANCE_DEFAULT_M = {"tracker": 2.5, "fixed": 1.0, "carport": 5.0}
 CARPORT_GCR = 0.01

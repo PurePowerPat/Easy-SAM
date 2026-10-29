@@ -5,6 +5,46 @@ Every version, newest first. Entries up to v0.2.8 are the release notes written 
 
 Release notes for v0.1.0–v0.1.2 and v0.1.7 were not kept.
 
+## v0.3.4 — 2026-10-29
+
+Code review clean-up. No visible changes to the pages, apart from the fixes below.
+
+**Fixes**
+- Inputs that are not a finite number ("nan", "inf") are now rejected with a field error. Before,
+  "nan" was accepted (it passes every range check) and could quietly turn the NEC 70% floor into
+  "not a number", so the simulated Isc was always reported as governing. "inf" in a whole-number
+  field crashed the check.
+- System maximum voltage and Weather time step must be exactly one of the listed values. Before,
+  1500.7 V ran as 1500 V and a 30.5-minute step ran as 30 minutes.
+- Results: the ✓ / ✕ next to the 70% floor uses the same test as the NEC table (they disagreed
+  when the simulated Isc equals the floor exactly).
+- The list of runs and weather retrievals is now safe to use from several threads at once (a rare
+  "dictionary changed size" error).
+- "Retrieve weather" no longer reuses a finished retrieval, so weather files deleted from the cache
+  since are noticed and downloaded again.
+- NSRDB retries no longer wait after the last attempt (up to 40 s saved before reporting a failure).
+- A request with a malformed body gets a clear 400 error instead of a 500.
+- Port selection binds the port instead of probing it, and a second app window no longer shares
+  the first one's port on Windows.
+- A CEC library download that is interrupted never leaves a partial file.
+- Every SAM input the app sets is checked by name: a misspelled input now stops the run instead
+  of being skipped silently (none is misspelled today).
+- The parallel SAM runs use the same process start method ("spawn") on every operating system.
+
+**Housekeeping**
+- One copy of shared text and mappings: racking names, self-shading wording, cell-type codes (the
+  page now gets them from the server) and the CEC database tooltip.
+- The page is split into index.html, app.css and app.js (content unchanged), served with explicit
+  content types.
+- Tests moved to pytest (tests/conftest.py; run_tests.bat installs it from requirements-dev.txt).
+  Each test gets its own data folder and restores what it patches; new tests cover each fix above.
+- Version number kept only in ppe_sam/__init__.py (scripts and tests no longer repeat it).
+- Python 3.12-3.14 stated consistently (the code already needed 3.11 or newer).
+- ruff lint settings in pyproject.toml; all checks pass.
+- README: developer notes (layout, tests, lint).
+
+Calculations unchanged (tests locked to the v0.1.6 values).
+
 ## v0.3.3 — 2026-10-29
 
 - **Settings need no visit.** Every setting starts at the PPE standard:

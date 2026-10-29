@@ -1,21 +1,18 @@
 PPE SAM Multi-Year Simulation
-Version: v0.3.3
+Version: v0.3.4
 Date:    10/29/2026
 
 HOW TO RUN: double-click run_from_source.bat.
 Full version history: CHANGELOG.md
 
-Changes since v0.3.2:
- - Settings need no visit. Every setting starts at the PPE standard:
-   - Calculate bifacial electrical mismatch: unchecked (as before).
-   - Self-shading: now filled in automatically with the PPE standard for the selected module
-     (bifacial -> Standard, Thin film for thin-film cells; monofacial -> None) and follows the module
-     when it changes. Marked Default. Choosing another option keeps that choice (marked User entered,
-     with the warning as before); choosing "Select..." returns to the PPE standard.
-     Previously (v0.2.8 - v0.3.2) it had to be selected for every run.
-   - Number of rows: 1 (as before).
- - Inputs used and the SAM inputs browser export mark settings left at the PPE standard as
-   Default / PPE default, and changed settings as User entered / User input.
- - A run (or the API) without a self-shading value uses the PPE standard for the module.
+Changes since v0.3.3 (code review clean-up):
+ - Fixes: inputs such as "nan" or "inf" are rejected (before, "nan" could make the NEC 70% floor
+   meaningless); system voltage and time step must be exactly a listed value; the 70% floor
+   check mark agrees with the NEC table when the values are equal; thread-safe job list;
+   "Retrieve weather" notices cache files deleted since; no wait after the last NSRDB retry;
+   clear 400 errors for malformed requests; safer port selection and library download.
+ - Housekeeping: one copy of shared text and mappings; page split into HTML / CSS / JS;
+   tests moved to pytest (run_tests.bat); version number kept in one place; lint settings;
+   developer notes in README.md.
 
  Calculations unchanged (tests locked to the v0.1.6 values).

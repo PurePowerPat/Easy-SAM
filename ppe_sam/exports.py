@@ -33,7 +33,7 @@ def series_csv(kind, per_year, timestamps) -> bytes:
 
 def inputs_json(raw_inputs: dict, started: float) -> bytes:
     """The inputs exactly as the page sent them for this run, loadable with "Load inputs (.json)"."""
-    saved = dt.datetime.fromtimestamp(started, dt.timezone.utc).isoformat(timespec="seconds")
+    saved = dt.datetime.fromtimestamp(started, dt.UTC).isoformat(timespec="seconds")
     return json.dumps({"format": INPUTS_FORMAT, "version": 1, "app_version": __version__, "saved": saved,
                        "inputs": raw_inputs}, indent=2).encode("utf-8")
 
@@ -41,8 +41,10 @@ def inputs_json(raw_inputs: dict, started: float) -> bytes:
 # SAM "Generate code > JSON for inputs" (SAM 2026.7.3): every pvsamv1 input by its SSC name, plus these
 # entries. PySAM renames the 6par_* inputs to sixpar_* (Python names cannot start with a digit).
 SAM_JSON_HEADER = {"compute_module_0": "pvsamv1", "compute_module_1": "grid", "number_compute_modules": 2}
-SAM_JSON_METRICS = [("annual_energy", "Annual AC energy in Year 1"), ("capacity_factor", "DC capacity factor in Year 1"),
-                    ("kwh_per_kw", "Energy yield in Year 1"), ("performance_ratio", "Performance ratio in Year 1")]
+SAM_JSON_METRICS = [("annual_energy", "Annual AC energy in Year 1"),
+                    ("capacity_factor", "DC capacity factor in Year 1"),
+                    ("kwh_per_kw", "Energy yield in Year 1"),
+                    ("performance_ratio", "Performance ratio in Year 1")]
 
 
 def sam_name(pysam_name: str) -> str:

@@ -69,7 +69,7 @@ def lookup(address: str) -> dict:
         if r:
             r["lat"], r["lon"] = round(r["lat"], 6), round(r["lon"], 6)
             return r
-    if errors and len(errors) == 2:
+    if len(errors) == 2:                          # both services unreachable
         raise GeocodeError("Address lookup failed (no internet connection or the services are unavailable). "
                            "Switch to Coordinates and enter latitude and longitude.")
     raise GeocodeError("No match found for this address. Check the spelling, add the city and state, "

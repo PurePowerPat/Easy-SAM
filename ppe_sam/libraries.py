@@ -15,6 +15,27 @@ _cache = {}
 # Pmp temperature coefficient (%/C): "gamma_pmp" in the current library, "gamma_r" in older files.
 GAMMA_PMP_COLUMNS = ("gamma_pmp", "gamma_r")
 
+# SAM 6-par "Cell type" (sixpar_celltech): monoSi=0, multiSi=1, CdTe=2, CIS=3, CIGS=4, Amorphous=5
+CELLTECH_TEXT = {0: "monoSi", 1: "multiSi", 2: "CdTe", 3: "CIS", 4: "CIGS", 5: "Amorphous"}
+
+
+def celltech_code(technology):
+    """Map the CEC library 'Technology' column to SAM's 6-par cell type code. None = no match."""
+    t = (technology or "").strip().lower()
+    if "mono" in t:
+        return 0
+    if "multi" in t or "poly" in t:
+        return 1
+    if "cdte" in t:
+        return 2
+    if "cigs" in t:          # check before "cis"
+        return 4
+    if "cis" in t:
+        return 3
+    if "a-si" in t or "amorph" in t:
+        return 5
+    return None
+
 
 def _f(v, default=None):
     try:
@@ -42,10 +63,13 @@ def _locate(filename: str) -> Path:
     target.mkdir(parents=True, exist_ok=True)
     dest = target / filename
     url = config.SAM_LIB_BASE + urllib.request.quote(filename)
+    tmp = dest.with_name(dest.name + ".tmp")          # never leave a half-written library behind
     try:
-        with urllib.request.urlopen(url, timeout=60) as r, open(dest, "wb") as fh:
-            fh.write(r.read())
+        with urllib.request.urlopen(url, timeout=60) as r:
+            tmp.write_bytes(r.read())
+        tmp.replace(dest)
     except Exception as exc:  # noqa: BLE001
+        tmp.unlink(missing_ok=True)
         raise RuntimeError(
             f"Could not find or download '{filename}'. Download it from\n{url}\n"
             f"and place it in: {config.library_search_paths()[0]}\n({exc})") from exc
@@ -62,7 +86,7 @@ def _read(filename: str):
         if not r or not r[0].strip():
             continue
         first = r[0].strip()
-        if first in ("Units", "[0]") or first.startswith("["):
+        if first == "Units" or first.startswith("["):
             continue
         data.append({header[i]: (r[i].strip() if i < len(r) else "") for i in range(len(header))})
     return data, path, header
@@ -99,6 +123,7 @@ def modules():
                     "adjust": _f(r.get("Adjust"), 0.0),
                 }
                 m["thin_film"] = _is_thin_film(m["technology"])
+                m["celltech"] = celltech_code(m["technology"])     # used by "Copy to custom module"
                 out[m["name"]] = m
             _cache["modules"] = out
             _cache["modules_path"] = str(path)
@@ -130,7 +155,8 @@ def inverters():
 
 
 def library_info():
-    modules(); inverters()
+    modules()
+    inverters()
     return {"modules_file": _cache.get("modules_path"), "inverters_file": _cache.get("inverters_path"),
             "module_count": len(_cache["modules"]), "inverter_count": len(_cache["inverters"]),
             "gamma_pmp_column": _cache.get("gamma_column"), "commit": config.SAM_LIB_COMMIT}

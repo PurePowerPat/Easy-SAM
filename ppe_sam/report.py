@@ -8,10 +8,10 @@ Row flags used by the Results page:
                (CEC library modules only; never highlighted)
   tip   "cec" -> "Module model" row gets the CEC-database tooltip
 """
-from . import config, model as model_mod
+from . import config
+from . import model as model_mod
 
 DB, USER, CALC, DEF = "Database", "User entered", "Calculated", "Default"
-RACK_TEXT = {"tracker": "Single-axis tracker", "fixed": "Fixed-tilt", "carport": "Carport"}
 
 KEY_INPUTS = {
     "Project name", "Latitude", "Longitude", "Weather time step", "Albedo",
@@ -105,7 +105,8 @@ def build(d: dict, weather: dict | None = None) -> list:
     S = "Module"
     add(S, "Module source", "Custom module" if custom else "CEC library")
     add(S, "Module", m["name"])
-    add(S, "Module model", "CEC Performance Model with " + ("User Entered Specifications" if custom else "Module Database"),
+    add(S, "Module model",
+        "CEC Performance Model with " + ("User Entered Specifications" if custom else "Module Database"),
         "", DEF, tip=None if custom else "cec")
     if custom:
         mc = lambda f: DB if f in dbf else USER  # noqa: E731
@@ -124,7 +125,7 @@ def build(d: dict, weather: dict | None = None) -> list:
         add(S, "Pmp temperature coefficient", m["gamma_r"], "%/°C", mc("custom_gpmp"))
         add(S, "NOCT", m["t_noct"], "°C", mc("custom_tnoct"))
         sp = cu.get("sixpar") or {}
-        for key, lib_col, label in model_mod.SIXPAR_OUTPUTS:
+        for key, lib_col, _label in model_mod.SIXPAR_OUTPUTS:
             add(S, f"Single-diode parameter {lib_col}", sp.get(key), "", CALC)
     else:
         G = "cec"   # collapsible sub-section under "Module model"; unhighlighted
@@ -176,7 +177,7 @@ def build(d: dict, weather: dict | None = None) -> list:
     # ---------------- System design ----------------
     S = "System design"
     rk = d["racking"]
-    add(S, "Mounting type", RACK_TEXT[rk])
+    add(S, "Mounting type", config.RACKING_LABELS[rk])
     add(S, "Modules per string", d["modules_per_string"], "modules")
     add(S, "System max voltage", sv, "V")
     if rk == "tracker":

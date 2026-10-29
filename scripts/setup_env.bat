@@ -1,5 +1,5 @@
 @echo off
-REM PPE SAM Multi-Year - shared environment setup (v0.3.3). Sets VPY to the project's .venv python.
+REM PPE SAM Multi-Year - shared environment setup. Sets VPY to the project's .venv python (Python 3.12-3.14).
 set "PYLAUNCH="
 for %%V in (3.14 3.13 3.12) do (
   if not defined PYLAUNCH (
@@ -7,12 +7,12 @@ for %%V in (3.14 3.13 3.12) do (
   )
 )
 if not defined PYLAUNCH (
-  echo ERROR: Python 3.14 was not found. Install it with:  py install 3.14
+  echo ERROR: Python 3.12, 3.13 or 3.14 was not found. Install 3.14 with:  py install 3.14
   exit /b 1
 )
 set "VPY=%CD%\.venv\Scripts\python.exe"
 if exist "%VPY%" (
-  "%VPY%" -c "import sys; sys.exit(0 if (3,8) <= sys.version_info[:2] <= (3,14) else 1)"
+  "%VPY%" -c "import sys; sys.exit(0 if (3,12) <= sys.version_info[:2] <= (3,14) else 1)"
   if errorlevel 1 (
     echo Existing .venv uses an unsupported Python version - recreating it.
     rmdir /s /q .venv

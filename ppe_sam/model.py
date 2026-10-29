@@ -6,31 +6,13 @@ inputs validated in `validate_design`; every design input must be entered (no hi
 `design["_entered"]` records which optional inputs the engineer typed; `design["_db_fields"]` lists
 the inputs the UI filled from the CEC database (used to label the Inputs used table).
 """
+import math
+
 from . import config, libraries
+from .libraries import CELLTECH_TEXT, celltech_code
 
 OUTPUT_VARS = {"isc": "subarray1_isc", "voc": "subarray1_voc", "vmp": "subarray1_dc_voltage"}
-
-# SAM 6-par "Cell type" (sixpar_celltech): monoSi=0, multiSi=1, CdTe=2, CIS=3, CIGS=4, Amorphous=5
-CELLTECH_TEXT = {0: "monoSi", 1: "multiSi", 2: "CdTe", 3: "CIS", 4: "CIGS", 5: "Amorphous"}
 LENGTH_UNITS = ("m", "in")
-
-
-def celltech_code(technology):
-    """Map the CEC library 'Technology' column to SAM's 6-par cell type code. None = no match."""
-    t = (technology or "").strip().lower()
-    if "mono" in t:
-        return 0
-    if "multi" in t or "poly" in t:
-        return 1
-    if "cdte" in t:
-        return 2
-    if "cigs" in t:          # check before "cis"
-        return 4
-    if "cis" in t:
-        return 3
-    if "a-si" in t or "amorph" in t:
-        return 5
-    return None
 
 
 def ppe_self_shading(bifacial: bool, thin_film: bool) -> str:
@@ -79,6 +61,8 @@ class _Checker:
         try:
             v = float(v)
         except (TypeError, ValueError):
+            return self.fail(key, f"{label}: enter a number.")
+        if not math.isfinite(v):                  # float() accepts "nan" and "inf"; no range check catches NaN
             return self.fail(key, f"{label}: enter a number.")
         if integer and v != int(v):
             return self.fail(key, f"{label}: enter a whole number.")
@@ -185,7 +169,8 @@ def _custom_module(d, c, length, width):
     params, fit_err = calculate_sixpar(celltech, voc, isc, vmp, imp, aisc, bvoc, gpmp, nser)
     if fit_err:
         c.fail("custom_fit", "SAM could not calculate the module model from these datasheet values "
-                             f"({fit_err}). Check Voc, Isc, Vmp, Imp, the temperature coefficients and cells in series.")
+                             f"({fit_err}). Check Voc, Isc, Vmp, Imp, the temperature coefficients and cells "
+                             "in series.")
         return None, None
     mod = {
         "source": "custom", "name": name, "manufacturer": "", "celltech": celltech,
@@ -226,9 +211,8 @@ def validate_design(d: dict) -> dict:
     else:
         out["lat"] = c.num("lat", "Latitude", -90, 90)
         out["lon"] = c.num("lon", "Longitude", -180, 180)
-    iv = c.num("interval", "Weather time step", required=False, default=60)
-    out["interval"] = int(iv) if iv is not None else 60
-    if out["interval"] not in (30, 60):
+    out["interval"] = c.num("interval", "Weather time step", required=False, default=60, integer=True)
+    if out["interval"] is not None and out["interval"] not in (30, 60):
         c.fail("interval", "Weather time step: select 60 or 30 minutes.")
 
     # ---- module ------------------------------------------------------------------------
@@ -288,8 +272,9 @@ def validate_design(d: dict) -> dict:
     # ---- system design: circuit -----------------------------------------------------------
     out["modules_per_string"] = c.num("modules_per_string", "Modules per string", 1, 100, integer=True)
     sv = c.num("system_voltage", "System maximum voltage")
-    if sv is not None and int(sv) not in config.SYSTEM_VOLTAGES:
+    if sv is not None and sv not in config.SYSTEM_VOLTAGES:
         c.fail("system_voltage", "System maximum voltage: select 1000 V or 1500 V.")
+        sv = None
     out["system_voltage"] = int(sv) if sv else None
 
     # ---- system design: racking ---------------------------------------------------------
@@ -494,17 +479,21 @@ def build_inputs(design: dict) -> dict:
 
 
 def make_model(inputs: dict, weather_path=None):
-    """FlatPlatePVNone defaults + every PPE assignment. Used by the run AND by the inputs export."""
+    """FlatPlatePVNone defaults + every PPE assignment. Used by the run AND by the inputs export.
+
+    Raises KeyError for a group or input PySAM does not know, so a misspelled setting can never be
+    skipped silently."""
     import PySAM.Pvsamv1 as pvsam
     model = pvsam.default("FlatPlatePVNone")
     for group, values in inputs.items():
         grp = getattr(model, group, None)
         if grp is None:
-            continue
+            raise KeyError(f"PySAM Pvsamv1 has no input group '{group}'")
         names = set(dir(grp))
         for k, v in values.items():
-            if k in names:
-                setattr(grp, k, v)
+            if k not in names:
+                raise KeyError(f"PySAM Pvsamv1.{group} has no input '{k}'")
+            setattr(grp, k, v)
     if weather_path is not None:
         model.SolarResource.solar_resource_file = str(weather_path)
     return model

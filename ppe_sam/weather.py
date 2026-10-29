@@ -10,6 +10,7 @@ reuses the cached years after a single download. locations.json remembers which 
 coordinates belongs to. Folders from older versions (named by coordinates) are moved into the
 grid-cell folders the first time they are used.
 """
+import contextlib
 import csv
 import datetime as dt
 import io
@@ -30,6 +31,7 @@ _last_request = [0.0]
 _throttle_lock = threading.Lock()   # weather prefetch and a run can download at the same time
 _cache_lock = threading.Lock()      # guards locations.json and folder moves
 INDEX_FILE = "locations.json"
+ATTEMPTS_PER_HOST = 4
 
 
 class NsrdbAccessError(RuntimeError):
@@ -60,7 +62,7 @@ def _header_location_id(text: str):
     rows = list(csv.reader(io.StringIO("\n".join(text.splitlines()[:2]))))
     if len(rows) < 2:
         return None
-    info = {k.strip(): v.strip() for k, v in zip(rows[0], rows[1])}
+    info = {k.strip(): v.strip() for k, v in zip(rows[0], rows[1], strict=False)}
     return _clean_location_id(info.get("Location ID"))
 
 
@@ -104,10 +106,8 @@ def _migrate_legacy(legacy: Path, key: str, interval: int, index: dict):
     for p in valid:
         target = dest / p.name
         if _file_location_id(p) == loc and not (target.exists() and validate_file(target, interval)):
-            try:
+            with contextlib.suppress(OSError):   # left behind: that year is downloaded again when needed
                 os.replace(p, target)
-            except OSError:
-                pass                       # left behind: that year is downloaded again when needed
     shutil.rmtree(legacy, ignore_errors=True)
     index[key] = loc
     _write_index(index)
@@ -195,7 +195,8 @@ def _request(year: int, lat: float, lon: float, interval: int) -> bytes:
     for host in config.NSRDB_HOSTS:
         url = host + config.NSRDB_PATH + "?" + urllib.parse.urlencode(params)
         outcome = "error"
-        for attempt in range(4):
+        for attempt in range(ATTEMPTS_PER_HOST):
+            last_try = attempt == ATTEMPTS_PER_HOST - 1
             _throttle()
             try:
                 with urllib.request.urlopen(url, timeout=180) as r:
@@ -208,12 +209,14 @@ def _request(year: int, lat: float, lon: float, interval: int) -> bytes:
                     break                  # retrying will not help; try the other host
                 if e.code == 429 or e.code >= 500:
                     outcome = "limited" if e.code == 429 else "error"
-                    time.sleep(5 * (attempt + 1))
+                    if not last_try:
+                        time.sleep(5 * (attempt + 1))
                     continue
                 raise LookupError(last_err) from e
             except (urllib.error.URLError, TimeoutError) as e:
                 outcome, last_err = "error", str(e)
-                time.sleep(3 * (attempt + 1))
+                if not last_try:
+                    time.sleep(3 * (attempt + 1))
         outcomes.append(outcome)
     if all(o == "refused" for o in outcomes):
         raise NsrdbAccessError(f"NSRDB refused the app's API key ({last_err[:160]}). "
@@ -228,7 +231,7 @@ def nsrdb_site_info(path: Path) -> dict:
     with open(path, newline="", encoding="utf-8", errors="replace") as fh:
         rdr = csv.reader(fh)
         keys, vals = next(rdr), next(rdr)
-    return {k.strip(): v.strip() for k, v in zip(keys, vals)}
+    return {k.strip(): v.strip() for k, v in zip(keys, vals, strict=False)}
 
 
 def download_all(lat, lon, interval, log, cancelled=lambda: False, on_year=None):
@@ -248,22 +251,27 @@ def download_all(lat, lon, interval, log, cancelled=lambda: False, on_year=None)
             path = folder / f"{year}.csv"
             if path.exists() and validate_file(path, interval):
                 log(f"{year}: using cached weather file")
-                results.append((year, path)); report(year, "cached")
+                results.append((year, path))
+                report(year, "cached")
                 continue
         try:
             data = _request(year, lat, lon, interval)
         except LookupError as e:
-            log(f"{year}: not available ({str(e)[:120]})"); report(year, "unavailable")
+            log(f"{year}: not available ({str(e)[:120]})")
+            report(year, "unavailable")
             continue
         except ConnectionError as e:
-            errors.append(year); log(f"{year}: download FAILED ({str(e)[:160]})"); report(year, "failed")
+            errors.append(year)
+            log(f"{year}: download FAILED ({str(e)[:160]})")
+            report(year, "failed")
             continue
         except NsrdbAccessError as e:
             log(f"{year}: download STOPPED. {e}")
             raise
         text = data.decode("utf-8", "replace")
         if not text.lstrip().startswith(("Source", "\"Source")):
-            log(f"{year}: unexpected response, skipped ({text[:120]!r})"); report(year, "unavailable")
+            log(f"{year}: unexpected response, skipped ({text[:120]!r})")
+            report(year, "unavailable")
             continue
         loc = _header_location_id(text)
         if folder is None:
@@ -273,22 +281,26 @@ def download_all(lat, lon, interval, log, cancelled=lambda: False, on_year=None)
         target = folder
         if folder_loc and loc != folder_loc:   # never expected; keep each file with its own grid cell
             log(f"WARNING: {year} file is for NSRDB grid cell {loc}, expected {folder_loc}.")
-            target = _location_folder(loc, interval) if loc else config.weather_cache_dir() / site_key(lat, lon, interval)
+            target = (_location_folder(loc, interval) if loc
+                      else config.weather_cache_dir() / site_key(lat, lon, interval))
             target.mkdir(parents=True, exist_ok=True)
         path = target / f"{year}.csv"
         if path.exists() and validate_file(path, interval):   # a nearby site in this cell already has it
             log(f"{year}: using cached weather file (same NSRDB grid cell)")
-            results.append((year, path)); report(year, "cached")
+            results.append((year, path))
+            report(year, "cached")
             continue
         tmp = path.with_name(f"{year}.{os.getpid()}.{threading.get_ident()}.tmp")   # never a half-written .csv
         tmp.write_text(text, encoding="utf-8", newline="")
         if not validate_file(tmp, interval):
             tmp.unlink(missing_ok=True)
-            log(f"{year}: file had the wrong number of rows, skipped"); report(year, "unavailable")
+            log(f"{year}: file had the wrong number of rows, skipped")
+            report(year, "unavailable")
             continue
         os.replace(tmp, path)
         log(f"{year}: downloaded")
-        results.append((year, path)); report(year, "downloaded")
+        results.append((year, path))
+        report(year, "downloaded")
     if errors:
         log(f"WARNING: {len(errors)} year(s) failed to download because of a connection problem: "
             f"{', '.join(map(str, errors))}. Re-run to retry them (successful years are cached).")
@@ -299,7 +311,8 @@ def read_timestamps(path: Path):
     out = []
     with open(path, newline="", encoding="utf-8", errors="replace") as fh:
         rdr = csv.reader(fh)
-        next(rdr); next(rdr)
+        next(rdr)                  # NSRDB header rows (names, values)
+        next(rdr)
         cols = [c.strip() for c in next(rdr)]
         iy, im, idd, ih, imin = (cols.index(c) for c in ("Year", "Month", "Day", "Hour", "Minute"))
         for r in rdr:

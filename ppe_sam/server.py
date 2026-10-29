@@ -1,17 +1,25 @@
 """Local-only web server (127.0.0.1) that serves the guided UI and a small JSON API."""
 import json
-import mimetypes
-import socket
+import os
 import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlparse
 
-from . import __date__, __version__, config, geocode, jobs, libraries, model, weather
+from . import __date__, __version__, config, geocode, jobs, libraries, model, report, weather
 
 STATIC = Path(__file__).resolve().parent / "static"
 LOCAL_HOSTS = ("127.0.0.1", "localhost")
+PORTS = range(8765, 8800)      # first free one is used
+# Explicit types: on Windows, mimetypes reads the registry, which can map .js to text/plain.
+CONTENT_TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
+                 ".js": "text/javascript; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml",
+                 ".jpg": "image/jpeg"}
+
+
+class BadRequest(ValueError):
+    pass
 
 
 def _static_dir():
@@ -46,9 +54,14 @@ class Handler(BaseHTTPRequestHandler):
         origin = self.headers.get("Origin")
         return not post or origin is None or origin in {f"http://{a}" for a in allowed}
 
-    def _body(self):
-        n = int(self.headers.get("Content-Length") or 0)
-        return json.loads(self.rfile.read(n) or b"{}")
+    def _body(self) -> dict:
+        try:
+            body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
+        except ValueError as e:
+            raise BadRequest(f"Request body is not valid JSON ({e}).") from e
+        if not isinstance(body, dict):
+            raise BadRequest("Request body must be a JSON object.")
+        return body
 
     def do_GET(self):  # noqa: N802
         if not self._from_this_app():
@@ -61,7 +74,8 @@ class Handler(BaseHTTPRequestHandler):
             if u.path.startswith("/static/"):
                 p = (_static_dir() / u.path[len("/static/"):]).resolve()
                 if _static_dir().resolve() in p.parents and p.is_file():
-                    return self._send(200, p.read_bytes(), mimetypes.guess_type(p.name)[0] or "application/octet-stream")
+                    return self._send(200, p.read_bytes(),
+                                      CONTENT_TYPES.get(p.suffix.lower(), "application/octet-stream"))
                 return self._send(404, {"error": "not found"})
             if u.path == "/api/info":
                 years = weather.requested_years()
@@ -69,6 +83,7 @@ class Handler(BaseHTTPRequestHandler):
                              if (_static_dir() / n).is_file()), None)
                 return self._send(200, {"version": __version__, "date": __date__,
                                         "libraries": libraries.library_info(), "logo": logo,
+                                        "cec_tip": report.CEC_SPECS_TIP,
                                         "weather": {"dataset": config.NSRDB_DATASET, "first": years[0],
                                                     "last": years[-1], "requested": len(years),
                                                     "min_years": config.RECOMMENDED_MIN_YEARS,
@@ -86,7 +101,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, weather.cache_info())
             if u.path.startswith("/api/job/"):
                 parts = u.path.split("/")
-                job = jobs.JOBS.get(parts[3]) if len(parts) > 3 else None
+                job = jobs.get(parts[3]) if len(parts) > 3 else None
                 if not job:
                     return self._send(404, {"error": "This run is no longer available. Run the simulation again."})
                 if len(parts) == 6 and parts[4] == "export":
@@ -133,7 +148,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, {"removed": weather.clear_cache(), "now": weather.cache_info()})
             parts = u.path.split("/")
             if len(parts) == 5 and parts[1] == "api" and parts[2] == "job":
-                job = jobs.JOBS.get(parts[3])
+                job = jobs.get(parts[3])
                 if not job:
                     return self._send(404, {"error": "unknown job"})
                 if parts[4] == "continue" and job.kind == "run":
@@ -144,21 +159,32 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(404, {"error": "not found"})
         except model.DesignError as e:
             return self._send(400, {"error": str(e), "errors": e.errors})
+        except BadRequest as e:
+            return self._send(400, {"error": str(e)})
         except Exception as e:  # noqa: BLE001
             return self._send(500, {"error": str(e)})
 
 
-def _free_port(preferred=8765):
-    for p in [preferred] + list(range(8766, 8800)):
-        with socket.socket() as s:
-            if s.connect_ex(("127.0.0.1", p)) != 0:
-                return p
-    return 0
+class _Server(ThreadingHTTPServer):
+    # On Windows SO_REUSEADDR lets a second socket bind a port that is already in use, so a second app
+    # window would share the first one's port instead of moving to the next.
+    allow_reuse_address = os.name != "nt"
+
+
+def make_server(port=None) -> ThreadingHTTPServer:
+    """Bind 127.0.0.1 on `port` (0 = any free port), or on the first free port in PORTS."""
+    if port is not None:
+        return _Server(("127.0.0.1", port), Handler)
+    for p in PORTS:
+        try:
+            return _Server(("127.0.0.1", p), Handler)
+        except OSError:            # in use (e.g. a second app window)
+            continue
+    return _Server(("127.0.0.1", 0), Handler)
 
 
 def serve(open_browser=True, port=None):
-    port = port or _free_port()
-    httpd = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    httpd = make_server(port)
     url = f"http://127.0.0.1:{httpd.server_address[1]}/"
     print(f"{config.APP_NAME} v{__version__} running at {url}")
     print("Keep this window open while using the app. Close it to stop the app.")

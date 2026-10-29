@@ -1,15 +1,14 @@
 """SAM case inputs (.json): same layout as SAM 2026.7.3 "Generate code > JSON for inputs", and complete
 enough that loading the file into a fresh model reproduces the app's run exactly."""
-import json, os, sys, tempfile
+import json
 from pathlib import Path
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
-os.environ["LOCALAPPDATA"] = tempfile.mkdtemp()
-os.environ["PPE_SAM_LIB_DIR"] = str(ROOT / "tests" / "fixtures")
-import PySAM.Pvsamv1 as pvsam  # noqa: E402
-from ppe_sam import exports, model, weather  # noqa: E402
 
-SAM_FILE = json.loads((ROOT / "tests" / "fixtures" / "SAM 2026.7.3 JSON for inputs.json").read_text())
+import PySAM.Pvsamv1 as pvsam
+import pytest
+
+from ppe_sam import exports, model, weather
+
+SAM_FILE = json.loads((Path(__file__).parent / "fixtures" / "SAM 2026.7.3 JSON for inputs.json").read_text())
 BASE = dict(lat=33.4, lon=-112.0, interval=60, inverter_name="TEST Central 2500kW", modules_per_string=28,
             system_voltage=1500, racking="tracker", rotlim=60, azimuth=180, orientation="portrait", modules_high=1,
             modules_across=28, rows=1, self_shading="standard", pitch=6, pitch_units="m")
@@ -29,15 +28,20 @@ def kind(v):
     return "number"
 
 
-def check(design):
+@pytest.mark.parametrize(("design", "expected"), [
+    ({**BASE, **CEC}, {"module_model": 1, "cec_i_sc_ref": 13.71, "subarray1_shade_mode": 1}),
+    ({**BASE, **CUSTOM}, {"module_model": 2, "6par_isc": 13.71, "6par_celltech": 0}),
+], ids=["cec", "custom"])
+def test_sam_case_json(design, expected, tmp_path):
     inputs = model.build_inputs(model.validate_design(design))
-    path = Path(tempfile.mkdtemp()) / "2003.csv"
+    path = tmp_path / "2003.csv"
     path.write_text(weather._selftest_csv(2003, 33.4, -112.0))
     data = json.loads(json.dumps(exports.sam_case_json(inputs, path)))       # through JSON, as the file is
     assert set(data) == set(SAM_FILE), (sorted(set(SAM_FILE) - set(data)), sorted(set(data) - set(SAM_FILE)))
-    wrong = [k for k in data if kind(data[k]) != kind(SAM_FILE[k])]
-    assert not wrong, wrong
+    assert [k for k in data if kind(data[k]) != kind(SAM_FILE[k])] == []
     assert data["solar_resource_file"] == str(path).replace("\\", "/")
+    assert {k: data[k] for k in expected} == expected
+
     m = pvsam.new()                                   # load the file the way the PySAM docs show
     for k, v in data.items():
         if k in exports.SAM_JSON_HEADER or k.startswith(("metric_", "number_metrics")):
@@ -47,12 +51,3 @@ def check(design):
     _, app = model.run_year((2003, str(path), inputs))
     for key, var in model.OUTPUT_VARS.items():
         assert list(getattr(m.Outputs, var)) == app[key], key
-    return data
-
-
-if __name__ == "__main__":
-    d = check({**BASE, **CEC})
-    assert d["module_model"] == 1 and d["cec_i_sc_ref"] == 13.71 and d["subarray1_shade_mode"] == 1
-    d = check({**BASE, **CUSTOM})
-    assert d["module_model"] == 2 and d["6par_isc"] == 13.71 and d["6par_celltech"] == 0
-    print("SAM JSON TEST PASSED")

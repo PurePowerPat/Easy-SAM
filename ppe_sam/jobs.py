@@ -7,33 +7,45 @@ WeatherJob  : weather retrieval only, started early from the Configure page ("Re
               for it (showing its progress) instead of downloading the same files twice.
 """
 import concurrent.futures as cf
-from concurrent.futures.process import BrokenProcessPool
 import io
 import json
+import multiprocessing
 import os
 import threading
 import time
 import traceback
 import uuid
 import zipfile
+from concurrent.futures.process import BrokenProcessPool
 
 from . import analysis, config, exports, inputs_export, model, report, weather
 
 JOBS = {}          # id -> Job | WeatherJob
 PREFETCH = {}      # weather.site_key -> latest WeatherJob for that site
+_jobs_lock = threading.Lock()   # JOBS / PREFETCH are used by request threads and job threads
 ACTIVE = ("queued", "downloading", "confirm", "simulating", "analyzing")
+DOWNLOADING = ("queued", "downloading")
 MAX_KEPT_JOBS = 5
 
 
+def get(job_id):
+    with _jobs_lock:
+        return JOBS.get(job_id)
+
+
 def any_active():
-    return any(j.status in ACTIVE for j in JOBS.values())
+    with _jobs_lock:
+        return any(j.status in ACTIVE for j in JOBS.values())
 
 
 def _prune():
-    for kind in ("run", "weather"):
-        done = [j for j in JOBS.values() if j.kind == kind and j.status not in ACTIVE]
-        for j in sorted(done, key=lambda j: j.started)[:-MAX_KEPT_JOBS]:
-            JOBS.pop(j.id, None)
+    with _jobs_lock:
+        for kind in ("run", "weather"):
+            done = [j for j in JOBS.values() if j.kind == kind and j.status not in ACTIVE]
+            for j in sorted(done, key=lambda j: j.started)[:-MAX_KEPT_JOBS]:
+                del JOBS[j.id]
+                if PREFETCH.get(getattr(j, "key", None)) is j:
+                    del PREFETCH[j.key]
 
 
 def _new_weather():
@@ -111,26 +123,28 @@ class WeatherJob(_Base):
             self.log(f"Weather retrieval complete: {len(files)} years cached.")
         except InterruptedError:
             self.status, self.message = "cancelled", "Weather retrieval cancelled."
-        except weather.NsrdbAccessError as e:
-            self.failed_stage = "weather"
-            self.status, self.error, self.message = "error", f"{e}", "Weather retrieval failed"
         except Exception as e:  # noqa: BLE001
             self.failed_stage = "weather"
             self.status, self.error, self.message = "error", f"{e}", "Weather retrieval failed"
-            self.log(traceback.format_exc())
+            if not isinstance(e, weather.NsrdbAccessError):    # an access error is fully explained by its message
+                self.log(traceback.format_exc())
         finally:
             _prune()
 
 
 def start_weather(lat, lon, interval):
-    """Start (or reuse) a weather retrieval for this site. Reuses a running or completed one."""
+    """Start a weather retrieval for this site, or return the one already running for it.
+
+    A finished retrieval is not reused: a new one reads the cache in moments, and also notices
+    cache files deleted since."""
     key = weather.site_key(lat, lon, interval)
-    cur = PREFETCH.get(key)
-    if cur and cur.status in ("queued", "downloading", "done") and cur.id in JOBS:
-        return cur
-    job = WeatherJob(lat, lon, interval)
-    JOBS[job.id] = job
-    PREFETCH[key] = job
+    with _jobs_lock:
+        cur = PREFETCH.get(key)
+        if cur and cur.status in DOWNLOADING:
+            return cur
+        job = WeatherJob(lat, lon, interval)
+        JOBS[job.id] = job
+        PREFETCH[key] = job
     threading.Thread(target=job.run, daemon=True).start()
     return job
 
@@ -186,12 +200,13 @@ class Job(_Base):
 
     def _wait_for_prefetch(self, lat, lon, interval):
         """If a weather retrieval for this site is already running, wait for it and mirror its progress."""
-        pre = PREFETCH.get(weather.site_key(lat, lon, interval))
-        if not pre or pre.status not in ("queued", "downloading"):
+        with _jobs_lock:
+            pre = PREFETCH.get(weather.site_key(lat, lon, interval))
+        if not pre or pre.status not in DOWNLOADING:
             return
         self.log("Weather retrieval for this site is already in progress (started from the Configure page); "
                  "waiting for it to finish.")
-        while pre.status in ("queued", "downloading"):
+        while pre.status in DOWNLOADING:
             if self._cancel:
                 raise InterruptedError("Cancelled")
             w = pre.weather
@@ -241,7 +256,9 @@ class Job(_Base):
                 self.log(f"{y}: simulated")
 
             try:
-                with cf.ProcessPoolExecutor(max_workers=workers) as ex:
+                # "spawn" everywhere (the Windows default): forking a multi-threaded server is unsafe.
+                spawn = multiprocessing.get_context("spawn")
+                with cf.ProcessPoolExecutor(max_workers=workers, mp_context=spawn) as ex:
                     futs = {ex.submit(model.run_year, t): t[0] for t in tasks}
                     for f in cf.as_completed(futs):
                         if self._cancel:
@@ -261,7 +278,7 @@ class Job(_Base):
                     if t[0] in per_year:
                         continue
                     if self._cancel:
-                        raise InterruptedError("Cancelled")
+                        raise InterruptedError("Cancelled") from None
                     _done(*model.run_year(t))
 
             stage = "analysis"
@@ -319,9 +336,6 @@ class Job(_Base):
             _prune()
 
 
-RACK_TEXT = {"tracker": "Single-axis tracker", "fixed": "Fixed-tilt", "carport": "Carport"}
-
-
 def _r(v, n=4):
     return None if v is None else round(v, n)
 
@@ -336,7 +350,7 @@ def review(raw):
     m, inv = d["module"], d["inverter"]
     years = weather.requested_years()
     rk = d["racking"]
-    mount = [RACK_TEXT[rk]]
+    mount = [config.RACKING_LABELS[rk]]
     mount.append(f"rotation limit {d['rotlim']:g}°" if rk == "tracker" else f"tilt {d['tilt']:g}°")
     mount.append(f"azimuth {d['azimuth']:g}°")
     mount.append(d["orientation"])
@@ -387,6 +401,7 @@ def review(raw):
 
 def start(raw_design):
     job = Job(raw_design)
-    JOBS[job.id] = job
+    with _jobs_lock:
+        JOBS[job.id] = job
     threading.Thread(target=job.run, daemon=True).start()
     return job
