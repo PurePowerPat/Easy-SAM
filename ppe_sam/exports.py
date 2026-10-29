@@ -1,7 +1,13 @@
-"""CSV exports: hourly (or 30-minute) string results, and the Inputs used table."""
+"""Exports: hourly (or 30-minute) string results, the Inputs used table, and the inputs (.json) file."""
 import csv
+import datetime as dt
 import io
+import json
 import re
+
+from . import __version__
+
+INPUTS_FORMAT = "PPE SAM inputs"     # same file as the page's "Save inputs (.json)"; "Load inputs" reads it
 
 KINDS = {"isc": ("Isc", "A"), "voc": ("Voc", "V"), "vmp": ("Vmp", "V")}
 
@@ -23,6 +29,13 @@ def series_csv(kind, per_year, timestamps) -> bytes:
     for i, t in enumerate(ref):
         w.writerow([t.month, t.day, t.hour, t.minute] + [f"{c[i]:.6g}" for c in cols])
     return buf.getvalue().encode("utf-8-sig")
+
+
+def inputs_json(raw_inputs: dict, started: float) -> bytes:
+    """The inputs exactly as the page sent them for this run, loadable with "Load inputs (.json)"."""
+    saved = dt.datetime.fromtimestamp(started, dt.timezone.utc).isoformat(timespec="seconds")
+    return json.dumps({"format": INPUTS_FORMAT, "version": 1, "app_version": __version__, "saved": saved,
+                       "inputs": raw_inputs}, indent=2).encode("utf-8")
 
 
 def inputs_used_csv(rows) -> bytes:

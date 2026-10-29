@@ -74,6 +74,8 @@ class Handler(BaseHTTPRequestHandler):
                                                     "min_years": config.RECOMMENDED_MIN_YEARS,
                                                     "albedo_fallback": config.ALBEDO_FALLBACK}})
             if u.path in ("/api/modules", "/api/inverters"):
+                if "name" in q:
+                    return self._send(200, libraries.exact(u.path[5:], q["name"]))
                 return self._send(200, libraries.search(u.path[5:], q.get("q", "")))
             if u.path == "/api/geocode":
                 try:

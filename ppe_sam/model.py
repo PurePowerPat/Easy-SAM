@@ -322,7 +322,7 @@ def validate_design(d: dict) -> dict:
     if racking:
         out["modules_high"] = c.num("modules_high", "Modules High", 1, 50, integer=True)
         out["modules_across"] = c.num("modules_across", "Modules Across", 1, 1000, integer=True)
-        out["rows_requested"] = c.num("rows", "Rows modeled", 1, 50, integer=True)
+        out["rows_requested"] = c.num("rows", "Number of rows", 1, 50, integer=True)
     else:
         out["modules_high"] = out["modules_across"] = out["rows_requested"] = None
     high = out["modules_high"] or 1
@@ -334,7 +334,7 @@ def validate_design(d: dict) -> dict:
         n = strings_for_rows(R, mps, per_sub)
         actual = sam_rows(n, mps, per_sub)
         if actual != R:
-            c.fail("rows", f"Rows modeled: with {mps} modules per string and {per_sub} modules per subarray, "
+            c.fail("rows", f"Number of rows: with {mps} modules per string and {per_sub} modules per subarray, "
                            f"SAM cannot model exactly {R} row(s); the nearest is {actual}. Enter {actual}, "
                            "or change Modules High / Modules Across.")
         out["nstrings"], out["rows"] = n, actual

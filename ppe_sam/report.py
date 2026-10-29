@@ -22,7 +22,7 @@ KEY_INPUTS = {
     "Isc (datasheet) for NEC 70% check",
     "Inverter", "Mounting type", "Modules per string", "System max voltage", "Tilt", "Azimuth",
     "Module orientation", "Ground clearance", "Modules High", "Modules Across", "Strings modeled",
-    "Rows modeled", "GCR", "Equivalent row pitch",
+    "Number of rows", "GCR", "Equivalent row pitch",
     "Losses (soiling, mismatch, wiring, diodes, nameplate, tracking, rack shading)",
 }
 
@@ -146,8 +146,6 @@ def build(d: dict, weather: dict | None = None) -> list:
         add(S, "Isc (datasheet) for NEC 70% check", d["isc_datasheet"], "A")
     add(S, "Bifacial", "Yes" if bif else "No", "",
         USER if (custom or d["bifacial_source"] == "user override") else DB)
-    if bif:
-        add(S, "Calculate bifacial electrical mismatch", "On" if d.get("bifacial_mismatch") else "Off")
     add(S, "Module length", d["module_length_mm"], "mm", entered_or_db("module_length"))
     add(S, "Module width", d["module_width_mm"], "mm", entered_or_db("module_width"))
     add(S, "Aspect ratio", round(d["aspect_ratio"], 4), "", CALC)
@@ -195,8 +193,6 @@ def build(d: dict, weather: dict | None = None) -> list:
     add(S, "Modules High", d["modules_high"], "modules")
     add(S, "Modules Across", d["modules_across"], "modules")
     add(S, "Strings modeled", d["nstrings"], "strings", CALC)
-    add(S, "Rows modeled", d["rows"], "rows")
-    add(S, "Self-shading", shading_text(d))
     if d["gcr_mode"] == "carport":
         add(S, "GCR", d["gcr"], "", DEF)
     elif d["gcr_mode"] == "gcr":
@@ -214,4 +210,13 @@ def build(d: dict, weather: dict | None = None) -> list:
     add(S, "External shading", "None", "", DEF)
     add(S, "Snow model", "Off", "", DEF)
     add(S, "Grid limits", "None", "", DEF)
+
+    # ---------------- Settings (same order as the Settings page) ----------------
+    S = "Settings"
+    if bif:
+        add(S, "Calculate bifacial electrical mismatch", "On" if d.get("bifacial_mismatch") else "Off")
+    else:
+        add(S, "Calculate bifacial electrical mismatch", "Not applicable (monofacial module)", "", DEF)
+    add(S, "Self-shading", shading_text(d))
+    add(S, "Number of rows", d["rows"], "rows", DEF if d["rows"] == config.PPE_STANDARD_ROWS else USER)
     return rows

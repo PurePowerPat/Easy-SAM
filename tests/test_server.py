@@ -66,7 +66,10 @@ DESIGN = {"location_mode": "coords", "lat": "33.4", "lon": "-112.0", "interval":
 if __name__ == "__main__":
     threading.Thread(target=server.serve, kwargs={"open_browser": False, "port": PORT}, daemon=True).start()
     time.sleep(1)
-    assert call("GET", "/api/info")[1]["version"] == "0.3.0"
+    assert call("GET", "/api/info")[1]["version"] == "0.3.1"
+    assert [r["name"] for r in call("GET", "/api/modules?name=TEST%20Mono%20400W")[1]] == ["TEST Mono 400W"]
+    assert call("GET", "/api/modules?name=TEST%20Mono")[1] == []                      # exact names only
+    assert len(call("GET", "/api/inverters?name=TEST%20Central%202500kW")[1]) == 1
     own = f"http://127.0.0.1:{PORT}"
     assert status_with("POST", "/api/validate", {"Origin": own}) == 200                  # the app's own page
     assert status_with("POST", "/api/validate", {"Origin": f"http://localhost:{PORT}"}) == 200
@@ -82,7 +85,7 @@ if __name__ == "__main__":
     assert len(REQUESTS) == n0
     assert s["result"]["nec"]["isc_stc_module"] == 13.9 and round(s["result"]["nec"]["floor_70pct"], 4) == 13.3788
     sh = [r for r in s["result"]["inputs_used"] if r["input"] == "Self-shading"][0]
-    assert sh["value"] == "Standard" and sh["section"] == "System design"
+    assert sh["value"] == "Standard" and sh["section"] == "Settings"
     jw2 = call("POST", "/api/weather", {"lat": 35.0, "lon": -110.0, "interval": 60})[1]["job"]
     time.sleep(0.2)
     jr = call("POST", "/api/run", {**DESIGN, "lat": "35.0", "lon": "-110.0", "self_shading": "none"})[1]["job"]
@@ -91,5 +94,9 @@ if __name__ == "__main__":
     assert len([r for r in REQUESTS if r[1] == 35.0]) == 3
     assert wait(jw2)["status"] == "done"
     code, (data, hdr) = call("GET", f"/api/job/{jr}/export/all", raw=True)
-    assert code == 200 and len(zipfile.ZipFile(io.BytesIO(data)).namelist()) == 5
+    assert code == 200 and len(zipfile.ZipFile(io.BytesIO(data)).namelist()) == 6
+    code, (data, hdr) = call("GET", f"/api/job/{jr}/export/inputs_json", raw=True)
+    saved = json.loads(data)
+    assert code == 200 and saved["format"] == "PPE SAM inputs" and saved["app_version"] == "0.3.1"
+    assert saved["inputs"] == {**DESIGN, "lat": "35.0", "lon": "-110.0", "self_shading": "none"}   # exactly what was run
     print("SERVER TEST PASSED")

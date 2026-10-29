@@ -40,8 +40,13 @@ def test_self_shading_input():
     by = {r["input"]: r for r in report.build(d)}
     s = by["Self-shading"]
     assert s["value"] == "None (PPE standard: Standard)" and s["method"] == "User entered" and s["key"]
-    assert s["section"] == "System design"
-    assert "⚠ PPE standard is Standard" in dict(jobs.review({**base, "self_shading": "none"})["groups"][3][1])["Modeled"]
+    assert s["section"] == "Settings"
+    settings = dict(jobs.review({**base, "self_shading": "none"})["groups"][4][1])
+    assert settings["Self-shading"] == "None ⚠ PPE standard is Standard" and settings["Number of rows"] == "1"
+    assert settings["Bifacial electrical mismatch"] == "off"
+    assert [r["input"] for r in report.build(d) if r["section"] == "Settings"] == [
+        "Calculate bifacial electrical mismatch", "Self-shading", "Number of rows"]          # Settings page order
+    assert by["Number of rows"]["method"] == "Default"
     mono = model.validate_design({**BASE, **TRK, "module_name": "TEST Mono 400W", "pitch": 6, "self_shading": "none"})
     assert mono["self_shading_ppe"] == "none"
     assert {r["input"]: r for r in report.build(mono)}["Self-shading"]["value"] == "None"

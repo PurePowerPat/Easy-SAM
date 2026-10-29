@@ -1,32 +1,30 @@
 PPE SAM Multi-Year Simulation
-Version: v0.3.0
-Date:    10/28/2026
+Version: v0.3.1
+Date:    10/29/2026
 
 HOW TO RUN: double-click run_from_source.bat.
 Full version history: CHANGELOG.md
 
-Changes since v0.2.8:
- - NEC 70% check now uses the module's DATASHEET Isc (previously the CEC library Isc).
-   CEC library modules: new required field Module > "Isc (datasheet)". It is cleared when a different
-   module is selected, and the CEC library value is shown under it for comparison (with a
-   "check the datasheet value" note when they differ by more than 10%).
-   Custom modules: the Isc entered on the custom module (from the datasheet) is used, as before.
-   Shown on the review screen, in Inputs used (highlighted) and in the NEC table on the Results page.
-   The simulation itself still uses the CEC library values (unchanged).
- - Weather download errors are clearer:
-     * NSRDB refusing the API key (HTTP 401/403) stops the download at once with "NSRDB refused the
-       app's API key" instead of marking every year "not available".
-     * NSRDB request limit (HTTP 429) still retries, but then stops with "NSRDB request limit reached.
-       Wait an hour, then run again." instead of grinding through every remaining year.
-     * A weather retrieval and a run downloading at the same time now share the 1-request-per-second
-       limit correctly.
-     * Downloads are written to a temporary file first, so an interrupted download never leaves a
-       damaged weather file in the cache.
- - Weather cache is organised by NSRDB grid cell (the file's "Location ID") instead of the exact
-   coordinates. A new site in the same grid cell as a cached site needs only one download instead of
-   every year. Existing cached weather is moved into the new layout automatically (no re-download).
- - The app only accepts requests from its own page (blocks other websites open in the browser from
-   starting runs or clearing the weather cache).
- - Housekeeping: added .gitignore; Python cache files (__pycache__) removed from the repository.
+Changes since v0.3.0:
+ - Settings page (new tab next to Configure; the summary panel and Run simulation stay beside it):
+   1. Calculate bifacial electrical mismatch (moved from Module). Always shown; greyed out with a note
+      for monofacial modules. Warning when checked, as before.
+   2. Self-shading (moved from System design > Subarray). Still required with no pre-selected value;
+      the PPE standard for the module and the warning are shown under it, as before.
+   3. Number of rows (was "Rows modeled", moved from System design > Subarray). Defaults to 1 (the PPE
+      standard), marked Default; the warning for more than 1 row is unchanged.
+   - Readiness has a "Settings" item; error links and readiness links open the Settings page.
+   - Review screen and Inputs used list the three settings in their own "Settings" group, in the same
+     order. Printing from Configure or Settings prints both pages.
+ - About is a page (tab) instead of a pop-up. Adds "Developed using" (NLR-PySAM 8.0.0
+   documentation, NatLabRockies/SAM on GitHub) and "For general information on SAM, inputs, outputs,
+   etc." (SAM Help). Links open in a new browser tab.
+ - System design: Row spacing (row pitch / GCR) now sits above the Layout illustration.
+ - Save / load inputs (.json): "Save inputs (.json)" and "Load inputs (.json)" in the summary panel.
+   The file holds every Configure and Settings input; loading it (after a confirmation) replaces all
+   inputs, reselects the module and inverter from the CEC library, and flags anything it could not
+   restore (e.g. a module no longer in the library). Results > Downloads has "Inputs (.json)" (the
+   exact inputs of that run, also in All files .zip), which loads the same way.
+ - Fix: a Readiness link clicked right after typing in a field now works (it was redrawn mid-click).
 
-Calculations unchanged: the locked test results (v0.1.6 values) still match.
+ Calculations unchanged (tests locked to the v0.1.6 values).

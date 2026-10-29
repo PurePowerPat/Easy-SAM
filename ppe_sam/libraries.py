@@ -136,6 +136,12 @@ def library_info():
             "gamma_pmp_column": _cache.get("gamma_column"), "commit": config.SAM_LIB_COMMIT}
 
 
+def exact(kind: str, name: str):
+    """[record] for this exact library name, else [] (used to reselect equipment from a saved inputs file)."""
+    rec = (modules() if kind == "modules" else inverters()).get(name or "")
+    return [rec] if rec else []
+
+
 def search(kind: str, query: str, limit: int = 40):
     lib = modules() if kind == "modules" else inverters()
     terms = [t for t in (query or "").lower().split() if t]

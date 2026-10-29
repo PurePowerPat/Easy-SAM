@@ -5,6 +5,31 @@ Every version, newest first. Entries up to v0.2.8 are the release notes written 
 
 Release notes for v0.1.0–v0.1.2 and v0.1.7 were not kept.
 
+## v0.3.1 — 2026-10-29
+
+- **Settings page** (new tab next to Configure; the summary panel and Run simulation stay beside it):
+  1. Calculate bifacial electrical mismatch (moved from Module). Always shown; greyed out with a note
+     for monofacial modules. Warning when checked, as before.
+  2. Self-shading (moved from System design > Subarray). Still required with no pre-selected value;
+     the PPE standard for the module and the warning are shown under it, as before.
+  3. Number of rows (was "Rows modeled", moved from System design > Subarray). Defaults to 1 (the PPE
+     standard), marked Default; the warning for more than 1 row is unchanged.
+  - Readiness has a "Settings" item; error links and readiness links open the Settings page.
+  - Review screen and Inputs used list the three settings in their own "Settings" group, in the same
+    order. Printing from Configure or Settings prints both pages.
+- **About is a page** (tab) instead of a pop-up. Adds "Developed using" (NLR-PySAM 8.0.0
+  documentation, NatLabRockies/SAM on GitHub) and "For general information on SAM, inputs, outputs,
+  etc." (SAM Help). Links open in a new browser tab.
+- **System design:** Row spacing (row pitch / GCR) now sits above the Layout illustration.
+- **Save / load inputs (.json):** "Save inputs (.json)" and "Load inputs (.json)" in the summary panel.
+  The file holds every Configure and Settings input; loading it (after a confirmation) replaces all
+  inputs, reselects the module and inverter from the CEC library, and flags anything it could not
+  restore (e.g. a module no longer in the library). Results > Downloads has "Inputs (.json)" (the
+  exact inputs of that run, also in All files .zip), which loads the same way.
+- Fix: a Readiness link clicked right after typing in a field now works (it was redrawn mid-click).
+
+Calculations unchanged (tests locked to the v0.1.6 values).
+
 ## v0.3.0 — 2026-10-28
 
 - **NEC 70% check now uses the module's datasheet Isc** (previously the CEC library Isc).

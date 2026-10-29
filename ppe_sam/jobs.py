@@ -165,13 +165,15 @@ class Job(_Base):
                     exports.series_csv(kind, self.per_year, self.stamps), "text/csv")
         if kind == "inputs_used":
             return f"{base}_inputs_used.csv", exports.inputs_used_csv(self.result["inputs_used"]), "text/csv"
+        if kind == "inputs_json":
+            return f"{base}_inputs.json", exports.inputs_json(self.raw, self.started), "application/json"
         if kind == "inputs":
             h, rows = inputs_export.build_rows(self.design, self.inputs, self.files)
             return f"{base}_SAM_inputs.csv", inputs_export.to_csv(h, rows), "text/csv"
         if kind == "all":
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-                for k in list(exports.KINDS) + ["inputs_used", "inputs"]:
+                for k in list(exports.KINDS) + ["inputs_used", "inputs_json", "inputs"]:
                     name, data, _ = self.export(k)
                     z.writestr(name, data)
             return f"{base}_exports.zip", buf.getvalue(), "application/zip"
@@ -343,16 +345,17 @@ def review(raw):
         spacing = f"row pitch {_len_txt(d['pitch'], d['pitch_entered'], d['pitch_units'])}, GCR {_r(d['gcr'], 3)}"
     bif = "No"
     if d["bifacial"]:
-        bif = (f"Yes · bifaciality {d['bifaciality']:g} · gain {d['bifacial_gain']:g} % · "
-               f"electrical mismatch {'on ⚠ PPE standard is off' if d['bifacial_mismatch'] else 'off'}")
+        bif = f"Yes · bifaciality {d['bifaciality']:g} · gain {d['bifacial_gain']:g} %"
+    mismatch = ("not applicable (monofacial)" if not d["bifacial"]
+                else "on ⚠ PPE standard is off" if d["bifacial_mismatch"] else "off")
     site = f"{d['lat']}, {d['lon']}"
     if d["location_mode"] == "address":
         site = f"{d['address']} → {site}"
     if d["project"]:
         site += f" · {d['project']}"
-    rows_txt = f"{d['rows']} row(s)" + ("" if d["rows"] == config.PPE_STANDARD_ROWS else " ⚠ PPE standard is 1 row")
+    rows_txt = f"{d['rows']}" + ("" if d["rows"] == config.PPE_STANDARD_ROWS else " ⚠ PPE standard is 1 row")
     sel, ppe = (config.SELF_SHADING[d["self_shading"]][1], config.SELF_SHADING[d["self_shading_ppe"]][1])
-    shade_txt = f"self-shading {sel}" + ("" if sel == ppe else f" ⚠ PPE standard is {ppe}")
+    shade_txt = sel + ("" if sel == ppe else f" ⚠ PPE standard is {ppe}")
     groups = [
         ["Site and weather", [
             ["Site", site],
@@ -367,7 +370,11 @@ def review(raw):
             ["Circuit", f"{d['modules_per_string']} modules per string · {d['system_voltage']} V max"],
             ["Mounting", " · ".join(mount)],
             ["Subarray", f"{d['modules_high']} high × {d['modules_across']} across · {spacing}"],
-            ["Modeled", f"{rows_txt} · {d['nstrings']} string(s) on 1 inverter · {shade_txt}"]]],
+            ["Modeled", f"{d['nstrings']} string(s) on 1 inverter"]]],
+        ["Settings", [
+            ["Bifacial electrical mismatch", mismatch],
+            ["Self-shading", shade_txt],
+            ["Number of rows", rows_txt]]],
     ]
     return {"groups": groups}
 

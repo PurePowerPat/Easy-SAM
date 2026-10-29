@@ -240,6 +240,10 @@
   .modal h2{font-size:16px;margin:0 0 10px}
   .modal .actions{margin-top:14px}
 
+  .about-h{font-size:13px;margin:16px 0 4px}
+  .about-links{margin:0 0 0 18px;padding:0;font-size:13.5px}
+  .about-links a{color:var(--accent)}
+  .checkrow label:has(input:disabled){color:var(--faint);cursor:not-allowed}
   .printonly{display:none}
   @media print{
     @page{margin:12mm}
@@ -253,6 +257,7 @@
     .csum{display:none}
     .choice [role=radio]:not([aria-checked=true]){display:none}
     .printonly{display:block}
+    #viewCfg:not(.hidden) .page.hidden{display:block!important}   /* Configure and Settings print together */
     tr.subrow{display:table-row!important}
     input:not([type=checkbox]),select{border:none!important;border-bottom:1px solid #999!important;border-radius:0;background:#fff!important;padding:2px 0;-webkit-appearance:none;appearance:none}
     input[type=checkbox]{-webkit-appearance:auto;appearance:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact;width:13px;height:13px}
@@ -267,14 +272,15 @@
   <div class="top-r">
     <div class="tabs" role="tablist" aria-label="Views">
       <button type="button" class="tab" role="tab" id="tabCfg" aria-selected="true" aria-controls="viewCfg">Configure</button>
+      <button type="button" class="tab" role="tab" id="tabSet" aria-selected="false" aria-controls="viewCfg">Settings</button>
       <button type="button" class="tab" role="tab" id="tabRes" aria-selected="false" aria-controls="viewRes" disabled>Results</button>
+      <button type="button" class="tab" role="tab" id="tabAbout" aria-selected="false" aria-controls="viewAbout">About</button>
     </div>
-    <button type="button" class="btn btn-sm" id="aboutBtn">About</button>
   </div>
 </div></header>
 
 <!-- ======================= CONFIGURE VIEW ======================= -->
-<div class="shell" id="viewCfg" role="tabpanel" aria-labelledby="tabCfg">
+<div class="shell view" id="viewCfg" role="tabpanel" aria-labelledby="tabCfg">
 <main>
 <div class="printonly" id="printStamp"></div>
 <div class="pagehead">
@@ -288,6 +294,8 @@
 
 <form id="f" autocomplete="off" novalidate>
 <input type="hidden" name="geocode_match" id="geocode_match"><input type="hidden" name="geocode_source" id="geocode_source">
+<!-- ============ CONFIGURE PAGE ============ -->
+<div class="page" id="pageCfg">
 
 <!-- ============ 1. SITE ============ -->
 <section class="card" id="sec1" data-sec="1">
@@ -353,7 +361,6 @@
         <div class="fld" data-field="isc_datasheet"><label for="isc_datasheet">Isc (datasheet)<span class="tip">?<span class="tiptext">Short-circuit current at STC from the module datasheet. Used for the NEC 70% floor: 0.70 × 1.25 × Isc. The simulation itself uses the CEC database values.</span></span></label><div class="inwrap"><input id="isc_datasheet" name="isc_datasheet" type="number" step="any" placeholder="e.g. 13.9"><span class="sfx">A</span></div><div class="note" id="iscDsNote"></div></div>
       </div>
       <div class="checkrow hidden" id="ovBox"><label><input type="checkbox" id="bifOverride">Module is bifacial (database says monofacial)</label></div>
-      <div id="cecMismatchSlot"></div>
     </div>
 
     <div id="customBox" class="hidden">
@@ -379,7 +386,6 @@
           <div class="fld ro" data-s="calc" title="Source: Calculated (Pmp ÷ area ÷ 1000 W/m²)"><label for="cEff">Efficiency</label><div class="inwrap"><input id="cEff" readonly tabindex="-1" placeholder="Needs Pmp, dimensions"><span class="sfx">%</span></div></div>
           <div class="span2" style="align-self:end;margin-bottom:4px">
             <div class="checkrow" style="margin-top:0"><label><input type="checkbox" id="customBif">Module is bifacial</label></div>
-            <div id="customMismatchSlot"></div>
           </div>
         </div>
       </div>
@@ -390,9 +396,6 @@
         <span class="note" id="saveNote"></span>
       </div>
     </div>
-
-    <div class="checkrow hidden" id="mismatchRow"><label><input type="checkbox" id="bifMismatch">Calculate bifacial electrical mismatch<span class="tip">?<span class="tiptext">SAM “Calculate bifacial electrical mismatch”: SAM estimates the mismatch loss caused by uneven rear-side irradiance. Leave unchecked for the worst case (no loss).</span></span></label>
-      <div class="fnote hidden" id="mismatchNote">Warning: PPE Standard is to ignore bifacial electrical mismatch. Including bifacial electrical mismatch will produce a lower &amp; more aggressive Isc value.</div></div>
 
     <div class="group"><h3>Dimensions</h3>
       <div class="g4">
@@ -469,11 +472,8 @@
         <div class="g4">
           <div class="fld" data-field="modules_high"><label for="modules_high">Modules High<span class="tip">?<span class="tiptext" id="highTip"></span></span></label><div class="inwrap"><input id="modules_high" name="modules_high" type="number" step="1" placeholder="e.g. 1"><span class="sfx">modules</span></div></div>
           <div class="fld" data-field="modules_across"><label for="modules_across">Modules Across<span class="tip">?<span class="tiptext">Number of modules side by side along the length of one full subarray.<img src="/static/modules_across.png" alt="Diagram: Modules Across is the horizontal count, Modules High is the vertical count"></span></span></label><div class="inwrap"><input id="modules_across" name="modules_across" type="number" step="1" placeholder="e.g. 26"><span class="sfx">modules</span></div></div>
-          <div class="fld" data-field="rows"><label for="rows">Rows modeled<span class="tip">?<span class="tiptext">Number of identical subarrays (rows) SAM models. PPE standard is 1 row.</span></span></label><div class="inwrap"><input id="rows" name="rows" type="number" step="1" placeholder="e.g. 1"><span class="sfx">rows</span></div><div class="fnote hidden" id="rowsNote">Warning: PPE Standard is 1 row. More than one row will cause self-shading, resulting in a lower &amp; more aggressive Isc value.</div></div>
           <div class="fld ro" data-s="calc" title="Source: Calculated (all strings on one inverter)"><label for="cStr">Strings modeled<span class="tip">?<span class="tiptext">Fewest strings that fill the rows modeled, all on one inverter. Results are per string.</span></span></label><div class="inwrap"><input id="cStr" readonly tabindex="-1" placeholder="Needs subarray, rows, modules per string"><span class="sfx">strings</span></div><div class="fnote hidden" id="strNote"></div></div>
-          <div class="fld" data-field="self_shading"><label for="self_shading">Self-shading<span class="tip">?<span class="tiptext">SAM self-shading model (shading of one module row by the row in front of it).<br><br>None: no self-shading.<br>Standard: non-linear model for crystalline silicon modules.<br>Thin film: linear model for thin-film modules.<br><br>PPE standard: bifacial modules use Standard (Thin film for thin-film cells); monofacial modules use None.</span></span></label><select id="self_shading" name="self_shading"><option value="">Select…</option><option value="none">None</option><option value="standard">Standard</option><option value="thin_film">Thin film</option></select><div class="note" id="shadeStd"></div><div class="fnote hidden" id="shadeWarn"></div></div>
         </div>
-        <details class="disc" id="layoutBox"><summary>Layout illustration</summary><div class="note" id="layoutNote" style="margin-top:6px"></div><div id="layoutSvgWrap"></div></details>
       </div>
 
       <div class="group" id="spacingBox"><h3>Row spacing</h3>
@@ -492,10 +492,38 @@
       <div class="group hidden" id="carportGcr"><h3>Row spacing</h3>
         <div class="g4"><div class="fld ro" data-s="def" title="Source: Default (carport)"><label for="cCarGcr">GCR</label><input id="cCarGcr" readonly tabindex="-1" value="0.01"></div></div>
       </div>
+      <div class="group">
+        <details class="disc" id="layoutBox"><summary>Layout illustration</summary><div class="note" id="layoutNote" style="margin-top:6px"></div><div id="layoutSvgWrap"></div></details>
+      </div>
     </div>
     <details class="disc"><summary>Modeling assumptions</summary><div id="sysAssume" style="margin-top:8px"></div></details>
   </div>
 </section>
+</div>
+
+<!-- ============ SETTINGS PAGE ============ -->
+<div class="page hidden" id="pageSet">
+<section class="card" id="secSet">
+  <div class="card-h"><h2>Settings</h2></div>
+  <div class="card-b">
+    <div class="first group"><h3>Bifacial electrical mismatch</h3>
+      <div class="checkrow" id="mismatchRow" style="margin-top:0"><label><input type="checkbox" id="bifMismatch">Calculate bifacial electrical mismatch<span class="tip">?<span class="tiptext">SAM “Calculate bifacial electrical mismatch”: SAM estimates the mismatch loss caused by uneven rear-side irradiance. Leave unchecked for the worst case (no loss).</span></span></label>
+      <div class="note hidden" id="mismatchNA">Applies to bifacial modules only (the selected module is monofacial).</div>
+      <div class="fnote hidden" id="mismatchNote">Warning: PPE Standard is to ignore bifacial electrical mismatch. Including bifacial electrical mismatch will produce a lower &amp; more aggressive Isc value.</div></div>
+    </div>
+    <div class="group"><h3>Self-shading</h3>
+      <div class="g4">
+        <div class="fld span2" data-field="self_shading"><label for="self_shading">Self-shading<span class="tip">?<span class="tiptext">SAM self-shading model (shading of one module row by the row in front of it).<br><br>None: no self-shading.<br>Standard: non-linear model for crystalline silicon modules.<br>Thin film: linear model for thin-film modules.<br><br>PPE standard: bifacial modules use Standard (Thin film for thin-film cells); monofacial modules use None.</span></span></label><select id="self_shading" name="self_shading"><option value="">Select…</option><option value="none">None</option><option value="standard">Standard</option><option value="thin_film">Thin film</option></select><div class="note" id="shadeStd"></div><div class="fnote hidden" id="shadeWarn"></div></div>
+      </div>
+    </div>
+    <div class="group"><h3>Rows</h3>
+      <div class="g4">
+        <div class="fld span2" data-field="rows"><label for="rows">Number of rows<span class="tip">?<span class="tiptext">Number of identical subarrays (rows) SAM models. PPE standard is 1 row.</span></span></label><div class="inwrap"><input id="rows" name="rows" type="number" step="1" value="1"><span class="sfx">rows</span></div><div class="fnote hidden" id="rowsNote">Warning: PPE Standard is 1 row. More than one row will cause self-shading, resulting in a lower &amp; more aggressive Isc value.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
 </form>
 </main>
 
@@ -514,13 +542,17 @@
   <div class="side-more"><div class="actions">
     <button type="button" class="btn btn-sm" id="printBtn">Print</button>
     <button type="button" class="btn btn-sm" id="resetBtn">Reset inputs</button>
-  </div><div class="note" id="cacheNote" style="margin-top:6px"></div></div>
+  </div><div class="actions" style="margin-top:8px">
+    <button type="button" class="btn btn-sm" id="saveInBtn">Save inputs (.json)</button>
+    <button type="button" class="btn btn-sm" id="loadInBtn">Load inputs (.json)</button>
+    <input type="file" id="loadInFile" accept=".json,application/json" class="hidden">
+  </div><div class="note" id="inNote" style="margin-top:6px"></div><div class="note" id="cacheNote" style="margin-top:6px"></div></div>
 </div>
 </aside>
 </div>
 
 <!-- ======================= RESULTS VIEW ======================= -->
-<div class="wide hidden" id="viewRes" role="tabpanel" aria-labelledby="tabRes">
+<div class="wide view hidden" id="viewRes" role="tabpanel" aria-labelledby="tabRes">
   <div class="printonly" id="printStamp2"></div>
   <div class="reshead"><h2 id="resTitle">Results</h2>
     <div class="actions"><button type="button" class="btn btn-sm" id="backBtn">Back to configuration</button><button type="button" class="btn btn-sm" id="printBtn2">Print</button></div></div>
@@ -552,6 +584,7 @@
         <button type="button" class="btn" data-export="voc">Voc (.csv)</button>
         <button type="button" class="btn" data-export="vmp">Vmp (.csv)</button>
         <button type="button" class="btn" data-export="inputs_used">Inputs used (.csv)</button>
+        <button type="button" class="btn" data-export="inputs_json">Inputs (.json)</button>
         <button type="button" class="btn" data-export="all">All files (.zip)</button>
       </div>
       <div class="note" style="margin-top:12px"><b>Testing only:</b> every SAM input variable, with its source.</div>
@@ -562,15 +595,31 @@
   </div>
 </div>
 
+<!-- ======================= ABOUT VIEW ======================= -->
+<div class="wide view hidden" id="viewAbout" role="tabpanel" aria-labelledby="tabAbout">
+  <section class="card">
+    <div class="card-h"><h2>About</h2></div>
+    <div class="card-b">
+      <div id="aboutBody"></div>
+      <h3 class="about-h">Developed using</h3>
+      <ul class="about-links">
+        <li><a href="https://nrel-pysam.readthedocs.io/en/main/index.html#" target="_blank" rel="noopener">NLR-PySAM 8.0.0 documentation</a></li>
+        <li><a href="https://github.com/NatLabRockies/SAM/tree/develop" target="_blank" rel="noopener">NatLabRockies/SAM - GitHub</a></li>
+      </ul>
+      <h3 class="about-h">For general information on SAM, inputs, outputs, etc.</h3>
+      <ul class="about-links">
+        <li><a href="https://natlabrockies.github.io/SAM/doc/index.html" target="_blank" rel="noopener">SAM Help</a></li>
+      </ul>
+    </div>
+  </section>
+</div>
+
 <!-- ============ MODALS ============ -->
 <div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalMsg"><div class="box"><p id="modalMsg" style="margin-top:0"></p>
   <div class="actions"><button class="btn primary" type="button" id="modalYes">Continue</button><button class="btn" type="button" id="modalNo">Cancel</button></div></div></div>
 <div class="modal hidden" id="reviewModal" role="dialog" aria-modal="true" aria-labelledby="revTitle"><div class="box big">
   <h2 id="revTitle">Review before running</h2><div id="revBody"></div>
   <div class="actions"><button class="btn primary" type="button" id="revRun">Run simulation</button><button class="btn" type="button" id="revBack">Back to edit</button></div></div></div>
-<div class="modal hidden" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle"><div class="box big">
-  <h2 id="aboutTitle">About</h2><div id="aboutBody"></div>
-  <div class="actions"><button class="btn" type="button" id="aboutClose">Close</button></div></div></div>
 
 <script>
 (() => {
@@ -578,7 +627,7 @@
   const f = $('#f');
   const st = {src:'cec', loc:null, module:null, inverter:null, racking:null, gmode:'pitch', job:null, doneJob:null,
               info:null, jobPrompted:false, touched:new Set(), running:false, geo:null, complete:null,
-              wx:null, showing:null};
+              wx:null, showing:null, view:'cfg'};
   const IN = 0.0254;
   const CEC_TIP = 'Module specs shown below are pulled directly from the CEC database. These values will likely differ from values shown on the module datasheet. These differences are NOT errors. If your module name is correct, you do not need to rerun your analysis with custom settings.';
   const SHADE_NAME = {none:'None', standard:'Standard', thin_film:'Thin film'};
@@ -606,7 +655,7 @@
     custom_aisc:'Isc coefficient', custom_gpmp:'Pmp coefficient', custom_tnoct:'NOCT', custom_fit:'Datasheet values',
     inverter_name:'Inverter', modules_per_string:'Modules per string', system_voltage:'System voltage', racking:'Mounting type',
     tilt:'Tilt', rotlim:'Rotation limit', azimuth:'Azimuth', orientation:'Orientation', ground_clearance:'Ground clearance',
-    modules_high:'Modules High', modules_across:'Modules Across', rows:'Rows modeled', self_shading:'Self-shading',
+    modules_high:'Modules High', modules_across:'Modules Across', rows:'Number of rows', self_shading:'Self-shading',
     pitch:'Row pitch', gap:'Module spacing', gcr:'GCR'};
 
   // ================= source indicator =================
@@ -619,7 +668,7 @@
   function srcOf(name){
     if(name==='lat' || name==='lon'){ if(st.loc==='address') return 'calc'; }
     if(name==='address'){ if(st.loc==='coords') return 'def'; }
-    const v=val(name); if(name==='interval') return v==='60' ? 'def' : 'user'; if(!v) return null;
+    const v=val(name); if(name==='interval') return v==='60' ? 'def' : 'user'; if(name==='rows' && v==='1') return 'def'; if(!v) return null;
     return (name in dbVals && same(v, dbVals[name])) ? 'db' : 'user'; }
   function renderSources(){
     $$('.fld[data-field]').forEach(box => { const n=box.dataset.field, el=f.elements[n]; if(!el || !el.tagName) return;
@@ -636,11 +685,16 @@
   const dbFields = () => Object.keys(dbVals).filter(n => srcOf(n)==='db');
 
   // ================= views =================
-  function showView(v){ const cfg = v==='cfg';
-    $('#viewCfg').classList.toggle('hidden', !cfg); $('#viewRes').classList.toggle('hidden', cfg);
-    $('#tabCfg').setAttribute('aria-selected', String(cfg)); $('#tabRes').setAttribute('aria-selected', String(!cfg));
+  // 'cfg' and 'set' are two pages of the same form (Configure / Settings) beside the summary panel.
+  const TABS = {cfg:'#tabCfg', set:'#tabSet', res:'#tabRes', about:'#tabAbout'};
+  function showView(v){ st.view = v; const form = v==='cfg' || v==='set';
+    $('#viewCfg').classList.toggle('hidden', !form); $('#pageCfg').classList.toggle('hidden', v!=='cfg'); $('#pageSet').classList.toggle('hidden', v!=='set');
+    $('#viewRes').classList.toggle('hidden', v!=='res'); $('#viewAbout').classList.toggle('hidden', v!=='about');
+    Object.entries(TABS).forEach(([k,id]) => $(id).setAttribute('aria-selected', String(k===v)));
     window.scrollTo({top:0}); }
-  $('#tabCfg').onclick = () => showView('cfg'); $('#tabRes').onclick = () => showView('res'); $('#backBtn').onclick = () => showView('cfg');
+  Object.entries(TABS).forEach(([k,id]) => $(id).onclick = () => showView(k)); $('#backBtn').onclick = () => showView('cfg');
+  // Fields on the page not shown still count; only fields hidden because they do not apply are left out.
+  const notApplicable = el => !!el.closest('.hidden:not(.page):not(.view)');
 
   // ================= modals =================
   let modalCb = null, lastFocus = null;
@@ -652,16 +706,16 @@
   document.addEventListener('keydown', e => { if(e.key!=='Escape') return;
     $$('.tip.open').forEach(t=>t.classList.remove('open'));
     if(!$('#modal').classList.contains('hidden')) $('#modalNo').click();
-    else ['#reviewModal','#aboutModal'].forEach(id => { if(!$(id).classList.contains('hidden')) closeModal(id); }); });
+    else if(!$('#reviewModal').classList.contains('hidden')) closeModal('#reviewModal'); });
 
   // ================= info / about / logo =================
   fetch('/api/info').then(r=>r.json()).then(j=>{
     if(j.error){ $('#sideStatus').innerHTML = `<span class="bad">Library load failed: ${esc(j.error)}</span>`; return; }
     st.info = j; $('#wxYears').textContent = `${j.weather.first}–${j.weather.last} (${j.weather.requested} requested; missing years are skipped)`;
     if(j.logo){ const im=$('#logoImg'); im.onload=()=>im.classList.remove('hidden'); im.onerror=()=>im.classList.add('hidden'); im.src=j.logo; }
-    update();
+    renderAbout(); update();
   }).catch(e => { $('#sideStatus').innerHTML = `<span class="bad">Could not reach the app: ${esc(e.message)}</span>`; });
-  $('#aboutBtn').onclick = () => {
+  function renderAbout(){
     const j = st.info || {}, L = j.libraries || {}, W = j.weather || {};
     $('#aboutBody').innerHTML = `<dl class="kv">
       <dt>Version</dt><dd>v${esc(j.version||'')}</dd>
@@ -675,9 +729,7 @@
       <h3 style="font-size:13px;margin:16px 0 4px">Method</h3>
       <ul class="note" style="margin:0 0 0 18px;padding:0">
         <li>Runs once per weather year. All strings are on one inverter; results are per string.</li>
-        <li>3-hour average = mean of 3 consecutive hourly steps (6 for 30-minute data).</li></ul>`;
-    openModal('#aboutModal'); };
-  $('#aboutClose').onclick = () => closeModal('#aboutModal');
+        <li>3-hour average = mean of 3 consecutive hourly steps (6 for 30-minute data).</li></ul>`; }
   function refreshCache(){ fetch('/api/cache').then(r=>r.json()).then(c=>{ $('#cacheNote').textContent = `Weather cache: ${c.files} files, ${c.mb} MB`; }).catch(()=>{}); }
   refreshCache();
 
@@ -822,7 +874,8 @@
     }
     $(P.cancel).onclick = () => { closeList(); showCard(); };
     idle();
-    return {showCard, reset(){ setSel(null); inp.value=''; closeList(); showCard(); }};
+    return {showCard, reset(){ setSel(null); inp.value=''; closeList(); showCard(); },
+            pick(r){ setSel(r); inp.value=''; closeList(); showCard(); }};
   }
   const modPicker = makePicker('module'), invPicker = makePicker('inverter');
   ['#bifOverride','#customBif','#bifMismatch'].forEach(s => $(s).addEventListener('change', () => { update(); scheduleValidate(); }));
@@ -991,8 +1044,8 @@
       ['Inverter MPPT high', `${svT}${inv?` (library ${V(inv.mppt_high)})`:''}`, 'System maximum voltage (PPE guide 6.5)'],
       ['Inverter max DC voltage', `${svT}${inv?` (library ${V(inv.vdcmax)})`:''}`, 'System maximum voltage (PPE guide 6.5)'],
       ['Strings and inverters', c.ns ? `${c.ns} string(s) on one inverter` : 'All strings on one inverter', 'Fills the rows modeled; results per string'],
-      ['Rows modeled', 'As entered (PPE standard 1)', 'More than 1 row adds row-to-row self-shading (lower Isc)'],
-      ['Self-shading', sel ? SHADE_NAME[sel] : 'As selected', 'PPE guide 7.3: bifacial → Standard (Thin film for thin-film cells); monofacial → None'],
+      ['Number of rows', 'As entered on Settings (PPE standard 1)', 'More than 1 row adds row-to-row self-shading (lower Isc)'],
+      ['Self-shading', sel ? SHADE_NAME[sel] : 'As selected on Settings', 'PPE guide 7.3: bifacial → Standard (Thin film for thin-film cells); monofacial → None'],
       ['Tracker', 'Tilt 0°, backtracking on', 'PPE guide 6.3'],
       ['Wiring and system losses', '0 %', 'Worst case'],
       ['Albedo', 'Weather file (0.2 where missing or invalid)', 'PPE guide 3.4'],
@@ -1002,7 +1055,7 @@
 
   // ================= readiness + auto-expand =================
   function missing(){
-    const m={1:[],2:[],3:[],4:[]}, need=(s,n,cond=true)=>{ if(cond && !val(n)) m[s].push(n); };
+    const m={1:[],2:[],3:[],4:[],5:[]}, need=(s,n,cond=true)=>{ if(cond && !val(n)) m[s].push(n); };
     if(!st.loc) m[1].push('location_mode');
     else if(st.loc==='address'){ if(!val('address') || !val('lat') || !val('lon')) m[1].push('address'); }
     else { need(1,'lat'); need(1,'lon'); }
@@ -1014,22 +1067,26 @@
     if(!st.racking) m[4].push('racking');
     need(4,'modules_per_string'); need(4,'system_voltage');
     if(st.racking){ need(4,'tilt',st.racking!=='tracker'); need(4,'rotlim',st.racking==='tracker'); need(4,'azimuth'); need(4,'orientation');
-      if(isBif()) need(4,'ground_clearance'); need(4,'modules_high'); need(4,'modules_across'); need(4,'rows'); need(4,'self_shading');
+      if(isBif()) need(4,'ground_clearance'); need(4,'modules_high'); need(4,'modules_across');
       if(st.racking!=='carport'){ if(st.gmode==='gcr') need(4,'gcr'); else { need(4,'pitch'); need(4,'gap', (parseInt(val('modules_high'))||1)>=2); } } }
+    need(5,'self_shading'); need(5,'rows');
     return m;
   }
-  const SEC_NAME = {1:'Site and weather', 2:'Module', 3:'Inverter', 4:'System design'};
+  let lastReady = null;
+  const SEC_NAME = {1:'Site and weather', 2:'Module', 3:'Inverter', 4:'System design', 5:'Settings'};
   function renderReadiness(m){
-    $('#ready').innerHTML = [1,2,3,4].map(s => { const L=m[s];
+    // Rewrite only on change: leaving a field re-renders, and replacing a link mid-click loses the click.
+    const html = [1,2,3,4,5].map(s => { const L=m[s];
       return `<li class="${L.length?'':'ok'}"><div class="rh"><span class="ri"></span>${SEC_NAME[s]}</div>`
         + (L.length ? `<div class="rm">${L.slice(0,4).map(n=>`<button type="button" class="linkbtn" data-jump="${n}">${esc(LABELS[n]||n)}</button>`).join(', ')}${L.length>4?` +${L.length-4}`:''}</div>` : '') + '</li>'; }).join('');
+    if(html !== lastReady){ lastReady = html; $('#ready').innerHTML = html; }
     [1,2,3,4].forEach(s => { const ch=$('#chip'+s); ch.classList.toggle('done', !m[s].length); ch.textContent = m[s].length ? 'Incomplete' : 'Complete'; });
     const now = [1,2,3,4].map(s => !m[s].length);
     if(st.complete){ [1,2,3].forEach(s => { if(now[s-1] && !st.complete[s-1]){ const nx=$('#sec'+(s+1)); if(nx.classList.contains('collapsed')) setCollapsed(nx, false); } }); }
     st.complete = now;
   }
-  document.addEventListener('click', e => { const b=e.target.closest('[data-jump]'); if(b){ showView('cfg'); jumpTo(b.dataset.jump); } });
-  function jumpTo(field){ const box = fieldBox(field); if(!box) return; const card = box.closest('.card'); if(card && card.classList.contains('collapsed')) setCollapsed(card, false);
+  document.addEventListener('click', e => { const b=e.target.closest('[data-jump]'); if(b) jumpTo(b.dataset.jump); });
+  function jumpTo(field){ const box = fieldBox(field); if(!box) return; showView(box.closest('#pageSet') ? 'set' : 'cfg'); const card = box.closest('.card'); if(card && card.classList.contains('collapsed')) setCollapsed(card, false);
     box.scrollIntoView({behavior:'smooth', block:'center'}); const i = box.querySelector('input:not([type=checkbox]):not([readonly]),select,[role=radio],button'); i && i.focus({preventScroll:true}); }
 
   // ================= summary =================
@@ -1072,9 +1129,7 @@
     $('#copyBox').classList.toggle('hidden', !(custom && st.module));
     $('#ovBox').classList.toggle('hidden', !(st.module && !st.module.bifacial));
     $('#iscDsBox').classList.toggle('hidden', !st.module);
-    const slot = custom ? $('#customMismatchSlot') : $('#cecMismatchSlot'), row = $('#mismatchRow');
-    if(row.parentElement !== slot) slot.appendChild(row);
-    row.classList.toggle('hidden', !bif);
+    $('#bifMismatch').disabled = !bif; $('#mismatchNA').classList.toggle('hidden', bif);
     $('#bifBox').classList.toggle('hidden', !bif);
     $('#rackFields').classList.toggle('hidden', !r); $('#rackPrompt').classList.toggle('hidden', !!r);
     $$('.r-tracker,.r-fixed,.r-carport').forEach(el => el.classList.toggle('hidden', !(r && el.classList.contains('r-'+r))));
@@ -1102,12 +1157,12 @@
     if(box && box.parentElement){ const outer = box.parentElement.closest('[data-field=custom_fit]'); outer && clearBox(outer); } }
   function clearAllErrors(){ $$('[data-field].invalid').forEach(clearBox); hideSummary(); }
   function payload(){
-    const o={}; [...f.elements].forEach(el=>{ if(el.name && el.type!=='checkbox' && !el.closest('.hidden')) o[el.name]=String(el.value).trim(); });
+    const o={}; [...f.elements].forEach(el=>{ if(el.name && el.type!=='checkbox' && !notApplicable(el)) o[el.name]=String(el.value).trim(); });
     o.location_mode=st.loc||''; o.module_source=st.src; o.module_name=st.module&&st.module.name; o.inverter_name=st.inverter&&st.inverter.name; o.racking=st.racking;
     o.gcr_mode=st.gmode; o.bifacial_override=(st.src==='cec'&&st.module&&!st.module.bifacial&&$('#bifOverride').checked)?'1':'0';
     o.custom_bifacial=(st.src==='custom'&&$('#customBif').checked)?'1':'0';
     o.bifacial_mismatch=(isBif() && $('#bifMismatch').checked)?'1':'0';
-    o.db_fields = dbFields();
+    o.db_fields = dbFields(); o.db_values = Object.fromEntries(o.db_fields.map(n => [n, dbVals[n]]));
     if(st.loc!=='address'){ delete o.address; delete o.geocode_match; delete o.geocode_source; }
     if(!isBif()){ delete o.ground_clearance; delete o.ground_clearance_units; }
     return o; }
@@ -1118,7 +1173,7 @@
     let j; try{ j = await serverValidate(); }catch(e){ return; }
     const by={}; (j.errors||[]).forEach(e=>{ if(e.field && !(e.field in by)) by[e.field]=e.message; });
     st.touched.forEach(n => { const box=fieldBox(n); if(!box) return;
-      if(by[n] && !box.closest('.hidden')) setFieldError(box, by[n]); else if(box.classList.contains('invalid') && n!=='custom_gpmp') clearBox(box); });
+      if(by[n] && !notApplicable(box)) setFieldError(box, by[n]); else if(box.classList.contains('invalid') && n!=='custom_gpmp') clearBox(box); });
     if(!$('#errSummary').classList.contains('hidden')) showSummary(j.errors||[], false); }
   f.addEventListener('focusout', e => { let n = e.target.name; if(!n) return; n = n.replace(/_units$/,'');
     if(n==='address') return;
@@ -1126,7 +1181,7 @@
   function showSummary(errors, focus=true){ const box=$('#errSummary'); if(!errors.length){ hideSummary(); return; }
     box.innerHTML = `<h2>Fix ${errors.length} item${errors.length>1?'s':''} before running</h2><ul>`
       + errors.map(e => `<li>${e.field ? `<button type="button" class="linkbtn" data-jump="${esc(e.field)}">${esc(e.message)}</button>` : esc(e.message)}</li>`).join('') + '</ul>';
-    box.classList.remove('hidden'); if(focus){ showView('cfg'); box.scrollIntoView({behavior:'smooth',block:'start'}); box.focus({preventScroll:true}); }
+    box.classList.remove('hidden'); if(focus){ if(st.view!=='set') showView('cfg'); box.scrollIntoView({behavior:'smooth',block:'start'}); box.focus({preventScroll:true}); }
     $('#sideStatus').innerHTML = `<span class="bad">${errors.length} item${errors.length>1?'s':''} to fix (listed at the top).</span>`; }
   function hideSummary(){ $('#errSummary').classList.add('hidden'); $('#errSummary').innerHTML=''; if(!st.running) $('#sideStatus').textContent=''; }
 
@@ -1172,7 +1227,7 @@
   $('#runBtn').onclick = async () => {
     let j; try{ j = await serverValidate(); } catch(e){ showSummary([{field:null, message:'Could not reach the app. Is the console window still open?'}]); return; }
     if(!j.ok){ (j.errors||[]).forEach(e=>{ if(e.field) st.touched.add(e.field); }); clearAllErrors();
-      (j.errors||[]).forEach(e=>{ const b=fieldBox(e.field); if(b && !b.closest('.hidden')){ setFieldError(b, e.message); const card=b.closest('.card'); if(card && card.classList.contains('collapsed')) setCollapsed(card,false); } }); showSummary(j.errors||[]); return; }
+      (j.errors||[]).forEach(e=>{ const b=fieldBox(e.field); if(b && !notApplicable(b)){ setFieldError(b, e.message); const card=b.closest('.card'); if(card && card.classList.contains('collapsed')) setCollapsed(card,false); } }); showSummary(j.errors||[]); return; }
     hideSummary();
     $('#revBody').innerHTML = '<table>' + j.groups.map(([g, rows]) => `<tr class="grp"><td colspan="2">${esc(g)}</td></tr>`
       + rows.map(r => `<tr><th style="width:120px">${esc(r[0])}</th><td>${esc(r[1])}</td></tr>`).join('')).join('') + '</table>';
@@ -1231,6 +1286,48 @@
     setCollapsed($('#sec1'), false); ['#sec2','#sec3','#sec4'].forEach(s=>setCollapsed($(s), true));
     $('#layoutBox').open=false; update(); window.scrollTo({top:0,behavior:'smooth'}); }
   $('#resetBtn').onclick=()=>ask('Clear all inputs? Results and the weather cache are not affected.','Reset inputs',ok=>ok&&resetAll());
+
+  // ================= save / load inputs (.json) =================
+  // File = {format, version, app_version, saved, inputs}; "inputs" is exactly what Run sends to the server,
+  // so the same file comes from Save inputs here and from Results > Downloads > Inputs (.json).
+  const INPUTS_FORMAT = 'PPE SAM inputs';
+  function saveFile(name, text){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));
+    a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000); }
+  $('#saveInBtn').onclick = () => {
+    const o = {format:INPUTS_FORMAT, version:1, app_version:(st.info&&st.info.version)||'', saved:new Date().toISOString(), inputs:payload()};
+    const name = ((val('project')||'PPE_SAM').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/^_+|_+$/g,'')||'PPE_SAM') + '_inputs.json';
+    saveFile(name, JSON.stringify(o, null, 2)); $('#inNote').textContent = `Saved ${name}`; };
+  $('#loadInBtn').onclick = () => $('#loadInFile').click();
+  $('#loadInFile').addEventListener('change', async e => { const file=e.target.files[0]; e.target.value=''; if(!file) return;
+    let o; try{ o = JSON.parse(await file.text()); if(!o || o.format!==INPUTS_FORMAT || typeof o.inputs!=='object') throw new Error('not a PPE SAM inputs file'); }
+    catch(err){ $('#inNote').innerHTML = `<span class="bad">Could not load ${esc(file.name)}: ${esc(err.message)}</span>`; return; }
+    ask(`Load ${file.name}? This replaces every input on the Configure and Settings pages.`, 'Load inputs', async ok => { if(!ok) return;
+      const probs = await applyInputs(o.inputs);
+      $('#inNote').innerHTML = `<span class="ok">Loaded ${esc(file.name)}</span>${o.app_version?` (saved with v${esc(o.app_version)})`:''}.`
+        + (probs.length ? `<ul class="bad" style="margin:4px 0 0 18px;padding:0">${probs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>` : ''); }); });
+  async function libraryRecord(kind, name){ if(!name) return null;
+    try{ const r = await fetch(`/api/${kind}?name=${encodeURIComponent(name)}`), j = await r.json(); return (r.ok && j.length) ? j[0] : null; }catch(e){ return null; } }
+  async function applyInputs(I){
+    const probs = [];
+    const [mod, inv] = await Promise.all([libraryRecord('modules', I.module_name), libraryRecord('inverters', I.inverter_name)]);
+    resetAll();
+    if(I.module_name && !mod) probs.push(`Module “${I.module_name}” is not in the CEC library. Select a module.`);
+    if(I.inverter_name && !inv) probs.push(`Inverter “${I.inverter_name}” is not in the CEC library. Select an inverter.`);
+    if(mod) modPicker.pick(mod); if(inv) invPicker.pick(inv);     // before the fields: picking fills the module dimensions
+    if(I.location_mode==='address' || I.location_mode==='coords'){ st.loc = I.location_mode; locG.sync($(`[data-loc=${st.loc}]`)); }
+    st.src = I.module_source==='custom' ? 'custom' : 'cec'; srcG.sync($(`[data-src=${st.src}]`));
+    if(RACK_NAME[I.racking]){ st.racking = I.racking; rackG.sync($(`[data-r=${st.racking}]`)); }
+    st.gmode = I.gcr_mode==='gcr' ? 'gcr' : 'pitch'; gcrG.sync($(`[data-g=${st.gmode}]`));
+    $('#bifOverride').checked = I.bifacial_override==='1'; $('#customBif').checked = I.custom_bifacial==='1'; $('#bifMismatch').checked = I.bifacial_mismatch==='1';
+    [...f.elements].forEach(el => { if(!el.name || el.type==='checkbox' || !(el.name in I)) return; const v = String(I[el.name] ?? '');
+      if(el.tagName==='SELECT' && ![...el.options].some(x => x.value===v)){ probs.push(`${LABELS[el.name]||el.name}: “${v}” is not one of the options.`); return; }
+      el.value = v; st.touched.add(el.name.replace(/_units$/,'')); });
+    Object.entries(I.db_values || {}).forEach(([n,v]) => { if(f.elements[n] && same(val(n), v)) dbVals[n] = String(v); });
+    if(st.loc==='address' && val('address') && val('lat') && val('lon')) st.geo = {address:val('address'), lat:num('lat'), lon:num('lon')};
+    ['#sec2','#sec3','#sec4'].forEach(s => setCollapsed($(s), false)); st.complete = null;
+    update(); scheduleValidate(); showView('cfg');
+    return probs;
+  }
 
   // ================= results =================
   const METH = {'Database':'db','User entered':'user','Calculated':'calc','Default':'def'};
