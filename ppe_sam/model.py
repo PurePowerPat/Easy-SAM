@@ -46,6 +46,22 @@ class DesignError(ValueError):
         super().__init__("; ".join(e["message"] for e in errors))
 
 
+ISC_DATASHEET_LABEL = "Module Isc (from datasheet)"
+
+
+def _isc_datasheet(c):
+    return c.num("isc_datasheet", ISC_DATASHEET_LABEL, 0.1, 50, required=False)
+
+
+def isc_datasheet(value):
+    """Module Isc (from datasheet) entered on the Results page: a number, or None when cleared."""
+    c = _Checker({"isc_datasheet": value})
+    v = _isc_datasheet(c)
+    if c.errors:
+        raise DesignError(c.errors)
+    return v
+
+
 class _Checker:
     def __init__(self, d):
         self.d, self.errors, self.entered = d, [], set()
@@ -251,10 +267,11 @@ def validate_design(d: dict) -> dict:
         bif = lib_bif or (_truthy(d.get("bifacial_override")) and mod is not None)
         out["bifacial_source"] = "library" if lib_bif else ("user override" if bif else "library (monofacial)")
     out["module"] = mod
-    # NEC 70% check uses the datasheet Isc. Custom modules are entered from the datasheet already;
-    # CEC library modules need it entered (library values often differ from the datasheet).
+    # The NEC check uses the datasheet Isc. Custom modules are entered from the datasheet already;
+    # CEC library modules need it entered (library values often differ from the datasheet). It is optional
+    # for the run: the engineer can enter it on the Results page afterwards (Job.set_isc_datasheet).
     if source == "cec":
-        out["isc_datasheet"] = c.num("isc_datasheet", "Isc (datasheet)", 0.1, 50) if mod is not None else None
+        out["isc_datasheet"] = _isc_datasheet(c) if mod is not None else None
     else:
         out["isc_datasheet"] = mod["i_sc_ref"] if mod else None
     out["bifacial"] = bif

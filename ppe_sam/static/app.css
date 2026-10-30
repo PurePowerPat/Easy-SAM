@@ -4,7 +4,7 @@
     --accent:#1f4e8c; --accent-h:#173d6e; --accent-bg:#eaf1fb; --focus:#2563eb;
     --ok:#166534; --ok-bg:#e8f5ec; --warn:#92400e; --bad:#b42318; --bad-bg:#fdecea;
     --s-db:#2f6fb5; --s-user:#6b7280; --s-calc:#2e8b57; --s-def:#c08a00;
-    --key-bg:#fff7d1;
+    --key-bg:#fff7d1; --navy:#000040; --sky:#00AAFF;
     --unit:72px;
   }
   *{box-sizing:border-box}
@@ -172,16 +172,6 @@
   th{background:#f6f7f9;font-weight:600} td.num,th.num{text-align:right}
   td.why{color:var(--mute)}
   tr.grp td{background:#f6f7f9;font-weight:700;text-transform:uppercase;font-size:12px;letter-spacing:.04em;color:var(--mute);padding-top:10px}
-  tr.key td{background:var(--key-bg);-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  tr.subhead td{padding:3px 8px 3px 22px}
-  .subtog{background:none;border:none;padding:2px 0;color:var(--accent);font-weight:600;font-size:12.5px}
-  .subtog:hover{text-decoration:underline}
-  tr.subrow{display:none}
-  tr.subrow.show{display:table-row}
-  tr.subrow td{background:#fafbfc}
-  tr.subrow td:first-child{padding-left:30px;color:var(--ink2)}
-  .keylegend{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mute)}
-  .keylegend i{width:14px;height:14px;border-radius:3px;background:var(--key-bg);border:1px solid #e9d98c;display:inline-block}
   .meth{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
   .meth::before{content:"";width:4px;height:14px;border-radius:2px;background:var(--s-user)}
   .meth.db::before{background:var(--s-db)} .meth.calc::before{background:var(--s-calc)} .meth.def::before{background:var(--s-def)}
@@ -229,14 +219,97 @@
   /* ---------- results ---------- */
   .reshead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
   .reshead h2{font-size:17px;margin:0}
-  .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
   @media (max-width:800px){ .kpis{grid-template-columns:1fr} }
-  .kpi{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 18px}
-  .kpi .t{font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.04em}
-  .kpi .v{font-size:30px;font-weight:700;margin:2px 0}
-  .kpi .s{font-size:14px;color:var(--ink2);display:flex;align-items:center;gap:6px;min-height:22px}
-  .mark{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;color:#fff;font-size:12px;font-weight:700}
-  .mark.yes{background:var(--ok)} .mark.no{background:var(--bad)}
+  /* Tiles, NEC panel and yearly charts are shared with the PDF report (#report, sized in pt there). */
+  .kpi{background:#fff;border:1px solid var(--line);border-top:3px solid var(--navy);border-radius:8px;padding:14px 18px}
+  .kpi .l{font-size:13px;font-weight:600;color:var(--ink2)} .kpi .l span{color:var(--mute);font-weight:400}
+  .kpi .v{font-size:32px;font-weight:700;line-height:1.15;margin:4px 0 2px;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .kpi .v small{font-size:17px;font-weight:600;color:var(--ink2);margin-left:3px}
+  .kpi .w{font-size:13px;color:var(--mute)} .kpi .w b{color:var(--ink2);font-weight:600}
+  .kpi .x{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-size:13px;color:var(--ink2)}
+  .rcard{margin:12px 0 0}
+  .necp{display:grid;grid-template-columns:1.05fr 1fr;gap:16px 28px}
+  @media (max-width:800px){ .necp{grid-template-columns:1fr} }
+  .iscfld{max-width:340px;margin-bottom:16px} .iscfld label{display:flex;align-items:center;font-weight:600;font-size:13px;margin-bottom:4px}
+  .use{margin-top:14px;border:1px solid var(--line2);border-left:4px solid var(--navy);border-radius:6px;padding:10px 14px;font-size:17px;font-weight:600;color:var(--ink2);background:#f8fafc;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .use b{font-size:26px;color:var(--ink);font-variant-numeric:tabular-nums;margin-left:4px}
+  .use.pending{border-left-color:#b45309;background:#fffbeb;color:var(--warn);font-size:14px}
+  .nw{white-space:nowrap}
+  .necp .gnote{font-size:13px;color:var(--ink2);margin-top:6px}
+  .necp .bars{margin-top:12px}
+  .br{display:grid;grid-template-columns:170px 1fr 70px;align-items:center;gap:10px;font-size:12.5px;height:24px;color:var(--ink2)}
+  .br .t{height:10px;background:#f1f5f9;border-radius:2px;position:relative;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .br .t div{position:absolute;inset:0 auto 0 0;border-radius:0 4px 4px 0} .br .sim{background:var(--navy)} .br .base{background:#94a3b8} .br .bif{background:#cbd5e1} .br .floor{background:#64748b}
+  .br .t .mk{position:absolute;top:-7px;bottom:-7px;border-left:2px dotted var(--sky);margin-left:-1px}   /* 70% of NEC Baseline */
+  .bkey{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mute);margin:6px 0 0 180px}
+  .bkey i{width:14px;border-top:2px dotted var(--sky)}
+  .br .bv{text-align:right;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+  table.necc td{padding:6px 0;border-bottom:1px solid var(--line2)} table.necc tr:last-child td{border-bottom:none}
+  table.necc td:last-child{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;padding-left:12px}
+  table.necc .f{display:block;color:var(--mute);font-size:12px;font-weight:400}
+  table.necc tr.used td{font-weight:700;color:var(--ink)}
+  .qa-legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12.5px;color:var(--mute);margin:0 0 8px}
+  .nonstd-key{display:inline-flex;align-items:center;gap:6px;color:var(--bad);font-weight:600}
+  .nonstd-key::before{content:"";width:14px;height:14px;border-radius:3px;background:var(--bad-bg);border:1px solid var(--bad)}
+  table.qa tr.nonstd td{background:var(--bad-bg);color:var(--bad);font-weight:600;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  table.qa td:first-child{width:40%}
+  .rcard .card-h .btn{margin-left:auto}
+  .ychs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:800px){ .ychs{grid-template-columns:1fr} }
+  .ych{border:1px solid var(--line2);border-radius:6px;padding:10px 14px 6px}
+  .ych .ct{font-size:13px;font-weight:600} .ych .cs{font-size:12px;color:var(--mute)}
+  .ych svg{display:block;width:100%;height:auto;margin-top:4px}
+  .ych text{font:7px "Segoe UI",Arial,sans-serif;fill:#64748b} .ych text.wl{fill:var(--ink);font-weight:600}
+  .ych .gl{stroke:#e2e8f0;stroke-width:.6} .ych .d{fill:var(--navy);stroke:#fff;stroke-width:.8} .ych .dw{fill:var(--sky);stroke:#fff;stroke-width:.8}
+  .ych .hit{fill:transparent} .ych .hit:hover{fill:rgba(0,170,255,.15)}
+
+  /* ---------- PDF report (print only: printing from Results prints this instead of the page) ---------- */
+  #report{display:none}
+  @media print{
+    body.print-report{font-size:9.5pt}
+    body.print-report > :not(#report){display:none!important}
+    body.print-report #report{display:block}
+  }
+  #report{font:9.5pt/1.45 "Segoe UI",Arial,sans-serif;color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #report .r-hdr{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:2px solid var(--navy)}
+  #report .r-wm{font:700 17pt/1 "Orbitron","Segoe UI",Arial,sans-serif;letter-spacing:.06em} #report .wm1{color:var(--navy)} #report .wm2{color:var(--sky)}
+  #report .r-doc{font-size:8.5pt;color:var(--mute);margin-top:4px;letter-spacing:.02em}
+  #report .r-hdr img{height:30px;width:auto}
+  #report .r-title{margin:12px 0 2px;display:flex;justify-content:space-between;align-items:baseline;gap:16px;color:var(--mute);font-size:9pt}
+  #report .r-title h1{font-size:20pt;margin:0;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+  #report .r-meta{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line2);border-radius:6px;margin:8px 0 14px;overflow:hidden}
+  #report .r-meta div{padding:7px 10px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2)}
+  #report .r-meta div:nth-child(4n){border-right:none} #report .r-meta div:nth-last-child(-n+4){border-bottom:none}
+  #report .r-meta dt{font-size:7pt;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);font-weight:600}
+  #report .r-meta dd{margin:1px 0 0;font-weight:600;font-size:9pt;word-break:break-word}
+  #report .r-meta dd small{display:block;font-weight:400;color:var(--mute);font-size:8pt}
+  #report .r-h{font-size:8.5pt;text-transform:uppercase;letter-spacing:.09em;color:var(--navy);margin:0 0 8px;display:flex;align-items:center;gap:8px}
+  #report .r-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  #report .r-sec{margin-bottom:14px;break-inside:avoid} #report .r-sec:last-child{margin-bottom:0}
+  #report .r-pb{break-before:page} #report .r-flow{break-inside:auto}
+  #report .kpis{gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}   /* print width is under the page's 800px breakpoint */
+  #report .necp,#report .ychs{grid-template-columns:1fr 1fr}
+  #report .kpi{border-radius:6px;padding:10px 12px;border-color:var(--line2);border-top-color:var(--navy)}
+  #report .kpi .l{font-size:8pt} #report .kpi .v{font-size:22pt;margin:3px 0 2px} #report .kpi .v small{font-size:12pt}
+  #report .kpi .w,#report .kpi .x{font-size:8pt} #report .kpi .x{margin-top:6px;padding-top:6px}
+  #report .necp{border:1px solid var(--line2);border-radius:6px;padding:10px 14px;gap:16px}
+  #report .use{font-size:10pt;padding:6px 12px} #report .use b{font-size:15pt}
+  #report .necp .gnote{font-size:8pt;margin-top:4px} #report .necp .bars{margin-top:2px}
+  #report .br{grid-template-columns:132px 1fr 46px;gap:6px;font-size:7.5pt;height:17px;white-space:nowrap}
+  #report .br .t{height:8px} #report .br .t .mk{top:-5px;bottom:-5px;border-left-width:1.5px}
+  #report .bkey{font-size:7.5pt;margin-left:138px} #report .use{margin-top:8px}
+  #report table.necc{font-size:8.5pt;line-height:1.3} #report table.necc td{padding:3px 0} #report table.necc .f{font-size:7.3pt}
+  #report .ychs{gap:14px} #report .ych{padding:10px 12px 6px} #report .ych .ct{font-size:8.5pt} #report .ych .cs{font-size:7.5pt}
+  #report .qa-legend{font-size:7.5pt;margin:-2px 0 6px;gap:14px} #report .qa-legend .meth::before{height:10px;width:3px}
+  #report .nonstd-key::before{width:10px;height:10px}
+  #report table.qa{font-size:8pt;line-height:1.25}
+  #report table.qa th{background:none;font-size:7pt;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);font-weight:600;padding:4px 6px;border-bottom:1.5px solid var(--navy)}
+  #report table.qa td{padding:2.4px 6px;border-bottom:1px solid var(--line2)}
+  #report table.qa td:first-child{width:40%} #report table.qa td:nth-child(3){width:10%;color:var(--mute)} #report table.qa td:nth-child(4){width:15%}
+  #report table.qa tr{break-inside:avoid}
+  #report table.qa tr.grp td{background:none;border-bottom:none;padding:9px 0 2px;font-weight:700;color:var(--navy);font-size:8.5pt;text-transform:none;letter-spacing:0;break-after:avoid}
+  #report table.qa .meth::before{height:10px;width:3px}
 
   /* ---------- modals ---------- */
   .modal{position:fixed;inset:0;background:rgba(17,24,39,.45);display:grid;place-items:center;z-index:50;padding:12px}
@@ -278,7 +351,6 @@
     .choice [role=radio]:not([aria-checked=true]){display:none}
     .printonly{display:block}
     #viewCfg:not(.hidden) .page.hidden{display:block!important}   /* Configure and Settings print together */
-    tr.subrow{display:table-row!important}
     input:not([type=checkbox]),select{border:none!important;border-bottom:1px solid #999!important;border-radius:0;background:#fff!important;padding:2px 0;-webkit-appearance:none;appearance:none}
     input[type=checkbox]{-webkit-appearance:auto;appearance:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact;width:13px;height:13px}
     .sfx,.inwrap select.unit{border:none;background:none}

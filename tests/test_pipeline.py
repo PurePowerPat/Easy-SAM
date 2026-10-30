@@ -75,6 +75,9 @@ def test_self_shading_input():
         "Calculate bifacial electrical mismatch", "Self-shading", "Vmppt low", "Vmppt high", "Vdc max",
         "Number of rows"]                                                       # Advanced Settings page order
     assert by["Number of rows"]["method"] == "Default"
+    assert [k for k, r in by.items() if r["nonstd"]] == ["Self-shading"]       # changed from the PPE standard
+    changed = {r["input"]: r for r in report.build(model.validate_design({**TRACKER_BIFACIAL, "rows": 2}))}
+    assert changed["Number of rows"]["nonstd"] and [k for k, r in changed.items() if r["nonstd"]] == ["Number of rows"]
     mono = model.validate_design({**BASE, **TRK, "module_name": "TEST Mono 400W", "pitch": 6, "self_shading": "none"})
     assert mono["self_shading_ppe"] == "none"
     assert {r["input"]: r for r in report.build(mono)}["Self-shading"]["value"] == "None"
@@ -82,14 +85,21 @@ def test_self_shading_input():
 
 def test_nec_floor_uses_datasheet_isc():
     base = {**TRACKER_BIFACIAL, "self_shading": "standard"}
-    assert errs({k: v for k, v in base.items() if k != "isc_datasheet"}) == ["isc_datasheet"]   # required
+    assert model.validate_design({k: v for k, v in base.items() if k != "isc_datasheet"})["isc_datasheet"] is None
     assert errs({**base, "isc_datasheet": 500}) == ["isc_datasheet"]
     d = model.validate_design(base)
     assert d["isc_datasheet"] == 13.9 and d["module"]["i_sc_ref"] == 13.71   # library value is not used
-    assert round(analysis.nec_floor(d["isc_datasheet"], d["bifacial"], d["bifacial_gain"]), 4) == 13.3788
-    row = {r["input"]: r for r in report.build(d)}["Isc (datasheet) for NEC 70% check"]
+    chk = analysis.nec_check(d["isc_datasheet"], d["bifacial"], d["bifacial_gain"], 15.0)
+    assert round(chk["baseline"], 4) == 17.375                                # 1.25 x 13.9
+    assert round(chk["baseline_bifacial"], 4) == 19.1125                      # x (1 + 10%)
+    assert round(chk["baseline_70pct"], 4) == 12.1625                     # 70% of the baseline: no bifacial gain
+    assert chk["use"] == "simulated" and chk["use_value"] == 15.0 and round(chk["pct_of_baseline"], 2) == 86.33
+    mono = analysis.nec_check(13.9, False, 10, 12.0)                      # 12.0 < 12.1625
+    assert mono["use"] == "baseline_70pct" and mono["use_value"] == mono["baseline_70pct"]
+    assert mono["baseline_bifacial"] is None
+    row = {r["input"]: r for r in report.build(d)}["Module Isc (from datasheet)"]
     assert row["value"] == "13.9" and row["method"] == "User entered" and row["key"]
-    assert dict(jobs.review(base)["groups"][1][1])["NEC 70% check"] == "Isc (datasheet) 13.9 A"
+    assert dict(jobs.review(base)["groups"][1][1])["Module Isc (from datasheet)"] == "13.9 A"
 
 
 @pytest.mark.parametrize("field", ["lat", "azimuth", "isc_datasheet", "bifacial_gain", "pitch", "modules_across"])
@@ -119,6 +129,8 @@ def test_locked_results_with_ppe_standard_shading(tmp_path):
     assert rounded(s) == {"isc_max": 15.19, "voc_max": 1403.34, "vmp_max": 1218.93, "vmp_min": 1034.2}
     exp = {r[0]: r for r in inputs_export.build_rows(d, inputs, files)[1]}
     assert exp["subarray1_shade_mode"][2] == "PPE default" and exp["subarray1_shade_mode"][5].startswith("Standard")
+    assert exp["grid_curtailment"][5] == "8760 values, all 1e+38"          # 8760-value arrays: not 52,000 characters
+    assert max(len(c) for r in exp.values() for c in r) <= inputs_export.EXCEL_CELL_MAX   # else Excel spills it
     _, s, *_ = run({**BASE, **BIF, "racking": "carport", "tilt": 7, "ground_clearance": 5.0, "self_shading": "standard",
                     "modules_per_string": 26, "modules_high": 14, "modules_across": 7, "orientation": "landscape"},
                    tmp_path, years=(2003,))

@@ -88,9 +88,6 @@
         </div>
         <div class="eqcard hidden" id="modcard" title="Source: Database (CEC module library)"></div>
       </div>
-      <div class="g4 hidden" id="iscDsBox" style="margin-top:12px">
-        <div class="fld" data-field="isc_datasheet"><label for="isc_datasheet">Isc (datasheet)<span class="tip">?<span class="tiptext">Short-circuit current at STC from the module datasheet. Used for the NEC 70% floor: 0.70 × 1.25 × Isc. The simulation itself uses the CEC database values.</span></span></label><div class="inwrap"><input id="isc_datasheet" name="isc_datasheet" type="number" min="0" step="0.1" placeholder="e.g. 13.9"><span class="sfx">A</span></div><div class="note" id="iscDsNote"></div></div>
-      </div>
       <div class="checkrow hidden" id="ovBox"><label><input type="checkbox" id="bifOverride">Module is bifacial (database says monofacial)</label></div>
     </div>
 
@@ -142,7 +139,7 @@
         <div class="fld" data-field="bifaciality_base"><label for="bifaciality_base">Bifaciality</label><div class="inwrap"><input id="bifaciality_base" name="bifaciality_base" type="number" min="0" step="any" placeholder="e.g. 70"><span class="sfx">%</span></div></div>
         <div class="fld" data-field="bifaciality_tol"><label for="bifaciality_tol">Tolerance</label><div class="inwrap"><input id="bifaciality_tol" name="bifaciality_tol" type="number" min="0" step="any" placeholder="e.g. 5"><span class="sfx">%</span></div></div>
         <div class="fld ro" data-s="calc" title="Source: Calculated (bifaciality + tolerance)"><label for="cBif">Bifaciality used</label><input id="cBif" readonly tabindex="-1" placeholder="Needs bifaciality, tolerance"></div>
-        <div class="fld" data-field="bifacial_gain"><label for="bifacial_gain">Gain for NEC 70% check<span class="tip">?<span class="tiptext">Rear-side gain applied to the 70% floor: 0.70 × 1.25 × Isc × (1 + gain).</span></span></label><div class="inwrap"><input id="bifacial_gain" name="bifacial_gain" type="number" min="0" step="any" placeholder="e.g. 10"><span class="sfx">%</span></div></div>
+        <div class="fld" data-field="bifacial_gain"><label for="bifacial_gain">Gain for NEC Baseline<span class="tip">?<span class="tiptext">Rear-side gain for “NEC Baseline + Bifacial Gain” on the Results page: Isc × 125% × (1 + gain). It is not applied to 70% of NEC Baseline.</span></span></label><div class="inwrap"><input id="bifacial_gain" name="bifacial_gain" type="number" min="0" step="any" placeholder="e.g. 10"><span class="sfx">%</span></div></div>
       </div>
     </div>
   </div>
@@ -334,7 +331,7 @@
 <div class="wide view hidden" id="viewRes" role="tabpanel" aria-labelledby="tabRes">
   <div class="printonly" id="printStamp2"></div>
   <div class="reshead"><h2 id="resTitle">Results</h2>
-    <div class="actions"><button type="button" class="btn btn-sm" id="backBtn">Back to configuration</button><button type="button" class="btn btn-sm" id="printBtn2">Print</button></div></div>
+    <div class="actions"><button type="button" class="btn btn-sm" id="backBtn">Back to configuration</button><button type="button" class="btn btn-sm primary hidden" id="printBtn2" title="Opens the print dialog: choose Save as PDF as the destination">Save PDF report</button></div></div>
 
   <section class="card hidden" id="progress" aria-live="polite">
     <div class="card-h"><h2>Run status</h2><span class="csum" style="visibility:visible" id="pmsg"></span></div>
@@ -352,22 +349,27 @@
 
   <div id="results" class="hidden">
     <div class="kpis" id="kpis"></div>
-    <details class="sec" open><summary>NEC 690.8(A)(1)(2) 70% minimum</summary><div class="sb" id="nec"></div></details>
-    <details class="sec"><summary>Inputs used</summary><div class="sb">
-      <div class="actions" style="margin-bottom:8px"><button type="button" class="btn btn-sm" data-export="inputs_used">Download (.csv)</button><span class="keylegend"><i></i>Key items to check</span></div>
-      <div id="inputsUsed"></div></div></details>
+    <section class="card rcard"><div class="card-h"><h2>PV Maximum Circuit Current</h2></div><div class="card-b necp">
+      <div>
+        <div class="fld iscfld" id="iscFld"><label for="iscDsRes">Module Isc (from datasheet)<span class="tip">?<span class="tiptext">Input Isc from the module datasheet. The simulation uses the CEC database values, which may differ from the datasheet.</span></span></label>
+          <div class="inwrap"><input id="iscDsRes" type="number" min="0" step="0.1" placeholder="e.g. 13.9"><span class="sfx">A</span></div><div class="note" id="iscDsResNote"></div></div>
+        <div id="necBars"></div>
+      </div>
+      <div><div id="necTable"></div><div id="necUse"></div></div>
+    </div></section>
+    <section class="card rcard"><div class="card-h"><h2>Annual maxima by weather year</h2></div><div class="card-b ychs" id="yrCharts"></div></section>
+    <section class="card rcard"><div class="card-h"><h2>QA/QC</h2><span class="csum" style="visibility:visible">Key items to check</span><button type="button" class="btn btn-sm" data-export="inputs_used">Full inputs used (.csv)</button></div>
+      <div class="card-b" id="qaqc"></div></section>
     <details class="sec"><summary>Downloads</summary><div class="sb">
-      <div class="note">Hourly (or 30-minute) string values, one column per year.</div>
+      <div class="note">Isc, Voc and Vmp: hourly (or 30-minute) string values, one column per year. Weather files: the NSRDB file of every year used.</div>
       <div class="actions" style="margin-top:8px">
         <button type="button" class="btn" data-export="isc">Isc (.csv)</button>
         <button type="button" class="btn" data-export="voc">Voc (.csv)</button>
         <button type="button" class="btn" data-export="vmp">Vmp (.csv)</button>
-        <button type="button" class="btn" data-export="inputs_used">Inputs used (.csv)</button>
+        <button type="button" class="btn" data-export="weather">Weather files (.zip)</button>
         <button type="button" class="btn" data-export="inputs_json">Inputs (.json)</button>
-        <button type="button" class="btn" data-export="sam_json">SAM case inputs (.json)</button>
         <button type="button" class="btn" data-export="all">All files (.zip)</button>
       </div>
-      <div class="note" id="samJsonNote" style="margin-top:6px"></div>
       <div class="note" style="margin-top:12px"><b>Testing only:</b> every SAM input variable, with its source.</div>
       <div class="actions" style="margin-top:6px"><button type="button" class="btn" data-export="inputs">SAM inputs browser (.csv)</button></div>
       <div class="note bad" id="exportErr"></div>
@@ -375,6 +377,10 @@
     <details class="sec"><summary>Log</summary><div class="sb"><pre class="log" id="finalLog"></pre></div></details>
   </div>
 </div>
+
+<!-- ============ PDF REPORT (print only, filled from the results) ============ -->
+<div id="report" aria-hidden="true"></div>
+<style id="reportPage"></style>
 
 <!-- ======================= ABOUT VIEW ======================= -->
 <div class="wide view hidden" id="viewAbout" role="tabpanel" aria-labelledby="tabAbout">

@@ -153,6 +153,11 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send(404, {"error": "unknown job"})
                 if parts[4] == "continue" and job.kind == "run":
                     job.answer(bool(self._body().get("proceed")))
+                elif parts[4] == "isc_datasheet" and job.kind == "run":
+                    try:
+                        job.set_isc_datasheet(self._body().get("value"))
+                    except LookupError as e:
+                        return self._send(409, {"error": str(e)})
                 elif parts[4] == "cancel":
                     job.cancel()
                 return self._send(200, job.snapshot())
