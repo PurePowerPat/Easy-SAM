@@ -19,7 +19,7 @@ KEY_INPUTS = {
     "Isc temperature coefficient", "Voc temperature coefficient", "Pmp temperature coefficient", "NOCT",
     "Bifacial", "Calculate bifacial electrical mismatch", "Module length", "Module width",
     "Bifaciality", "Bifaciality tolerance", "Bifacial gain for NEC 70% check", "Self-shading",
-    "Isc (datasheet) for NEC 70% check",
+    model_mod.ISC_DATASHEET_LABEL,
     "Inverter", "Mounting type", "Modules per string", "Tilt", "Azimuth",
     "Module orientation", "Ground clearance", "Modules High", "Modules Across", "Strings modeled",
     "Number of rows", "GCR", "Equivalent row pitch", "Vmppt low", "Vmppt high", "Vdc max",
@@ -143,7 +143,8 @@ def build(d: dict, weather: dict | None = None) -> list:
                            ("r_s", "R_s"), ("r_sh_ref", "R_sh_ref"), ("adjust", "Adjust")):
             add(S, f"Single-diode parameter {label}", m.get(key), "", DB, sub=G)
     if not custom:
-        add(S, "Isc (datasheet) for NEC 70% check", d["isc_datasheet"], "A")
+        isc = d["isc_datasheet"]
+        add(S, model_mod.ISC_DATASHEET_LABEL, "(not entered)" if isc is None else isc, "" if isc is None else "A")
     add(S, "Bifacial", "Yes" if bif else "No", "",
         USER if (custom or d["bifacial_source"] == "user override") else DB)
     add(S, "Module length", d["module_length_mm"], "mm", entered_or_db("module_length"))

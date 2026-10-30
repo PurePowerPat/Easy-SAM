@@ -63,7 +63,24 @@ def summarize(per_year: dict, timestamps: dict, interval: int):
     return {"window_steps": n, "worst": results, "yearly": yearly}
 
 
-def nec_floor(isc_stc_module: float, bifacial: bool, bifacial_gain_pct: float) -> float:
-    """0.70 x 1.25 x Isc_STC (one string), x (1 + gain) for bifacial modules."""
+def nec_baseline(isc_stc_module: float, bifacial: bool, bifacial_gain_pct: float) -> float:
+    """NEC Baseline: 1.25 x Isc_STC (one string), x (1 + gain) for bifacial modules."""
     mult = 1.0 + (bifacial_gain_pct / 100.0 if bifacial else 0.0)
-    return 0.70 * 1.25 * isc_stc_module * mult
+    return 1.25 * isc_stc_module * mult
+
+
+def nec_floor(isc_stc_module: float, bifacial: bool, bifacial_gain_pct: float) -> float:
+    """70% of the NEC Baseline: 0.70 x 1.25 x Isc_STC (one string), x (1 + gain) for bifacial modules."""
+    return 0.70 * nec_baseline(isc_stc_module, bifacial, bifacial_gain_pct)
+
+
+def nec_check(isc_stc_module, bifacial: bool, bifacial_gain_pct: float, simulated: float) -> dict:
+    """PV Maximum Circuit Current: use the larger of the SAM simulated Isc and 70% of the NEC Baseline.
+    Baseline values are None until the module Isc at STC (datasheet) is known."""
+    known = isc_stc_module is not None
+    base = nec_baseline(isc_stc_module, bifacial, bifacial_gain_pct) if known else None
+    floor = 0.70 * base if known else None
+    use = None if not known else ("simulated" if simulated >= floor else "baseline_70pct")
+    return {"isc_stc_module": isc_stc_module, "bifacial_gain_pct": bifacial_gain_pct if bifacial else None,
+            "simulated_3hr": simulated, "baseline": base, "baseline_70pct": floor, "use": use,
+            "use_value": None if not known else max(simulated, floor)}

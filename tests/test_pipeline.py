@@ -82,14 +82,17 @@ def test_self_shading_input():
 
 def test_nec_floor_uses_datasheet_isc():
     base = {**TRACKER_BIFACIAL, "self_shading": "standard"}
-    assert errs({k: v for k, v in base.items() if k != "isc_datasheet"}) == ["isc_datasheet"]   # required
+    assert model.validate_design({k: v for k, v in base.items() if k != "isc_datasheet"})["isc_datasheet"] is None
     assert errs({**base, "isc_datasheet": 500}) == ["isc_datasheet"]
     d = model.validate_design(base)
     assert d["isc_datasheet"] == 13.9 and d["module"]["i_sc_ref"] == 13.71   # library value is not used
     assert round(analysis.nec_floor(d["isc_datasheet"], d["bifacial"], d["bifacial_gain"]), 4) == 13.3788
-    row = {r["input"]: r for r in report.build(d)}["Isc (datasheet) for NEC 70% check"]
+    chk = analysis.nec_check(d["isc_datasheet"], d["bifacial"], d["bifacial_gain"], 15.0)
+    assert round(chk["baseline"], 4) == 19.1125 and chk["use"] == "simulated" and chk["use_value"] == 15.0
+    assert analysis.nec_check(13.9, False, 10, 12.0)["use"] == "baseline_70pct"       # 0.7 x 1.25 x 13.9 = 12.16
+    row = {r["input"]: r for r in report.build(d)}["Module Isc at STC (datasheet)"]
     assert row["value"] == "13.9" and row["method"] == "User entered" and row["key"]
-    assert dict(jobs.review(base)["groups"][1][1])["NEC 70% check"] == "Isc (datasheet) 13.9 A"
+    assert dict(jobs.review(base)["groups"][1][1])["Module Isc at STC (datasheet)"] == "13.9 A"
 
 
 @pytest.mark.parametrize("field", ["lat", "azimuth", "isc_datasheet", "bifacial_gain", "pitch", "modules_across"])

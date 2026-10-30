@@ -3,7 +3,7 @@
   const f = $('#f');
   const st = {src:'cec', loc:null, module:null, inverter:null, racking:null, gmode:'pitch', job:null, doneJob:null,
               info:null, jobPrompted:false, touched:new Set(), running:false, geo:null, complete:null,
-              wx:null, showing:null, view:'cfg', shadeAuto:true};
+              wx:null, showing:null, view:'cfg', shadeAuto:true, iscDs:null};   // iscDs: Module Isc at STC (datasheet), entered on Results
   const IN = 0.0254;
   const SHADE_NAME = {none:'None', standard:'Standard', thin_film:'Thin film'};
   const fmt = (v,d=2) => (v===null||v===undefined||v===''||isNaN(v)) ? '—' : Number(v).toFixed(d);
@@ -28,7 +28,7 @@
     carport:'This should be the number of “stacked” modules in one full subarray. This is between 2 and 20.'};
   const GC_TYPICAL = {m:{tracker:'2.5', fixed:'1.0', carport:'5.0'}, in:{tracker:'98', fixed:'39', carport:'197'}};
   const LABELS = {location_mode:'Location input', address:'Address lookup', lat:'Latitude', lon:'Longitude', interval:'Weather time step', module_name:'Module',
-    isc_datasheet:'Isc (datasheet)', module_length:'Module length', module_width:'Module width', bifaciality_base:'Bifaciality', bifaciality_tol:'Tolerance',
+    isc_datasheet:'Module Isc at STC (datasheet)', module_length:'Module length', module_width:'Module width', bifaciality_base:'Bifaciality', bifaciality_tol:'Tolerance',
     bifacial_gain:'Bifacial gain', custom_name:'Module name', custom_celltech:'Cell type', custom_nser:'Cells in series',
     custom_voc:'Voc', custom_isc:'Isc', custom_vmp:'Vmp', custom_imp:'Imp', custom_bvoc:'Voc coefficient',
     custom_aisc:'Isc coefficient', custom_gpmp:'Pmp coefficient', custom_tnoct:'NOCT', custom_fit:'Datasheet values',
@@ -251,7 +251,7 @@
       if(e.key==='Escape') closeList(); if(e.key==='Enter') e.preventDefault(); });
     function choose(r){ closeList(); inp.value=''; setSel(r); showCard(); clearFieldError(inp); update(); scheduleValidate();
       const ch=$(P.card).querySelector('[data-act=change]'); if(ch && !$(P.card).closest('.collapsed')) ch.focus(); }
-    function setSel(r){ if(M){ if(!r || !st.module || r.name!==st.module.name){ f.elements.isc_datasheet.value=''; clearFieldError(f.elements.isc_datasheet); }
+    function setSel(r){ if(M){ if(!r || !st.module || r.name!==st.module.name) st.iscDs = null;   // datasheet Isc belongs to the old module
         st.module = r; $('#bifOverride').checked = false;
         if(r){ fillDb('module_length', mm(r.length)); fillDb('module_width', mm(r.width)); } } else st.inverter = r; }
     function showCard(){
@@ -382,11 +382,6 @@
     setCalc('#cBif', c.bif!==null ? c.bif.toFixed(3) : null);
     setCalc('#cPmp', c.pmp ? c.pmp.toFixed(1) : null);
     setCalc('#cEff', (c.pmp && c.area) ? (c.pmp/(c.area*1000)*100).toFixed(2) : null);
-    const iscNote=$('#iscDsNote'), iscDs=num('isc_datasheet'), iscLib=st.module ? st.module.i_sc_ref : null;
-    if(iscLib){ const pct = iscDs>0 ? (iscDs/iscLib-1)*100 : null, far = pct!==null && Math.abs(pct)>10;
-      iscNote.className = 'note' + (far ? ' warn' : '');
-      iscNote.textContent = `CEC library: ${fmt(iscLib,2)} A` + (pct===null ? '' : ` (datasheet ${pct>=0?'+':''}${pct.toFixed(1)}%)`) + (far ? '. Check the datasheet value.' : ''); }
-    else iscNote.textContent = '';
     const eq=(raw,units,ref,absUnit)=>{ const x=parseFloat(raw); if(isNaN(x)||!(ref>0)) return '';
       const a = units==='pct' ? x/100*ref : x; return units==='pct' ? `= ${a.toPrecision(4)} ${absUnit}` : `= ${(a/ref*100).toFixed(4)} %/°C`; };
     $('#bvocEq').textContent = eq(val('custom_bvoc'), val('custom_bvoc_units'), num('custom_voc'), 'V/°C');
@@ -429,7 +424,7 @@
     if(!st.loc) m[1].push('location_mode');
     else if(st.loc==='address'){ if(!val('address') || !val('lat') || !val('lon')) m[1].push('address'); }
     else { need(1,'lat'); need(1,'lon'); }
-    if(st.src==='cec'){ if(!st.module) m[2].push('module_name'); else need(2,'isc_datasheet'); }
+    if(st.src==='cec'){ if(!st.module) m[2].push('module_name'); }
     else ['custom_name','custom_celltech','custom_nser','custom_voc','custom_isc','custom_vmp','custom_imp','custom_bvoc','custom_aisc','custom_gpmp','custom_tnoct'].forEach(n=>need(2,n));
     const dims = st.src==='custom' || st.module; need(2,'module_length',dims); need(2,'module_width',dims);
     if(isBif()){ need(2,'bifaciality_base'); need(2,'bifaciality_tol'); need(2,'bifacial_gain'); }
@@ -495,7 +490,6 @@
     $('#cecBox').classList.toggle('hidden', custom); $('#customBox').classList.toggle('hidden', !custom);
     $('#copyBox').classList.toggle('hidden', !(custom && st.module));
     $('#ovBox').classList.toggle('hidden', !(st.module && !st.module.bifacial));
-    $('#iscDsBox').classList.toggle('hidden', !st.module);
     $('#mismatchNA').classList.toggle('hidden', bif);
     $('#bifBox').classList.toggle('hidden', !bif);
     $('#rackFields').classList.toggle('hidden', !r); $('#rackPrompt').classList.toggle('hidden', !!r);
@@ -532,6 +526,7 @@
     o.db_fields = dbFields(); o.db_values = Object.fromEntries(o.db_fields.map(n => [n, dbVals[n]]));
     if(st.loc!=='address'){ delete o.address; delete o.geocode_match; delete o.geocode_source; }
     if(!isBif()){ delete o.ground_clearance; delete o.ground_clearance_units; }
+    if(st.src==='cec' && st.iscDs) o.isc_datasheet = st.iscDs;
     return o; }
   async function serverValidate(){ const r = await fetch('/api/validate',{method:'POST',body:JSON.stringify(payload())}); return r.json(); }
   let vTimer;
@@ -655,12 +650,14 @@
   window.addEventListener('afterprint',()=>{ $$('details').forEach((d,i)=>d.open=openBefore[i]);
     if(!document.body.classList.contains('print-report')) return;
     document.body.classList.remove('print-report'); $('#reportPage').textContent=''; document.title = APP_TITLE; });
-  $('#printBtn2').onclick = () => window.print();
+  $('#printBtn2').onclick = () => (st.res && st.res.nec.use===null)
+    ? ask('Module Isc at STC (datasheet) is not entered, so the PV Maximum Circuit Current section is incomplete. Save the PDF report anyway?', 'Save anyway', ok => ok && window.print())
+    : window.print();
 
   // ================= reset =================
   function resetAll(){
     f.reset(); clearAllErrors(); st.touched.clear(); Object.keys(dbVals).forEach(k=>delete dbVals[k]);
-    Object.assign(st,{src:'cec', loc:null, racking:null, gmode:'pitch', geo:null, complete:null, shadeAuto:true}); locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=pitch]'));
+    Object.assign(st,{src:'cec', loc:null, racking:null, gmode:'pitch', geo:null, complete:null, shadeAuto:true, iscDs:null}); locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=pitch]'));
     modPicker.reset(); invPicker.reset(); ['#customBif','#bifOverride'].forEach(s=>$(s).checked=false); ['#copyNote','#saveNote','#geoNote','#inNote'].forEach(s=>$(s).textContent='');
     $('#cCarGcr').value='0.01';
     setCollapsed($('#sec1'), false); ['#sec2','#sec3','#sec4'].forEach(s=>setCollapsed($(s), true));
@@ -705,6 +702,8 @@
       el.value = v; st.touched.add(el.name.replace(/_units$/,'')); });
     Object.entries(I.db_values || {}).forEach(([n,v]) => { if(f.elements[n] && same(val(n), v)) dbVals[n] = String(v); });
     st.shadeAuto = val('self_shading')===ppeShade();
+    if(st.src==='cec' && mod && I.isc_datasheet!==undefined && String(I.isc_datasheet).trim()!==''){ const x = Number(I.isc_datasheet);   // shown on Results after the run
+      if(isFinite(x) && x>=0.1 && x<=50) st.iscDs = String(I.isc_datasheet).trim(); else probs.push(`Module Isc at STC (datasheet): “${I.isc_datasheet}” is not a value from 0.1 to 50 A. Enter it on the Results page.`); }
     if(st.loc==='address' && val('address') && val('lat') && val('lon')) st.geo = {address:val('address'), lat:num('lat'), lon:num('lon')};
     ['#sec2','#sec3','#sec4'].forEach(s => setCollapsed($(s), false)); st.complete = null;
     update(); scheduleValidate(); showView('cfg');
@@ -725,27 +724,36 @@
   const inputsMap = res => Object.fromEntries(res.inputs_used.filter(r => !r.sub).map(r => [r.input, r]));
 
   // ---- shared by the Results page and the PDF report ----
-  function kpiTiles(res){ const W=res.summary.worst, n=res.nec, I=inputsMap(res);
-    const tile = (l, sub, w, u, d, x) => `<div class="kpi"><div class="l">${l} <span>· ${sub}</span></div><div class="v">${w?fmtg(w.value,d):'—'}<small>${u}</small></div>
-      <div class="w">${w?`Worst case <b>${when(w)}</b>`:'No value'}</div>${x?`<div class="x">${x}</div>`:''}</div>`;
-    const vdc = I['Library max DC voltage'];
-    return tile('Isc', 'max 3-hr average', W.isc_max, 'A', 2, `NEC governing current <b>${fmtg(n.governing,2)} A</b>`)
-      + tile('Voc', 'max single time step', W.voc_max, 'V', 1, vdc && vdc.value ? `Inverter Vdc max (library) ${esc(vdc.value)} V` : '')
-      + tile('Vmp', 'max 3-hr average', W.vmp_max, 'V', 1, W.vmp_min ? `Min operating Vmp <b>${fmtg(W.vmp_min.value,1)} V</b> (${whenDay(W.vmp_min)})` : ''); }
+  function kpiTiles(res){ const W=res.summary.worst;
+    const tile = (l, sub, w, u, d) => `<div class="kpi"><div class="l">${l} <span>· ${sub}</span></div><div class="v">${w?fmtg(w.value,d):'—'}<small>${u}</small></div>
+      <div class="w">${w?`Worst case <b>${when(w)}</b>`:'No value'}</div></div>`;
+    return tile('Isc', 'max 3-hr average', W.isc_max, 'A', 2) + tile('Voc', 'max single time step', W.voc_max, 'V', 1); }
 
-  function necPanel(res){ const n=res.nec, W=res.summary.worst, pass=!n.floor_governs, bif=n.bifacial_gain_pct!==null;
-    const diff = Math.abs(n.simulated_3hr/n.floor_70pct - 1)*100, mx = Math.max(n.simulated_3hr, n.floor_70pct)*1.08;
+  // PV Maximum Circuit Current: SAM Simulated vs NEC Baseline (Isc × 125% × (1 + bifacial gain %)) and 70% of it.
+  const fisc = v => (v===null||v===undefined) ? '—' : Number(v).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:3});
+  function necFormulas(n){ const bif = n.bifacial_gain_pct!==null && n.bifacial_gain_pct!==undefined, known = n.baseline!==null && n.baseline!==undefined;
+    const sym = `Isc × 125%${bif?' × (1 + bifacial gain %)':''}`;
+    const nums = known ? `${fisc(n.isc_stc_module)} A × 125%${bif?` × (1 + ${fmtg(n.bifacial_gain_pct,1)}%)`:''}` : '';
+    return {base: sym, base70: `${sym} × 70%`,
+            baseNums: known ? `${nums} = ${fmtg(n.baseline,2)} A` : '', base70Nums: known ? `${nums} × 70% = ${fmtg(n.baseline_70pct,2)} A` : ''}; }
+  function necUse(res){ const n=res.nec, known = n.use!==null && n.use!==undefined;
+    const mx = Math.max(n.simulated_3hr, known ? n.baseline : 0) * 1.05;
     const bar = (lab, v, cls) => `<div class="br"><span>${lab}</span><div class="t"><div class="${cls}" style="width:${v/mx*100}%"></div></div><span class="bv">${fmtg(v,2)} A</span></div>`;
-    return `<div class="necp"><div>
-        <span class="verdict ${pass?'ok':'floor'}"><i>${pass?'✓':'!'}</i>${pass?'Simulation governs':'70% floor governs'}</span>
-        <div class="gov">Governing current</div><div class="big">${fmtg(n.governing,3)}<small> A</small></div>
-        <div class="gnote">Simulated Isc is ${fmtg(diff,1)}% ${pass?'above':'below'} the 70% floor${pass?'':', so the floor governs'}.</div>
-        <div class="bars">${bar('Simulated Isc', n.simulated_3hr, 'sim')}${bar('70% floor', n.floor_70pct, 'floor')}</div></div>
-      <table class="necc"><tr><td>Module Isc at STC (datasheet)</td><td>${fmtg(n.isc_stc_module,3)} A</td></tr>
-        ${bif?`<tr><td>Bifacial gain</td><td>${fmtg(n.bifacial_gain_pct,1)} %</td></tr>`:''}
-        <tr><td>70% floor<span class="f">0.70 × 1.25 × ${fmtg(n.isc_stc_module,3)} A${bif?` × (1 + ${+(n.bifacial_gain_pct/100).toFixed(4)})`:''}</span></td><td>${fmtg(n.floor_70pct,3)} A</td></tr>
-        <tr><td>Simulated max 3-hr average Isc<span class="f">${when(W.isc_max)}</span></td><td>${fmtg(n.simulated_3hr,3)} A</td></tr>
-        <tr><td><b>Governing current</b><span class="f">The larger of the two</span></td><td><b>${fmtg(n.governing,3)} A</b></td></tr></table></div>`; }
+    const bars = `<div class="bars">${bar('SAM Simulated', n.simulated_3hr, 'sim')}${known ? bar('NEC Baseline', n.baseline, 'base') + bar('70% of NEC Baseline', n.baseline_70pct, 'floor') : ''}</div>`;
+    if(!known) return `<div class="use pending">Enter the Module Isc at STC (datasheet) to complete this check.</div>${bars}`;
+    const diff = (n.simulated_3hr/n.baseline_70pct - 1)*100;
+    return `<div class="use">Use ${n.use==='simulated' ? 'SAM Simulated' : '70% of NEC Baseline'}: <b>${fmtg(n.use_value,2)} A</b></div>
+      <div class="gnote">SAM Simulated is ${fmtg(Math.abs(diff),1)}% ${diff>=0?'above':'below'} 70% of NEC Baseline.</div>${bars}`; }
+  // On the page the formulas are tooltips; in the PDF report they are printed under each label.
+  function necTable(res, print){ const n=res.nec, W=res.summary.worst, F=necFormulas(n), used = k => n.use===k ? ' class="used"' : '';
+    const tip = (title, sym, nums) => `<span class="tip">?<span class="tiptext"><b>${title}</b><br>= ${sym}${nums?`<br>= ${nums}`:''}</span></span>`;
+    const lab = (title, sym, nums) => print ? `${title}<span class="f">${nums || sym}</span>` : `${title}${tip(title, sym, nums)}`;
+    return `<table class="necc">
+      ${print ? `<tr><td>Module Isc at STC (datasheet)</td><td>${n.isc_stc_module===null ? 'Not entered' : fisc(n.isc_stc_module)+' A'}</td></tr>` : ''}
+      ${n.bifacial_gain_pct!==null ? `<tr><td>Bifacial gain</td><td>${fmtg(n.bifacial_gain_pct,1)} %</td></tr>` : ''}
+      <tr${used('simulated')}><td>SAM Simulated<span class="f">Max 3-hr average Isc · ${when(W.isc_max)}</span></td><td>${fmtg(n.simulated_3hr,2)} A</td></tr>
+      <tr><td>${lab('NEC Baseline', F.base, F.baseNums)}</td><td>${fmtg(n.baseline,2)}${n.baseline===null?'':' A'}</td></tr>
+      <tr${used('baseline_70pct')}><td>${lab('70% of NEC Baseline', F.base70, F.base70Nums)}</td><td>${fmtg(n.baseline_70pct,2)}${n.baseline_70pct===null?'':' A'}</td></tr></table>`; }
 
   // One dot per weather year, own axis per chart (not zero-based, so no stems); the worst year is highlighted and labelled.
   function yearChart(res, key, title, sub, u, d){ const worst=res.summary.worst[key], ys=res.summary.yearly.filter(r => r[key]!==null && r[key]!==undefined);
@@ -765,47 +773,45 @@
     + yearChart(res, 'voc_max', 'Voc · max single time step (V)', 'Highest time step in each weather year; worst year highlighted', 'V', 1);
 
   // ---- PDF report: printed instead of the page when printing from Results ----
+  const SRC = {'Database':'m-db','User entered':'','Calculated':'m-calc','Default':'m-def'};
+  const srcTag = r => `<span class="src ${SRC[r.method]||''}">${esc(r.method)}</span>`;
   function reportHtml(res, dateText){ const I=inputsMap(res), iv=k => I[k] ? I[k].value : '', wx=res.weather||{}, n=res.nec;
     const join = (...p) => p.filter(Boolean).join(' · '), withU = k => I[k] ? `${I[k].value}${I[k].units?' '+I[k].units:''}` : '';
     const tracker = !!I['Rotation limit'], pitch = I['Row pitch'] ? withU('Row pitch') : withU('Equivalent row pitch');
     const gcr = parseFloat(iv('GCR')), rows = iv('Number of rows');
-    const missing = (wx.unavailable_years||[]).length;
+    const missing = (wx.unavailable_years||[]).length, bif = n.bifacial_gain_pct!==null;
     const meta = [
       ['Location', `${iv('Latitude')}°, ${iv('Longitude')}°`, iv('NSRDB grid point') ? `NSRDB grid point ${iv('NSRDB grid point')}°` : ''],
       ['Weather', wx.first ? `${wx.first}–${wx.last} · ${wx.count} years` : '—', join(wx.dataset, wx.interval ? `${wx.interval}-min` : '', missing ? `${missing} years not available` : '')],
-      ['Module', iv('Module'), join(iv('Bifacial')==='Yes' ? 'Bifacial' : 'Monofacial', `Isc (datasheet) ${fmtg(n.isc_stc_module,2)} A`)],
+      ['Module', iv('Module'), join(iv('Bifacial')==='Yes' ? 'Bifacial' : 'Monofacial', n.isc_stc_module===null ? 'Isc (datasheet) not entered' : `Isc (datasheet) ${fisc(n.isc_stc_module)} A`)],
       ['Inverter', iv('Inverter'), `Limits ${iv('Vmppt low')}–${iv('Vmppt high')} V, Vdc max ${iv('Vdc max')} V`],
       ['Mounting', iv('Mounting type'), join(tracker ? `Rotation limit ±${iv('Rotation limit')}°` : `Tilt ${iv('Tilt')}°`, `azimuth ${iv('Azimuth')}°`)],
       ['String', `${iv('Modules per string')} modules`, `${iv('Module orientation')}, ${iv('Modules High')} high × ${iv('Modules Across')} across`],
       ['Rows / GCR', join(`${rows} ${rows==='1'?'row':'rows'}`, isNaN(gcr) ? '' : `GCR ${fmtg(gcr,2)}`), join(pitch && `Pitch ${pitch}`, I['Ground clearance'] && `clearance ${withU('Ground clearance')}`)],
       ['Run', `${wx.count||'—'} SAM runs`, join(`Easy-SAM v${(st.info&&st.info.version)||''}`, res.elapsed_s!==undefined ? `${res.elapsed_s} s` : '')]];
-    const M = {'Database':'m-db','User entered':'','Calculated':'m-calc','Default':'m-def'};
-    let last='', subDone=false, t='';
-    res.inputs_used.forEach(r => {
-      if(r.section!==last){ t += `<tr class="grp"><td colspan="4">${esc(r.section)}</td></tr>`; last=r.section; }
-      if(r.sub && !subDone){ subDone=true; t += `<tr class="subh"><td colspan="4">CEC database module specs (these may differ from the datasheet; that is not an error)</td></tr>`; }
-      t += `<tr class="${r.sub?'sub':r.key?'key':''}"><td>${esc(r.input)}</td><td>${esc(r.value)}</td><td>${esc(r.units)}</td><td><span class="src ${M[r.method]||''}">${esc(r.method)}</span></td></tr>`; });
+    // Inputs used rows, grouped by section; QA/QC = only the key items to check, with a box to tick.
+    const table = (list, qa) => { let last='', subDone=false, t='', cols = qa ? 5 : 4;
+      list.forEach(r => {
+        if(r.section!==last){ t += `<tr class="grp"><td colspan="${cols}">${esc(r.section)}</td></tr>`; last=r.section; }
+        if(r.sub && !subDone){ subDone=true; t += `<tr class="subh"><td colspan="${cols}">CEC database module specs (these may differ from the datasheet; that is not an error)</td></tr>`; }
+        t += `<tr class="${r.sub?'sub':(r.key && !qa)?'key':''}"><td>${esc(r.input)}</td><td>${esc(r.value)}</td><td>${esc(r.units)}</td><td>${srcTag(r)}</td>${qa?'<td><span class="cb"></span></td>':''}</tr>`; });
+      return `<table class="r-inp${qa?' r-qa':''}"><thead><tr><th>${qa?'Item':'Input'}</th><th>Value</th><th>Units</th><th>Source</th>${qa?'<th>Checked</th>':''}</tr></thead><tbody>${t}</tbody></table>`; };
+    const legend = key => `<div class="r-legend">${key?'<span><i class="k"></i>Key item to check</span>':''}<span class="src m-db">Database</span><span class="src">User entered</span><span class="src m-calc">Calculated</span><span class="src m-def">Default</span></div>`;
     const logo = st.info && st.info.logo ? `<img src="${esc(st.info.logo)}" alt="Pure Power Engineering">` : '';
     return `<div class="r-hdr"><div><div class="r-wm"><span class="wm1">Easy</span><span class="wm2">-SAM</span></div><div class="r-doc">Worst-case string values · multi-year SAM simulation</div></div>${logo}</div>
       <div class="r-title"><h1>${esc(res.project || 'Untitled project')}</h1><div>Report date ${esc(dateText)}</div></div>
       <dl class="r-meta">${meta.map(([k,v,s]) => `<div><dt>${k}</dt><dd>${esc(v)}<small>${esc(s)}</small></dd></div>`).join('')}</dl>
       <section class="r-sec"><h2 class="r-h">Design values (per string)</h2><div class="kpis">${kpiTiles(res)}</div></section>
-      <section class="r-sec"><h2 class="r-h">NEC 690.8(A)(1)(2) — 70% minimum current</h2>${necPanel(res)}</section>
+      <section class="r-sec"><h2 class="r-h">PV Maximum Circuit Current</h2><div class="necp"><div>${necUse(res)}</div>${necTable(res, true)}</div></section>
       <section class="r-sec"><h2 class="r-h">Annual maxima by weather year</h2><div class="ychs">${yearCharts(res)}</div></section>
-      <section class="r-sec r-pb"><h2 class="r-h">Method and notes</h2><div class="r-notes">
-        <p><b>Isc and Vmp:</b> highest consecutive 3-hour average in any weather year (windows stay within one year; minimum Vmp counts only windows where every step is non-zero). <b>Voc:</b> highest single time step.</p>
-        <p><b>Model:</b> SAM (NLR-PySAM 8.0.0), one run per weather year, all strings on one inverter; results are per string, times in local standard time. <b>NEC floor:</b> 0.70 × 1.25 × Isc<sub>STC</sub>${n.bifacial_gain_pct!==null?' × (1 + bifacial gain)':''}.</p></div></section>
-      <section class="r-sec r-flow"><h2 class="r-h">Inputs used</h2>
-        <div class="r-legend"><span><i class="k"></i>Key item to check</span><span class="src m-db">Database</span><span class="src">User entered</span><span class="src m-calc">Calculated</span><span class="src m-def">Default</span></div>
-        <table class="r-inp"><thead><tr><th>Input</th><th>Value</th><th>Units</th><th>Source</th></tr></thead><tbody>${t}</tbody></table></section>`; }
+      <section class="r-sec r-pb r-flow"><h2 class="r-h">QA/QC: key items to check</h2>${legend(false)}${table(res.inputs_used.filter(r => r.key && !r.sub), true)}
+        <div class="r-sign"><span>Checked by</span><i></i><span>Date</span><i></i></div></section>
+      <section class="r-sec"><h2 class="r-h">Method and notes</h2><div class="r-notes">
+        <p><b>Isc:</b> highest consecutive 3-hour average in any weather year (windows stay within one year). <b>Voc:</b> highest single time step. Model: SAM (NLR-PySAM 8.0.0), one run per weather year, all strings on one inverter; results are per string, times in local standard time.</p>
+        <p><b>PV Maximum Circuit Current:</b> NEC Baseline = Isc<sub>STC</sub> × 125%${bif?' × (1 + bifacial gain %)':''} (Isc<sub>STC</sub> from the module datasheet). Use the larger of SAM Simulated and 70% of NEC Baseline.</p></div></section>
+      <section class="r-sec r-pb r-flow"><h2 class="r-h">Inputs used</h2>${legend(true)}${table(res.inputs_used, false)}</section>`; }
 
-  function show(res){
-    st.res = res; st.resDate = new Date();
-    $('#resTitle').textContent = `Results${res.project?`: ${res.project}`:''}`;
-    $('#kpis').innerHTML = kpiTiles(res);
-    $('#nec').innerHTML = necPanel(res);
-    $('#yrCharts').innerHTML = yearCharts(res);
-    $('#report').innerHTML = reportHtml(res, st.resDate.toLocaleDateString('en-GB',{day:'numeric', month:'short', year:'numeric'}));
+  function renderInputsUsed(res){
     const rows = res.inputs_used, tipTxt = res.cec_tip, started = {};
     let last='', h='<table><tr><th>Input</th><th>Value</th><th>Units</th><th>Method</th></tr>';
     rows.forEach(r => {
@@ -815,10 +821,42 @@
       const tip = r.tip ? `<span class="tip tip-l">?<span class="tiptext">${esc(tipTxt)}</span></span>` : '';
       const cls = r.sub ? ` class="subrow" data-sub="${esc(r.sub)}"` : (r.key ? ' class="key"' : '');
       h += `<tr${cls}><td>${esc(r.input)}${tip}</td><td>${esc(r.value)}</td><td>${esc(r.units)}</td><td><span class="meth ${METH[r.method]||'user'}">${esc(r.method)}</span></td></tr>`; });
-    $('#inputsUsed').innerHTML = h + '</table>';
+    $('#inputsUsed').innerHTML = h + '</table>'; }
+  // The PV Maximum Circuit Current panel, Inputs used and the report: redrawn when the datasheet Isc changes.
+  function renderNec(res){ st.res = res; const n=res.nec, custom = res.module_source==='custom';
+    $('#necUse').innerHTML = necUse(res); $('#necTable').innerHTML = necTable(res, false);
+    const note = $('#iscDsResNote'), pct = (n.isc_stc_module>0 && res.isc_cec>0) ? (n.isc_stc_module/res.isc_cec-1)*100 : null, far = pct!==null && Math.abs(pct)>10;
+    note.className = 'note' + (far ? ' warn' : '');
+    note.textContent = custom ? 'From the custom module specs (Configure).'
+      : `CEC library: ${fmt(res.isc_cec,2)} A` + (pct===null ? '' : ` (datasheet ${pct>=0?'+':''}${pct.toFixed(1)}%)`) + (far ? '. Check the datasheet value.' : '');
+    renderInputsUsed(res);
+    $('#report').innerHTML = reportHtml(res, st.resDate.toLocaleDateString('en-GB',{day:'numeric', month:'short', year:'numeric'})); }
+
+  function show(res){
+    st.resDate = new Date();
+    $('#resTitle').textContent = `Results${res.project?`: ${res.project}`:''}`;
+    $('#kpis').innerHTML = kpiTiles(res);
+    $('#yrCharts').innerHTML = yearCharts(res);
+    const inp = $('#iscDsRes'), custom = res.module_source==='custom';
+    inp.value = res.nec.isc_stc_module ?? ''; inp.readOnly = custom; inp.tabIndex = custom ? -1 : 0;
+    $('#iscFld').classList.toggle('ro', custom); clearBox($('#iscFld'));
+    renderNec(res);
     $('#samJsonNote').textContent = res.sam_json_year ? `SAM case inputs (.json): every SAM input for ${res.sam_json_year} (the worst-case Isc year), in SAM's own "JSON for inputs" format, with that year's weather file.` : '';
     $('#exportErr').textContent=''; $('#results').classList.remove('hidden'); $('#printBtn2').classList.remove('hidden');
   }
+  // Module Isc at STC (datasheet): entered here after the run (CEC library modules). The server recalculates and
+  // keeps it with the run (Inputs used, Inputs .json); it is also sent with the next run and saved with the inputs.
+  let iscTimer = null, iscSeq = 0;
+  async function saveIscDs(){ const v = $('#iscDsRes').value.trim(), box = $('#iscFld'), seq = ++iscSeq;
+    if(!st.doneJob || !st.res || st.res.module_source==='custom') return;
+    const cur = st.res.nec.isc_stc_module; if(v==='' ? cur===null : (cur!==null && parseFloat(v)===cur)) { clearBox(box); return; }
+    let r, j; try{ r = await fetch(`/api/job/${st.doneJob}/isc_datasheet`, {method:'POST', body:JSON.stringify({value:v})}); j = await r.json(); }
+    catch(e){ if(seq===iscSeq) setFieldError(box, 'Could not reach the app. Is the console window still open?'); return; }
+    if(seq!==iscSeq) return;
+    if(!r.ok){ setFieldError(box, (j.errors && j.errors[0] && j.errors[0].message) || j.error || 'Could not save the value.'); return; }
+    clearBox(box); st.iscDs = v==='' ? null : v; renderNec(j.result); }
+  $('#iscDsRes').addEventListener('input', () => { clearTimeout(iscTimer); iscTimer = setTimeout(saveIscDs, 500); });
+  $('#iscDsRes').addEventListener('change', () => { clearTimeout(iscTimer); saveIscDs(); });
   $('#inputsUsed').addEventListener('click', e => { const b=e.target.closest('.subtog'); if(!b) return;
     const open = b.getAttribute('aria-expanded')!=='true'; b.setAttribute('aria-expanded', String(open));
     b.textContent = (open?'▾':'▸') + b.textContent.slice(1);

@@ -115,11 +115,33 @@ def test_run_reads_weather_retrieved_earlier(app):
     assert s["status"] == "done", s["error"]
     assert len(REQUESTS) == n0                                              # everything came from the cache
     assert not any("Parallel run unavailable" in line for line in s["log"])  # the process pool worked
-    assert s["result"]["nec"]["isc_stc_module"] == 13.9 and round(s["result"]["nec"]["floor_70pct"], 4) == 13.3788
+    nec = s["result"]["nec"]
+    assert nec["isc_stc_module"] == 13.9 and round(nec["baseline"], 4) == 19.1125
+    assert round(nec["baseline_70pct"], 4) == 13.3788 and nec["use"] in ("simulated", "baseline_70pct")
     sh = [r for r in s["result"]["inputs_used"] if r["input"] == "Self-shading"][0]
     assert sh["value"] == "Standard" and sh["section"] == "Advanced settings"
     again = call(app, "POST", "/api/weather", {"lat": 33.4, "lon": -112.0, "interval": 60})[1]["job"]
     assert again != jw and wait(app, again)["weather"]["cached"] == len(YEARS)   # finished jobs are not reused
+
+
+def test_isc_datasheet_entered_on_the_results_page(app):
+    s = wait(app, call(app, "POST", "/api/run", {k: v for k, v in DESIGN.items() if k != "isc_datasheet"})[1]["job"])
+    assert s["status"] == "done", s["error"]                       # not needed to run
+    job, nec = s["id"], s["result"]["nec"]
+    assert nec["isc_stc_module"] is None and nec["baseline"] is None and nec["use"] is None
+    row = lambda r: [x for x in r["inputs_used"] if x["input"] == "Module Isc at STC (datasheet)"][0]  # noqa: E731
+    assert row(s["result"])["value"] == "(not entered)"
+    code, err = call(app, "POST", f"/api/job/{job}/isc_datasheet", {"value": "500"})
+    assert code == 400 and err["errors"][0]["field"] == "isc_datasheet"
+    code, s = call(app, "POST", f"/api/job/{job}/isc_datasheet", {"value": "20"})
+    nec = s["result"]["nec"]
+    assert code == 200 and nec["isc_stc_module"] == 20 and round(nec["baseline_70pct"], 4) == 19.25
+    assert nec["use"] == "baseline_70pct" and nec["use_value"] == nec["baseline_70pct"]   # 70% floor is the larger
+    assert row(s["result"])["value"] == "20" and row(s["result"])["method"] == "User entered"
+    code, data, _ = request(app, "GET", f"/api/job/{job}/export/inputs_json")
+    assert code == 200 and json.loads(data)["inputs"]["isc_datasheet"] == "20"      # kept for Load inputs
+    s = call(app, "POST", f"/api/job/{job}/isc_datasheet", {"value": ""})[1]          # cleared again
+    assert s["result"]["nec"]["baseline"] is None
 
 
 def test_run_waits_for_running_retrieval_then_exports(app):

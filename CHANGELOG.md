@@ -8,21 +8,28 @@ Release notes for v0.1.0–v0.1.2 and v0.1.7 were not kept.
 ## v0.3.8 — 2026-10-30
 
 - **PDF report.** Results > **Save PDF report** (was Print) opens the print dialog with a report layout
-  instead of the web page: header with the Easy-SAM and PPE logos, project name and report date, a
-  summary of the site, weather, module, inverter, mounting, string and rows, the design values, the
-  NEC 70% check, annual maxima by weather year, method notes and the Inputs used table. Footer on every
-  page (version, project, date, "Page X of Y"); no buttons, downloads or log. The suggested file name
-  is "Easy-SAM - <project> - <date>". Fits on 3 Letter pages for a typical CEC-library run.
-  Best in Chrome or Edge (Destination: Save as PDF; turn off "Headers and footers" under More settings).
-- **Results page** uses the same pieces:
-  - Isc, Voc and Vmp tiles show when the worst case happened (date and 3-hour window, or the single
-    time step for Voc), the NEC governing current, the inverter's library Vdc max, and the minimum
-    operating Vmp with its date.
-  - NEC 70% minimum current: a "Simulation governs" / "70% floor governs" label, the governing current,
-    how far the simulated Isc is above or below the floor, a bar comparison, and the floor calculation
-    written out with the values.
+  instead of the web page. Page 1: header with the Easy-SAM and PPE logos, project name and report
+  date, a summary of the site, weather, module, inverter, mounting, string and rows, the Isc and Voc
+  design values, the PV Maximum Circuit Current and the annual maxima by weather year. Page 2: a
+  **QA/QC** checklist of the key items to check (with a box per item and Checked by / Date lines) and
+  the method notes. Then the full Inputs used table. Footer on every page (version, project, date,
+  "Page X of Y"); no buttons, downloads or log. The suggested file name is
+  "Easy-SAM - <project> - <date>". Best in Chrome or Edge (Destination: Save as PDF; turn off
+  "Headers and footers" under More settings).
+- **Results page:**
+  - Isc and Voc tiles show when the worst case happened (date and 3-hour window, or the single time
+    step for Voc). The Vmp tile is removed (the Vmp .csv download stays).
+  - **PV Maximum Circuit Current** (was NEC 690.8(A)(1)(2) 70% minimum): SAM Simulated, NEC Baseline
+    (Isc × 125% × (1 + bifacial gain %)) and 70% of NEC Baseline, with the formulas in tooltips,
+    a bar comparison and "Use SAM Simulated: X A" or "Use 70% of NEC Baseline: X A" (the larger).
+    No more "governs" wording.
   - **New:** Annual maxima by weather year: the highest Isc (3-hour average) and Voc of each weather
     year, with the worst year highlighted (hover a dot for its value).
+- **Module Isc at STC (datasheet) moved from Configure to Results** (in PV Maximum Circuit Current).
+  It is no longer needed to run: enter it after the run and the check, Inputs used, the PDF report and
+  Downloads > Inputs (.json) update. It is sent with the next run and saved with Save inputs; choosing
+  another module clears it. Save PDF report asks first if it is not entered. Custom modules still use
+  the Isc from their specs (shown read-only).
 - Printing from Configure or Advanced Settings is unchanged.
 
 Calculations unchanged.

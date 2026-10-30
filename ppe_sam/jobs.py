@@ -157,7 +157,25 @@ class Job(_Base):
         self.raw = raw_design
         self._confirm = threading.Event()
         self._proceed = False
-        self.design = self.inputs = self.files = self.per_year = self.stamps = None
+        self.design = self.inputs = self.files = self.per_year = self.stamps = self.wx = self.isc_sim = None
+
+    def _nec(self):
+        d = self.design
+        return analysis.nec_check(d["isc_datasheet"], d["bifacial"], d["bifacial_gain"],
+                                  self.isc_sim)
+
+    def set_isc_datasheet(self, value):
+        """Module Isc at STC (datasheet) entered on the Results page (CEC library modules): recompute the PV
+        Maximum Circuit Current and Inputs used, and keep it in the Inputs (.json) download."""
+        if self.status != "done" or not self.result:
+            raise LookupError("Results are not available for this run.")
+        if self.design["module_source"] != "cec":
+            raise LookupError("A custom module uses the Isc entered with its specs on the Configure page.")
+        v = model.isc_datasheet(value)
+        self.design["isc_datasheet"] = v
+        self.design["_entered"] = sorted(set(self.design.get("_entered", [])) | {"isc_datasheet"})
+        self.raw = {**self.raw, "isc_datasheet": "" if v is None else f"{v:g}"}
+        self.result = {**self.result, "nec": self._nec(), "inputs_used": report.build(self.design, self.wx)}
 
     def answer(self, proceed: bool):
         self._proceed = proceed
@@ -295,8 +313,7 @@ class Job(_Base):
             self.ana["done"] += 1
             self.log("3-hour averages and max Voc calculated.")
 
-            floor = analysis.nec_floor(design["isc_datasheet"], design["bifacial"], design["bifacial_gain"])
-            isc = summary["worst"]["isc_max"]["value"]
+            self.isc_sim = summary["worst"]["isc_max"]["value"]
             site = weather.nsrdb_site_info(files[0][1])
             self.design, self.inputs, self.files = design, inputs, files
             self.per_year, self.stamps = per_year, stamps
@@ -305,13 +322,13 @@ class Job(_Base):
                   "unavailable_years": self.weather["unavailable_years"], "dataset": config.NSRDB_DATASET,
                   "nsrdb_lat": site.get("Latitude"), "nsrdb_lon": site.get("Longitude"),
                   "location_id": site.get("Location ID"), "interval": interval}
+            self.wx = wx
             self.result = {
                 "summary": summary,
-                "nec": {"isc_stc_module": design["isc_datasheet"],
-                        "bifacial_gain_pct": design["bifacial_gain"] if design["bifacial"] else None,
-                        "floor_70pct": floor, "simulated_3hr": isc,
-                        "governing": max(isc, floor), "floor_governs": isc < floor},
+                "nec": self._nec(),
                 "project": design["project"],
+                "module_source": design["module_source"],
+                "isc_cec": None if design["module_source"] == "custom" else design["module"]["i_sc_ref"],
                 "inputs_used": report.build(design, wx),
                 "cec_tip": report.CEC_SPECS_TIP,
                 "weather": wx,
@@ -387,7 +404,8 @@ def review(raw):
         ["Module", [
             ["Module", f"{m['name']} ({'custom' if d['module_source'] == 'custom' else 'CEC library'})"],
             ["Dimensions", f"{d['module_length_mm']:g} × {d['module_width_mm']:g} mm"],
-            ["NEC 70% check", f"Isc (datasheet) {d['isc_datasheet']:g} A"],
+            [model.ISC_DATASHEET_LABEL, "Enter it on the Results page" if d["isc_datasheet"] is None
+             else f"{d['isc_datasheet']:g} A"],
             ["Bifacial", bif]]],
         ["Inverter", [["Inverter", inv["name"]]]],
         ["System design", [
