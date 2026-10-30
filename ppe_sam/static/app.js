@@ -73,13 +73,26 @@
 
   // ================= views =================
   // 'cfg' and 'set' are two pages of the same form (Configure / Advanced Settings) beside the summary panel.
-  const TABS = {cfg:'#tabCfg', set:'#tabSet', res:'#tabRes', about:'#tabAbout'};
+  // Configure and Results are tabs; Advanced Settings and About open from the gear menu.
+  const TABS = {cfg:'#tabCfg', res:'#tabRes'};
   function showView(v){ const changed = st.view!==v; st.view = v; const form = v==='cfg' || v==='set';
     $('#viewCfg').classList.toggle('hidden', !form); $('#pageCfg').classList.toggle('hidden', v!=='cfg'); $('#pageSet').classList.toggle('hidden', v!=='set');
     $('#viewRes').classList.toggle('hidden', v!=='res'); $('#viewAbout').classList.toggle('hidden', v!=='about');
     Object.entries(TABS).forEach(([k,id]) => $(id).setAttribute('aria-selected', String(k===v)));
+    $('#gearBtn').classList.toggle('on', v==='set' || v==='about');
+    $$('#gearMenu [data-view]').forEach(b => b.dataset.view===v ? b.setAttribute('aria-current','page') : b.removeAttribute('aria-current'));
     if(changed) window.scrollTo({top:0}); }
   Object.entries(TABS).forEach(([k,id]) => $(id).onclick = () => showView(k)); $('#backBtn').onclick = () => showView('cfg');
+  const gearBtn = $('#gearBtn'), gearMenu = $('#gearMenu'), gearItems = $$('#gearMenu [role=menuitem]');
+  function setGear(open, focusBtn){ gearMenu.classList.toggle('hidden', !open); gearBtn.setAttribute('aria-expanded', String(open));
+    if(open) gearItems[0].focus(); else if(focusBtn) gearBtn.focus(); }
+  gearBtn.onclick = () => setGear(gearMenu.classList.contains('hidden'));
+  gearItems.forEach(b => b.onclick = () => { setGear(false); showView(b.dataset.view); });
+  gearMenu.addEventListener('keydown', e => { const i = gearItems.indexOf(document.activeElement);
+    if(e.key==='ArrowDown' || e.key==='ArrowUp'){ e.preventDefault(); gearItems[(i + (e.key==='ArrowDown' ? 1 : gearItems.length-1)) % gearItems.length].focus(); }
+    else if(e.key==='Escape'){ e.preventDefault(); setGear(false, true); } else if(e.key==='Tab') setGear(false); });
+  document.addEventListener('click', e => { if(!e.target.closest('.gear-wrap')) setGear(false); });
+  $('#advOpen').onclick = () => showView('set');
   $$('.lockval').forEach(el => el.title = 'Locked: PPE default');
   // Fields on the page not shown still count; only fields hidden because they do not apply are left out.
   const notApplicable = el => !!el.closest('.hidden:not(.page):not(.view)');
@@ -475,7 +488,16 @@
     $('#csum3').textContent = st.inverter ? st.inverter.name : '';
     $('#csum4').textContent = r ? `${RACK_NAME[r]} · ${val('modules_per_string')||'?'} modules · ${val('modules_high')||'?'} × ${val('modules_across')||'?'}${R?` · ${R} row(s)`:''}${c.gcr?` · GCR ${c.gcr.toFixed(3)}`:''}` : '';
     $('#verifyLoc').disabled = !okLL; $('#locText').textContent = okLL ? site : '';
+    const adv = advChanged(); $('#advChanged').classList.toggle('hidden', !adv.length); $('#advList').textContent = adv.join(', ');
   }
+  // Advanced Settings that differ from the PPE default (only the ones that apply to this configuration).
+  function advChanged(){
+    const out = [];
+    if(isBif() && val('bifacial_mismatch')==='1') out.push(LABELS.bifacial_mismatch);
+    if(haveModule() && val('self_shading') && val('self_shading')!==ppeShade()) out.push(LABELS.self_shading);
+    INV_LIMITS.forEach(n => { if(val(n) && !atDefault(n)) out.push(LABELS[n]); });
+    if(val('rows') && !same(val('rows'), '1')) out.push(LABELS.rows);
+    return out; }
   $('#verifyLoc').onclick = () => { const a=num('lat'), o=num('lon'); if(a===null||o===null) return;
     window.open(`https://www.bing.com/maps?cp=${a}~${o}&lvl=16&style=h&sp=point.${a}_${o}_Site`, '_blank', 'noopener'); };
 
