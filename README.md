@@ -15,12 +15,18 @@ and Vmp, the maximum Voc (single time step), plus the NEC 70% floor check. Curre
 Tip: after entering the location, click **Retrieve weather** to download the weather in the background
 while you fill out the rest of the page.
 
+Project files (.esam): **Save inputs** saves the project as `<project>.esam`. Run `register_esam.bat`
+once (per user, no admin rights; again after moving the folder, `register_esam.bat /u` removes it) and
+double-clicking an .esam file opens the app with that project loaded. If the app is already running, the
+file opens in a new tab of it instead of starting a second app.
+
 Weather cache folder: `%LOCALAPPDATA%\PPE_SAM_MultiYear\weather` (delete it to force fresh downloads).
 Files are stored per NSRDB grid cell, so nearby sites share them.
 
 | Script | Purpose |
 |---|---|
-| `run_from_source.bat` | Runs the app |
+| `run_from_source.bat` | Runs the app (`run_from_source.bat project.esam` opens a project) |
+| `register_esam.bat` | Double-clicking an .esam file opens it in the app (`/u` removes it) |
 | `run_tests.bat` | Automated tests (pytest) + real CEC library check |
 | `build_exe.bat` | Optional .exe (may be blocked by company policy) |
 
@@ -37,6 +43,7 @@ page and a small JSON API. No third-party dependencies besides PySAM.
 | `weather.py` | NSRDB download, throttling, and the per-grid-cell weather cache |
 | `analysis.py` | Rolling 3-hour windows (Isc, Vmp), max Voc and the NEC 70% floor |
 | `report.py` | The "Inputs used" rows (QA/QC on the Results page; full table as a .csv download) |
+| `esam.py` | Project files (.esam): open from Explorer, hand off to a running app, Windows file association |
 | `exports.py`, `inputs_export.py` | CSV / JSON downloads (incl. SAM's "JSON for inputs" format) |
 | `libraries.py` | CEC module and inverter libraries (`libraries/*.csv`) |
 | `config.py` | Fixed settings (NSRDB, PPE standards, folders) |

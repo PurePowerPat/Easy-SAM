@@ -10,7 +10,7 @@ import zipfile
 
 import pytest
 
-from ppe_sam import __version__, config, jobs, server, weather
+from ppe_sam import __version__, config, esam, jobs, server, weather
 
 YEARS = [2010, 2011, 2012]
 
@@ -167,10 +167,11 @@ def test_run_waits_for_running_retrieval_then_exports(app):
     assert code == 200 and sam["compute_module_0"] == "pvsamv1" and sam["subarray1_shade_mode"] == 0
     assert sam["solar_resource_file"].endswith(f"/{year}.csv")
     assert f"SAM_case_inputs_{year}.json" in hdr["Content-Disposition"]
-    code, data, _ = request(app, "GET", f"/api/job/{jr}/export/inputs_json")
+    code, data, hdr = request(app, "GET", f"/api/job/{jr}/export/inputs_json")
     saved = json.loads(data)
     assert code == 200 and saved["format"] == "PPE SAM inputs" and saved["app_version"] == __version__
     assert saved["inputs"] == design                                         # exactly what was run
+    assert '.esam"' in hdr["Content-Disposition"]                            # a project file, opens with a double-click
 
 
 def test_finished_jobs_are_pruned(app):
@@ -179,3 +180,50 @@ def test_finished_jobs_are_pruned(app):
         prefetch = [j for j in jobs.PREFETCH.values()]
     assert len(kept) <= jobs.MAX_KEPT_JOBS
     assert all(j.id in jobs.JOBS for j in prefetch)                          # no stale prefetch entries
+
+
+PROJECT = {"format": "PPE SAM inputs", "version": 1, "app_version": __version__, "saved": "", "inputs": DESIGN}
+
+
+def test_project_file_is_read_and_checked(tmp_path):
+    p = tmp_path / "Site A.esam"
+    p.write_text(json.dumps(PROJECT))
+    assert esam.read(p) == {"name": "Site A.esam", "project": PROJECT}
+    for text, msg in (("{not json", "not valid JSON"), (json.dumps([1, 2]), "not an Easy-SAM"),
+                      (json.dumps({"format": "other", "inputs": {}}), "not an Easy-SAM")):
+        p.write_text(text)
+        with pytest.raises(esam.ProjectError, match=msg):
+            esam.read(p)
+    with pytest.raises(esam.ProjectError):
+        esam.read(tmp_path / "missing.esam")
+
+
+def test_opened_file_is_given_to_the_page_once(app):
+    code, j = call(app, "POST", "/api/open", {"name": "Site A.esam", "project": PROJECT})
+    assert code == 200
+    assert call(app, "GET", f"/api/opened/{j['token']}") == (200, {"name": "Site A.esam", "project": PROJECT})
+    assert call(app, "GET", f"/api/opened/{j['token']}")[0] == 404             # a refresh does not load it again
+    assert call(app, "POST", "/api/open", {"name": "x.esam", "project": {"format": "other"}})[0] == 400
+    evil = {"Origin": "https://evil.example"}
+    assert request(app, "POST", "/api/open", {"name": "x", "project": PROJECT}, evil)[0] == 403
+
+
+def test_opening_a_file_hands_it_to_the_running_app(app, tmp_path, monkeypatch):
+    port = int(app.split(":")[1])
+    assert esam.find_running([port], __version__) == port
+    assert esam.find_running([port], "0.0.0") is None                        # another version: start a new app
+    p = tmp_path / "Site B.esam"
+    p.write_text(json.dumps(PROJECT))
+    opened = []
+    monkeypatch.setattr(server, "PORTS", [port])
+    monkeypatch.setattr(server.webbrowser, "open", opened.append)
+    monkeypatch.setattr(server, "serve", lambda **kw: pytest.fail("started a second app"))
+    assert server.main([str(p)]) == esam.HANDED_OFF
+    assert opened[0].startswith(f"http://127.0.0.1:{port}/?open=")
+    token = opened[0].split("?open=")[1]
+    assert call(app, "GET", f"/api/opened/{token}")[1]["name"] == "Site B.esam"
+
+
+def test_file_association_runs_this_copy_of_the_app():
+    cmd = esam.open_command()
+    assert cmd.endswith('run_from_source.bat" "%1"') and cmd.startswith('"')

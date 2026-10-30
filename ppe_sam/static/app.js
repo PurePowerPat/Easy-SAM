@@ -684,24 +684,31 @@
     $('#layoutBox').open=true; update(); window.scrollTo({top:0,behavior:'smooth'}); }
   $('#resetBtn').onclick=()=>ask('Clear all inputs? Results and the weather cache are not affected.','Reset',ok=>ok&&resetAll());
 
-  // ================= save / load inputs (.json) =================
+  // ================= save / load inputs (.esam) =================
   // File = {format, version, app_version, saved, inputs}; "inputs" is exactly what Run sends to the server,
-  // so the same file comes from Save inputs here and from Results > Downloads > Inputs (.json).
+  // so the same file comes from Save inputs here and from Results > Downloads > Project (.esam).
+  // An .esam file opened from Explorer arrives as ?open=<token> (run_app.py holds it; see esam.py).
   const INPUTS_FORMAT = 'PPE SAM inputs';
-  function saveFile(name, text){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));
+  function saveFile(name, text, type='application/json'){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type}));
     a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000); }
   $('#saveInBtn').onclick = () => {
     const o = {format:INPUTS_FORMAT, version:1, app_version:(st.info&&st.info.version)||'', saved:new Date().toISOString(), inputs:payload()};
-    const name = ((val('project')||'PPE_SAM').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/^_+|_+$/g,'')||'PPE_SAM') + '_inputs.json';
-    saveFile(name, JSON.stringify(o, null, 2)); $('#inNote').textContent = `Saved ${name}`; };
+    const name = ((val('project')||'PPE_SAM').replace(/[^A-Za-z0-9._-]+/g,'_').replace(/^_+|_+$/g,'')||'PPE_SAM') + '.esam';
+    saveFile(name, JSON.stringify(o, null, 2), 'application/octet-stream'); $('#inNote').textContent = `Saved ${name}`; };
   $('#loadInBtn').onclick = () => $('#loadInFile').click();
+  const isInputs = o => !!o && o.format===INPUTS_FORMAT && !!o.inputs && typeof o.inputs==='object';
+  async function loadProject(name, o){ const probs = await applyInputs(o.inputs);
+    $('#inNote').innerHTML = `<span class="ok">Loaded ${esc(name)}</span>${o.app_version?` (saved with v${esc(o.app_version)})`:''}.`
+      + (probs.length ? `<ul class="bad" style="margin:4px 0 0 18px;padding:0">${probs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>` : ''); }
   $('#loadInFile').addEventListener('change', async e => { const file=e.target.files[0]; e.target.value=''; if(!file) return;
-    let o; try{ o = JSON.parse(await file.text()); if(!o || o.format!==INPUTS_FORMAT || typeof o.inputs!=='object') throw new Error('not a PPE SAM inputs file'); }
+    let o; try{ o = JSON.parse(await file.text()); if(!isInputs(o)) throw new Error('not an Easy-SAM project file'); }
     catch(err){ $('#inNote').innerHTML = `<span class="bad">Could not load ${esc(file.name)}: ${esc(err.message)}</span>`; return; }
-    ask(`Load ${file.name}? This replaces every input on the Configure and Advanced Settings pages.`, 'Load inputs', async ok => { if(!ok) return;
-      const probs = await applyInputs(o.inputs);
-      $('#inNote').innerHTML = `<span class="ok">Loaded ${esc(file.name)}</span>${o.app_version?` (saved with v${esc(o.app_version)})`:''}.`
-        + (probs.length ? `<ul class="bad" style="margin:4px 0 0 18px;padding:0">${probs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>` : ''); }); });
+    ask(`Load ${file.name}? This replaces every input on the Configure and Advanced Settings pages.`, 'Load inputs', ok => ok && loadProject(file.name, o)); });
+  (async () => { const tok = new URLSearchParams(location.search).get('open'); if(!tok) return;
+    history.replaceState(null, '', location.pathname);         // a refresh must not load the file again
+    let r, j; try{ r = await fetch('/api/opened/' + encodeURIComponent(tok)); j = await r.json(); }catch(e){ j = {error:String(e)}; }
+    if(!r || !r.ok || !isInputs(j.project)){ $('#inNote').innerHTML = `<span class="bad">Could not open the file: ${esc((j && j.error) || 'not an Easy-SAM project file')}</span>`; return; }
+    document.title = `${j.name} - ${document.title}`; await loadProject(j.name, j.project); })();
   async function libraryRecord(kind, name){ if(!name) return null;
     try{ const r = await fetch(`/api/${kind}?name=${encodeURIComponent(name)}`), j = await r.json(); return (r.ok && j.length) ? j[0] : null; }catch(e){ return null; } }
   async function applyInputs(I){
@@ -849,7 +856,7 @@
     $('#exportErr').textContent=''; $('#results').classList.remove('hidden'); $('#printBtn2').classList.remove('hidden');
   }
   // Module Isc (from datasheet): entered here after the run (CEC library modules). The server recalculates and
-  // keeps it with the run (Inputs used, Inputs .json); it is also sent with the next run and saved with the inputs.
+  // keeps it with the run (Inputs used, Project .esam); it is also sent with the next run and saved with the inputs.
   let iscTimer = null, iscSeq = 0;
   async function saveIscDs(){ const v = $('#iscDsRes').value.trim(), box = $('#iscFld'), seq = ++iscSeq;
     if(!st.doneJob || !st.res || st.res.module_source==='custom') return;

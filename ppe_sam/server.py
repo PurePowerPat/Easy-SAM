@@ -7,7 +7,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlparse
 
-from . import __date__, __version__, config, geocode, jobs, libraries, model, report, weather
+from . import __date__, __version__, config, esam, geocode, jobs, libraries, model, report, weather
 
 STATIC = Path(__file__).resolve().parent / "static"
 LOCAL_HOSTS = ("127.0.0.1", "localhost")
@@ -99,6 +99,11 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send(404, {"error": str(e)})
             if u.path == "/api/cache":
                 return self._send(200, weather.cache_info())
+            if u.path.startswith("/api/opened/"):
+                opened = esam.take(u.path[len("/api/opened/"):])
+                if not opened:
+                    return self._send(404, {"error": "This file was already opened. Open it again from Explorer."})
+                return self._send(200, opened)
             if u.path.startswith("/api/job/"):
                 parts = u.path.split("/")
                 job = jobs.get(parts[3]) if len(parts) > 3 else None
@@ -142,6 +147,13 @@ class Handler(BaseHTTPRequestHandler):
                 if not (-90 <= lat <= 90 and -180 <= lon <= 180) or interval not in (30, 60):
                     return self._send(400, {"error": "Latitude, longitude or time step out of range."})
                 return self._send(200, {"job": jobs.start_weather(lat, lon, interval).id})
+            if u.path == "/api/open":
+                b = self._body()
+                try:
+                    opened = {"name": str(b.get("name") or "project.esam"), "project": esam.check(b.get("project"))}
+                except esam.ProjectError as e:
+                    raise BadRequest(str(e)) from e
+                return self._send(200, {"token": esam.hold(opened)})
             if u.path == "/api/cache/clear":
                 if jobs.any_active():
                     return self._send(409, {"error": "A job is running. Wait for it to finish or cancel it first."})
@@ -188,12 +200,43 @@ def make_server(port=None) -> ThreadingHTTPServer:
     return _Server(("127.0.0.1", 0), Handler)
 
 
-def serve(open_browser=True, port=None):
+def serve(open_browser=True, port=None, opened=None):
+    """Run the app. `opened` = an .esam file (esam.read) to load when the page opens."""
     httpd = make_server(port)
     url = f"http://127.0.0.1:{httpd.server_address[1]}/"
     print(f"{config.APP_NAME} v{__version__} running at {url}")
     print("Keep this window open while using the app. Close it to stop the app.")
     threading.Thread(target=libraries.library_info, daemon=True).start()
     if open_browser:
-        threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+        page = url + (f"?open={esam.hold(opened)}" if opened else "")
+        threading.Timer(0.8, lambda: webbrowser.open(page)).start()
     httpd.serve_forever()
+
+
+def main(argv) -> int:
+    """run_app.py [file.esam | --register | --unregister]"""
+    if argv[:1] in (["--register"], ["--unregister"]):
+        if os.name != "nt":
+            print("File types can only be registered on Windows.")
+            return 1
+        print(esam.register() if argv[0] == "--register" else esam.unregister())
+        return 0
+    opened = None
+    if argv:
+        try:
+            opened = esam.read(argv[0])
+        except esam.ProjectError as e:
+            print(f"Could not open {argv[0]}: {e}")
+    if opened:
+        port = esam.find_running(PORTS, __version__)
+        if port:
+            try:
+                token = esam.hand_off(port, opened)
+            except (OSError, ValueError, KeyError) as e:
+                print(f"The running app did not take the file ({e}); starting another one.")
+            else:
+                print(f"Opened {opened['name']} in the app already running at http://127.0.0.1:{port}/")
+                webbrowser.open(f"http://127.0.0.1:{port}/?open={token}")
+                return esam.HANDED_OFF
+    serve(opened=opened)
+    return 0

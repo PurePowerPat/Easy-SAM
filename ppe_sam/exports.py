@@ -1,4 +1,4 @@
-"""Exports: hourly (or 30-minute) string results, the Inputs used table, and the inputs (.json) file."""
+"""Exports: hourly (or 30-minute) string results, the Inputs used table, and the project (.esam) file."""
 import csv
 import datetime as dt
 import io
@@ -7,7 +7,7 @@ import re
 
 from . import __version__, model
 
-INPUTS_FORMAT = "PPE SAM inputs"     # same file as the page's "Save inputs (.json)"; "Load inputs" reads it
+INPUTS_FORMAT = "PPE SAM inputs"     # same file as the page's "Save inputs" (.esam); "Load inputs" reads it
 
 KINDS = {"isc": ("Isc", "A"), "voc": ("Voc", "V"), "vmp": ("Vmp", "V")}
 
@@ -32,7 +32,7 @@ def series_csv(kind, per_year, timestamps) -> bytes:
 
 
 def inputs_json(raw_inputs: dict, started: float) -> bytes:
-    """The inputs exactly as the page sent them for this run, loadable with "Load inputs (.json)"."""
+    """The inputs exactly as the page sent them for this run: an .esam project file (see esam.py)."""
     saved = dt.datetime.fromtimestamp(started, dt.UTC).isoformat(timespec="seconds")
     return json.dumps({"format": INPUTS_FORMAT, "version": 1, "app_version": __version__, "saved": saved,
                        "inputs": raw_inputs}, indent=2).encode("utf-8")

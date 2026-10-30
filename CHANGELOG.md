@@ -5,6 +5,15 @@ Every version, newest first. Entries up to v0.2.8 are the release notes written 
 
 Release notes for v0.1.0–v0.1.2 and v0.1.7 were not kept.
 
+## Unreleased (File-ext-test branch)
+
+- **Project files (.esam):** Save inputs saves `<project>.esam` (same contents as the inputs .json;
+  Load inputs still reads .json). Results > Downloads > Inputs (.json) is now Project (.esam).
+- Double-click an .esam file to open the app with that project loaded on the Configure page:
+  run `register_esam.bat` once to associate .esam with this copy of the app (current Windows user only).
+  If the app is already running, the file opens in a new browser tab of it.
+- `run_app.py <file>.esam`, `run_app.py --register` / `--unregister`.
+
 ## v0.3.8 — 2026-10-30
 
 - **PV Maximum Circuit Current** (was NEC 690.8(A)(1)(2) 70% minimum) on the Results page:

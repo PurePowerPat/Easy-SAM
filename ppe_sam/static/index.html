@@ -329,9 +329,9 @@
   <div class="side-status" id="sideStatus" aria-live="polite"></div>
   <div class="side-more"><div class="side-btns">
     <button type="button" class="btn btn-sm" id="resetBtn">Reset</button>
-    <button type="button" class="btn btn-sm" id="saveInBtn" title="Save every input to a file (.json)">Save inputs</button>
-    <button type="button" class="btn btn-sm" id="loadInBtn" title="Load inputs from a saved file (.json)">Load inputs</button>
-    <input type="file" id="loadInFile" accept=".json,application/json" class="hidden">
+    <button type="button" class="btn btn-sm" id="saveInBtn" title="Save every input to a project file (.esam). Double-click it later to open it in the app.">Save inputs</button>
+    <button type="button" class="btn btn-sm" id="loadInBtn" title="Load inputs from a project file (.esam, or a saved .json)">Load inputs</button>
+    <input type="file" id="loadInFile" accept=".esam,.json,application/json" class="hidden">
   </div><div class="note" id="inNote" style="margin-top:6px"></div></div>
 </div>
 </aside>
@@ -377,7 +377,7 @@
         <button type="button" class="btn" data-export="voc">Voc (.csv)</button>
         <button type="button" class="btn" data-export="vmp">Vmp (.csv)</button>
         <button type="button" class="btn" data-export="weather">Weather files (.zip)</button>
-        <button type="button" class="btn" data-export="inputs_json">Inputs (.json)</button>
+        <button type="button" class="btn" data-export="inputs_json">Project (.esam)</button>
         <button type="button" class="btn" data-export="all">All files (.zip)</button>
       </div>
       <div class="note" style="margin-top:12px"><b>Testing only:</b> every SAM input variable, with its source.</div>

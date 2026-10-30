@@ -19,7 +19,7 @@ import zipfile
 from concurrent.futures.process import BrokenProcessPool
 from pathlib import Path
 
-from . import analysis, config, exports, inputs_export, model, report, weather
+from . import analysis, config, esam, exports, inputs_export, model, report, weather
 
 JOBS = {}          # id -> Job | WeatherJob
 PREFETCH = {}      # weather.site_key -> latest WeatherJob for that site
@@ -167,7 +167,7 @@ class Job(_Base):
 
     def set_isc_datasheet(self, value):
         """Module Isc (from datasheet) entered on the Results page (CEC library modules): recompute the PV
-        Maximum Circuit Current and Inputs used, and keep it in the Inputs (.json) download."""
+        Maximum Circuit Current and Inputs used, and keep it in the Project (.esam) download."""
         if self.status != "done" or not self.result:
             raise LookupError("Results are not available for this run.")
         if self.design["module_source"] != "cec":
@@ -209,7 +209,7 @@ class Job(_Base):
             data = exports.sam_case_json(self.inputs, dict(self.files)[year])
             return f"{base}_SAM_case_inputs_{year}.json", json.dumps(data, indent=1).encode("utf-8"), "application/json"
         if kind == "inputs_json":
-            return f"{base}_inputs.json", exports.inputs_json(self.raw, self.started), "application/json"
+            return f"{base}{esam.EXT}", exports.inputs_json(self.raw, self.started), "application/octet-stream"
         if kind == "inputs":
             h, rows = inputs_export.build_rows(self.design, self.inputs, self.files)
             return f"{base}_SAM_inputs.csv", inputs_export.to_csv(h, rows), "text/csv"
