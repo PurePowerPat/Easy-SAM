@@ -189,14 +189,15 @@
   // ================= background weather retrieval =================
   function wxKey(){ const a=num('lat'), o=num('lon');
     return (a!==null && o!==null && Math.abs(a)<=90 && Math.abs(o)<=180) ? `${a}|${o}|${val('interval')}` : null; }
+  const WX_ICO = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4 4 0 0 1-.5 7.97"/><path d="M12 12v8m-3-3 3 3 3-3"/></svg>';
   function renderWxBtn(){
     const b=$('#wxBtn'), k=wxKey(); b.classList.toggle('hidden', !k); if(!k) return;
     const s = st.wx && st.wx.key===k ? st.wx.status : null;
     b.classList.toggle('done', s==='done');
     if(s==='queued' || s==='downloading'){ b.disabled=true; b.innerHTML='<span class="spin"></span>'; b.setAttribute('aria-label','Retrieving weather'); b.title='Retrieving weather in the background (progress on the Results tab)'; }
     else if(s==='done'){ b.disabled=true; b.innerHTML='✓ Complete'; b.removeAttribute('aria-label'); b.title='Weather retrieved and cached. Run simulation will use it.'; }
-    else if(s==='error'){ b.disabled=false; b.textContent='Retry weather retrieval'; b.removeAttribute('aria-label'); b.title='The last retrieval failed. See the Results tab.'; }
-    else { b.disabled=false; b.textContent='Retrieve weather'; b.removeAttribute('aria-label'); b.title='Download the weather years now, in the background, while you finish the rest of the page'; }
+    else if(s==='error'){ b.disabled=false; b.innerHTML=WX_ICO+'Retry weather retrieval'; b.removeAttribute('aria-label'); b.title='The last retrieval failed. See the Results tab.'; }
+    else { b.disabled=false; b.innerHTML=WX_ICO+'Retrieve weather'; b.removeAttribute('aria-label'); b.title='Download the weather years now, in the background, while you finish the rest of the page'; }
   }
   $('#wxBtn').onclick = async () => {
     const k = wxKey(); if(!k) return;
@@ -425,7 +426,7 @@
 
   // ================= readiness + auto-expand =================
   function missing(){
-    const m={1:[],2:[],3:[],4:[],5:[]}, need=(s,n,cond=true)=>{ if(cond && !val(n)) m[s].push(n); };
+    const m={1:[],2:[],3:[],4:[]}, need=(s,n,cond=true)=>{ if(cond && !val(n)) m[s].push(n); };
     if(!st.loc) m[1].push('location_mode');
     else if(st.loc==='address'){ if(!val('address') || !val('lat') || !val('lon')) m[1].push('address'); }
     else { need(1,'lat'); need(1,'lon'); }
@@ -439,13 +440,12 @@
     if(st.racking){ need(4,'tilt',st.racking!=='tracker'); need(4,'rotlim',st.racking==='tracker'); need(4,'azimuth'); need(4,'orientation');
       if(isBif()) need(4,'ground_clearance'); need(4,'modules_high'); need(4,'modules_across');
       if(st.racking!=='carport'){ if(st.gmode==='gcr') need(4,'gcr'); else { need(4,'pitch'); need(4,'gap', (parseInt(val('modules_high'))||1)>=2); } } }
-    need(5,'self_shading', haveModule()); INV_LIMITS.forEach(n => need(5,n)); need(5,'rows');
     return m;
   }
   let lastReady = null;
-  const SEC_NAME = {1:'Site and weather', 2:'Module', 3:'Inverter', 4:'System design', 5:'Advanced Settings'};
+  const SEC_NAME = {1:'Site and weather', 2:'Module', 3:'Inverter', 4:'System design'};
   function renderReadiness(m){
-    const html = [1,2,3,4,5].map(s => `<li class="${m[s].length?'':'ok'}"><div class="rh"><span class="ri"></span>${SEC_NAME[s]}</div></li>`).join('');
+    const html = [1,2,3,4].map(s => `<li class="${m[s].length?'':'ok'}"><div class="rh"><span class="ri"></span>${SEC_NAME[s]}</div></li>`).join('');
     if(html !== lastReady){ lastReady = html; $('#ready').innerHTML = html; }
     [1,2,3,4].forEach(s => { const ch=$('#chip'+s); ch.classList.toggle('done', !m[s].length); ch.textContent = m[s].length ? 'Incomplete' : 'Complete'; });
     const now = [1,2,3,4].map(s => !m[s].length);
@@ -463,15 +463,13 @@
     const site = okLL ? `${hemi(lat,'N','S')}, ${hemi(lon,'E','W')}` : null;
     $('#sProject').innerHTML = val('project') ? esc(val('project')) : E('Not named');
     const addr = st.loc==='address' && val('address') ? `${esc(val('address'))}<br>` : '';
-    $('#sSite').innerHTML = site ? `${addr}${site} · ${val('interval')}-min` : E(st.loc==='address' ? 'Run the address lookup' : st.loc ? 'Coordinates needed' : 'Choose Address or Coordinates');
-    let mod = null;
-    if(st.src==='cec' && st.module) mod = `${esc(st.module.name)} · ${fnum(st.module.stc)} W${isBif()?' · bifacial':''}`;
-    if(st.src==='custom' && val('custom_name')) mod = `${esc(val('custom_name'))}${c.pmp?` · ${c.pmp.toFixed(0)} W`:''}${isBif()?' · bifacial':''}`;
-    $('#sModule').innerHTML = mod || E('Not selected');
-    $('#sInverter').innerHTML = st.inverter ? `${esc(st.inverter.name)} · ${fmt(st.inverter.paco/1000,1)} kWac` : E('Not selected');
+    $('#sSite').innerHTML = site ? `${addr}${site}` : E(st.loc==='address' ? 'Run the address lookup' : st.loc ? 'Coordinates needed' : 'Choose Address or Coordinates');
+    const mod = st.src==='cec' ? (st.module && st.module.name) : val('custom_name');
+    $('#sModule').innerHTML = mod ? esc(mod) : E('Not selected');
+    $('#sInverter').innerHTML = st.inverter ? esc(st.inverter.name) : E('Not selected');
     $('#sString').innerHTML = val('modules_per_string') ? `${val('modules_per_string')} modules per string` : E('Not set');
-    const r=st.racking, R=val('rows'), sh=val('self_shading');
-    $('#sMount').innerHTML = r ? `${RACK_NAME[r]} · ${val('modules_high')||'?'} × ${val('modules_across')||'?'}${R?` · ${R} row${R==='1'?'':'s'}`:''}${c.gcr?` · GCR ${c.gcr.toFixed(3)}`:''}${sh?` · self-shading ${SHADE_NAME[sh]}`:''}` : E('Not chosen');
+    const r=st.racking, R=val('rows');
+    $('#sMount').innerHTML = r ? `${RACK_NAME[r]} · ${val('modules_high')||'?'} × ${val('modules_across')||'?'}${R?` · ${R} row${R==='1'?'':'s'}`:''}${c.gcr?` · GCR ${c.gcr.toFixed(3)}`:''}` : E('Not chosen');
     $('#csum1').textContent = site ? `${st.loc==='address'&&val('address')?val('address')+' · ':''}${site} · ${val('interval')}-min` : '';
     $('#csum2').textContent = st.src==='cec' ? (st.module ? `${st.module.name} · ${fnum(st.module.stc)} W` : '') : val('custom_name');
     $('#csum3').textContent = st.inverter ? st.inverter.name : '';
