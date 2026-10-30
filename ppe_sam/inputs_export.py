@@ -232,7 +232,7 @@ def _ui_value(d, var, path):
         "is_advanced": (0, PD, "Standard NSRDB download"),
         "subarray1_ui_row_spacing": {
             "pitch": (d["pitch"], U, pitch_note),
-            "gcr": (d["pitch"], PC, "Equivalent row pitch = Modules High x module dimension along slope / GCR"),
+            "gcr": (d["pitch"], PC, "Row pitch = Modules High x module dimension along slope / GCR"),
             "carport": (None, ER, "Carport: no row pitch (GCR fixed at 0.01)"),
         }[d["gcr_mode"]],
     }.get(var)

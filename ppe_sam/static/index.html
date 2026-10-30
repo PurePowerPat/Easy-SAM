@@ -215,15 +215,15 @@
 
       <div class="group" id="spacingBox"><h3>Row spacing</h3>
         <div class="choice compact" role="radiogroup" aria-label="Row spacing input" id="gcrMode">
-          <button type="button" role="radio" aria-checked="true" data-g="pitch"><span class="ck"></span><span class="ct">Row pitch</span></button>
-          <button type="button" role="radio" aria-checked="false" data-g="gcr"><span class="ck"></span><span class="ct">GCR</span></button>
+          <button type="button" role="radio" aria-checked="true" data-g="gcr"><span class="ck"></span><span class="ct">GCR</span></button>
+          <button type="button" role="radio" aria-checked="false" data-g="pitch"><span class="ck"></span><span class="ct">Row pitch</span></button>
         </div>
         <div class="g4" style="margin-top:10px">
-          <div class="fld g-pitch" data-field="pitch"><label for="pitch">Row pitch</label><div class="inwrap"><input id="pitch" name="pitch" type="number" min="0" step="any" placeholder="e.g. 236"><select class="unit" name="pitch_units" aria-label="Row pitch units"><option value="in" selected>in</option><option value="m">m</option></select></div><div class="note" id="pitchEq"></div></div>
-          <div class="fld g-pitch" id="gapBox" data-field="gap"><label for="gap">Module spacing<span class="tip">?<span class="tiptext">Gap between modules stacked high.</span></span></label><div class="inwrap"><input id="gap" name="gap" type="number" min="0" step="any" placeholder="e.g. 0.8"><span class="sfx">in</span></div></div>
-          <div class="fld g-gcr hidden" data-field="gcr"><label for="gcr">GCR</label><input id="gcr" name="gcr" type="number" min="0" step="0.1" placeholder="e.g. 0.35"></div>
-          <div class="fld ro g-pitch" data-s="calc" title="Source: Calculated ((Modules High × module dimension + spacing) ÷ row pitch)"><label for="cGcr">GCR</label><input id="cGcr" readonly tabindex="-1" placeholder="Needs dimensions, orientation, pitch"></div>
-          <div class="fld ro g-gcr hidden" data-s="calc" title="Source: Calculated (Modules High × module dimension ÷ GCR)"><label for="cPitch">Equivalent row pitch</label><div class="inwrap"><input id="cPitch" readonly tabindex="-1" placeholder="Needs GCR, dimensions, orientation"><span class="sfx">m</span></div></div>
+          <div class="fld g-gcr" data-field="gcr"><label for="gcr">GCR</label><input id="gcr" name="gcr" type="number" min="0" step="0.1" placeholder="e.g. 0.35"></div>
+          <div class="fld ro g-pitch hidden" data-s="calc" title="Source: Calculated ((Modules High × module dimension + spacing) ÷ row pitch)"><label for="cGcr">GCR</label><input id="cGcr" readonly tabindex="-1" placeholder="Needs dimensions, orientation, pitch"></div>
+          <div class="fld g-pitch hidden" data-field="pitch"><label for="pitch">Row pitch</label><div class="inwrap"><input id="pitch" name="pitch" type="number" min="0" step="any" placeholder="e.g. 236"><select class="unit" name="pitch_units" aria-label="Row pitch units"><option value="in" selected>in</option><option value="m">m</option></select></div><div class="note" id="pitchEq"></div></div>
+          <div class="fld ro g-gcr" data-s="calc" title="Source: Calculated (Modules High × module dimension ÷ GCR)"><label for="cPitch">Row pitch</label><div class="inwrap"><input id="cPitch" readonly tabindex="-1" placeholder="Needs GCR, dimensions, orientation"><span class="sfx">m</span></div></div>
+          <div class="fld g-pitch hidden" id="gapBox" data-field="gap"><label for="gap">Module spacing<span class="tip">?<span class="tiptext">Gap between modules stacked high.</span></span></label><div class="inwrap"><input id="gap" name="gap" type="number" min="0" step="any" placeholder="e.g. 0.8"><span class="sfx">in</span></div></div>
         </div>
       </div>
       <div class="group hidden" id="carportGcr"><h3>Row spacing</h3>

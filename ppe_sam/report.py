@@ -22,7 +22,7 @@ KEY_INPUTS = {
     "Isc (datasheet) for NEC 70% check",
     "Inverter", "Mounting type", "Modules per string", "Tilt", "Azimuth",
     "Module orientation", "Ground clearance", "Modules High", "Modules Across", "Strings modeled",
-    "Number of rows", "GCR", "Equivalent row pitch", "Vmppt low", "Vmppt high", "Vdc max",
+    "Number of rows", "GCR", "Row pitch", "Vmppt low", "Vmppt high", "Vdc max",
     "Losses (soiling, mismatch, wiring, diodes, nameplate, tracking, rack shading)",
 }
 
@@ -193,7 +193,7 @@ def build(d: dict, weather: dict | None = None) -> list:
         add(S, "GCR", d["gcr"], "", DEF)
     elif d["gcr_mode"] == "gcr":
         add(S, "GCR", d["gcr"])
-        add(S, "Equivalent row pitch", round(d["pitch"], 3) if d["pitch"] else None, "m", CALC)
+        add(S, "Row pitch", round(d["pitch"], 3) if d["pitch"] else None, "m", CALC)
     else:
         length(S, "Row pitch", d["pitch"], d.get("pitch_entered"), d.get("pitch_units", "m"))
         if d["modules_high"] >= 2:

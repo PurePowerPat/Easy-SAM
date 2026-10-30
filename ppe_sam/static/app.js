@@ -1,7 +1,7 @@
 (() => {
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const f = $('#f');
-  const st = {src:'cec', loc:null, module:null, inverter:null, racking:null, gmode:'pitch', job:null, doneJob:null,
+  const st = {src:'cec', loc:null, module:null, inverter:null, racking:null, gmode:'gcr', job:null, doneJob:null,
               info:null, jobPrompted:false, touched:new Set(), running:false, geo:null, complete:null,
               wx:null, showing:null, view:'cfg', shadeAuto:true};
   const IN = 0.0254;
@@ -166,7 +166,7 @@
   const srcG = radioGroup('#srcGroup', b => { st.src = b.dataset.src; update(); scheduleValidate(); });
   const rackG = radioGroup('#rack', b => { st.racking = b.dataset.r; clearFieldError($('#rack')); update(); scheduleValidate(); });
   const gcrG = radioGroup('#gcrMode', b => { st.gmode = b.dataset.g; update(); scheduleValidate(); });
-  locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=pitch]'));
+  locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=gcr]'));
 
   // ================= location: address or coordinates =================
   function setLatLon(lat, lon){ f.elements.lat.value = (lat??''); f.elements.lon.value = (lon??''); }
@@ -667,7 +667,7 @@
   // ================= reset =================
   function resetAll(){
     f.reset(); clearAllErrors(); st.touched.clear(); Object.keys(dbVals).forEach(k=>delete dbVals[k]);
-    Object.assign(st,{src:'cec', loc:null, racking:null, gmode:'pitch', geo:null, complete:null, shadeAuto:true}); locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=pitch]'));
+    Object.assign(st,{src:'cec', loc:null, racking:null, gmode:'gcr', geo:null, complete:null, shadeAuto:true}); locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=gcr]'));
     modPicker.reset(); invPicker.reset(); ['#customBif','#bifOverride'].forEach(s=>$(s).checked=false); ['#copyNote','#saveNote','#geoNote','#inNote'].forEach(s=>$(s).textContent='');
     $('#cCarGcr').value='0.01';
     setCollapsed($('#sec1'), false); ['#sec2','#sec3','#sec4'].forEach(s=>setCollapsed($(s), true));
