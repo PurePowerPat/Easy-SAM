@@ -507,7 +507,7 @@
     const custom = st.src==='custom', r = st.racking, bif = isBif();
     $('#locPrompt').classList.toggle('hidden', !!st.loc);
     setRO('address', st.loc!=='address'); setRO('lat', st.loc!=='coords'); setRO('lon', st.loc!=='coords');
-    f.elements.address.placeholder = st.loc==='coords' ? 'Not used' : 'e.g. 1 Main St, Stamford, CT';
+    f.elements.address.placeholder = st.loc==='coords' ? 'Not used' : 'e.g. 100 Solar St, Hoboken, NJ';
     f.elements.lat.placeholder = st.loc==='address' ? 'From address lookup' : st.loc ? 'e.g. 39.18886' : '';
     f.elements.lon.placeholder = st.loc==='address' ? 'From address lookup' : st.loc ? 'e.g. -76.60095' : '';
     $('#geoRun').classList.toggle('hidden', !(st.loc==='address' && val('address')));
