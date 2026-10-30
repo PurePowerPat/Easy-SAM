@@ -139,7 +139,7 @@
         <div class="fld" data-field="bifaciality_base"><label for="bifaciality_base">Bifaciality</label><div class="inwrap"><input id="bifaciality_base" name="bifaciality_base" type="number" min="0" step="any" placeholder="e.g. 70"><span class="sfx">%</span></div></div>
         <div class="fld" data-field="bifaciality_tol"><label for="bifaciality_tol">Tolerance</label><div class="inwrap"><input id="bifaciality_tol" name="bifaciality_tol" type="number" min="0" step="any" placeholder="e.g. 5"><span class="sfx">%</span></div></div>
         <div class="fld ro" data-s="calc" title="Source: Calculated (bifaciality + tolerance)"><label for="cBif">Bifaciality used</label><input id="cBif" readonly tabindex="-1" placeholder="Needs bifaciality, tolerance"></div>
-        <div class="fld" data-field="bifacial_gain"><label for="bifacial_gain">Gain for NEC 70% check<span class="tip">?<span class="tiptext">Rear-side gain applied to the NEC Baseline on the Results page: Isc × 125% × (1 + gain). The check compares the simulated Isc with 70% of it.</span></span></label><div class="inwrap"><input id="bifacial_gain" name="bifacial_gain" type="number" min="0" step="any" placeholder="e.g. 10"><span class="sfx">%</span></div></div>
+        <div class="fld" data-field="bifacial_gain"><label for="bifacial_gain">Gain for NEC Baseline<span class="tip">?<span class="tiptext">Rear-side gain for “NEC Baseline + Bifacial Gain” on the Results page: Isc × 125% × (1 + gain). It is not applied to 70% of NEC Baseline.</span></span></label><div class="inwrap"><input id="bifacial_gain" name="bifacial_gain" type="number" min="0" step="any" placeholder="e.g. 10"><span class="sfx">%</span></div></div>
       </div>
     </div>
   </div>
@@ -351,28 +351,25 @@
     <div class="kpis" id="kpis"></div>
     <section class="card rcard"><div class="card-h"><h2>PV Maximum Circuit Current</h2></div><div class="card-b necp">
       <div>
-        <div class="fld iscfld" id="iscFld"><label for="iscDsRes">Module Isc at STC (datasheet)<span class="tip">?<span class="tiptext">Short-circuit current at STC from the module datasheet. Used for the NEC Baseline. The simulation itself uses the CEC database values.</span></span></label>
+        <div class="fld iscfld" id="iscFld"><label for="iscDsRes">Module Isc (from datasheet)<span class="tip">?<span class="tiptext">Input Isc from the module datasheet. The simulation uses the CEC database values, which may differ from the datasheet.</span></span></label>
           <div class="inwrap"><input id="iscDsRes" type="number" min="0" step="0.1" placeholder="e.g. 13.9"><span class="sfx">A</span></div><div class="note" id="iscDsResNote"></div></div>
-        <div id="necUse"></div>
+        <div id="necBars"></div>
       </div>
-      <div id="necTable"></div>
+      <div><div id="necTable"></div><div id="necUse"></div></div>
     </div></section>
     <section class="card rcard"><div class="card-h"><h2>Annual maxima by weather year</h2></div><div class="card-b ychs" id="yrCharts"></div></section>
-    <details class="sec"><summary>Inputs used</summary><div class="sb">
-      <div class="actions" style="margin-bottom:8px"><button type="button" class="btn btn-sm" data-export="inputs_used">Download (.csv)</button><span class="keylegend"><i></i>Key items to check</span></div>
-      <div id="inputsUsed"></div></div></details>
+    <section class="card rcard"><div class="card-h"><h2>QA/QC</h2><span class="csum" style="visibility:visible">Key items to check</span><button type="button" class="btn btn-sm" data-export="inputs_used">Full inputs used (.csv)</button></div>
+      <div class="card-b" id="qaqc"></div></section>
     <details class="sec"><summary>Downloads</summary><div class="sb">
-      <div class="note">Hourly (or 30-minute) string values, one column per year.</div>
+      <div class="note">Isc, Voc and Vmp: hourly (or 30-minute) string values, one column per year. Weather files: the NSRDB file of every year used.</div>
       <div class="actions" style="margin-top:8px">
         <button type="button" class="btn" data-export="isc">Isc (.csv)</button>
         <button type="button" class="btn" data-export="voc">Voc (.csv)</button>
         <button type="button" class="btn" data-export="vmp">Vmp (.csv)</button>
-        <button type="button" class="btn" data-export="inputs_used">Inputs used (.csv)</button>
+        <button type="button" class="btn" data-export="weather">Weather files (.zip)</button>
         <button type="button" class="btn" data-export="inputs_json">Inputs (.json)</button>
-        <button type="button" class="btn" data-export="sam_json">SAM case inputs (.json)</button>
         <button type="button" class="btn" data-export="all">All files (.zip)</button>
       </div>
-      <div class="note" id="samJsonNote" style="margin-top:6px"></div>
       <div class="note" style="margin-top:12px"><b>Testing only:</b> every SAM input variable, with its source.</div>
       <div class="actions" style="margin-top:6px"><button type="button" class="btn" data-export="inputs">SAM inputs browser (.csv)</button></div>
       <div class="note bad" id="exportErr"></div>

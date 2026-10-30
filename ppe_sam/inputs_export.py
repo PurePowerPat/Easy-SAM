@@ -125,6 +125,13 @@ def load_vars():
         return [(r[0], r[1]) for r in rdr if r]
 
 
+EXCEL_CELL_MAX = 32767    # characters; Excel spills a longer CSV field into the rows below
+
+
+def _flat(v):
+    return [x for row in v for x in row] if v and isinstance(v[0], (list, tuple)) else list(v)
+
+
 def _fmt(v):
     if v is None:
         return "Error"
@@ -137,8 +144,18 @@ def _fmt(v):
         return str(int(f)) if f.is_integer() and abs(f) < 1e15 else f"{f:.10g}"
     if isinstance(v, (list, tuple)):
         if v and isinstance(v[0], (list, tuple)):
-            return "".join("[" + ";".join(_fmt(x) for x in row) + "]" for row in v)
-        return ";".join(_fmt(x) for x in v)
+            text = "".join("[" + ";".join(_fmt(x) for x in row) + "]" for row in v)
+        else:
+            text = ";".join(_fmt(x) for x in v)
+        if len(text) <= EXCEL_CELL_MAX:
+            return text
+        # Too long for one spreadsheet cell (e.g. grid_curtailment: 8760 x 1e+38): summarize it instead.
+        flat = _flat(v)
+        if all(x == flat[0] for x in flat):
+            return f"{len(flat)} values, all {_fmt(flat[0])}"
+        nums = [x for x in flat if isinstance(x, (int, float))]
+        rng = f", min {_fmt(min(nums))}, max {_fmt(max(nums))}" if nums else ""
+        return f"{len(flat)} values{rng} (too long for one spreadsheet cell; see SAM case inputs .json)"
     return str(v)
 
 

@@ -46,7 +46,7 @@ class DesignError(ValueError):
         super().__init__("; ".join(e["message"] for e in errors))
 
 
-ISC_DATASHEET_LABEL = "Module Isc at STC (datasheet)"
+ISC_DATASHEET_LABEL = "Module Isc (from datasheet)"
 
 
 def _isc_datasheet(c):
@@ -54,7 +54,7 @@ def _isc_datasheet(c):
 
 
 def isc_datasheet(value):
-    """Module Isc at STC (datasheet) entered on the Results page: a number, or None when cleared."""
+    """Module Isc (from datasheet) entered on the Results page: a number, or None when cleared."""
     c = _Checker({"isc_datasheet": value})
     v = _isc_datasheet(c)
     if c.errors:

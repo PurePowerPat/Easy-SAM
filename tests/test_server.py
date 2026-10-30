@@ -116,8 +116,9 @@ def test_run_reads_weather_retrieved_earlier(app):
     assert len(REQUESTS) == n0                                              # everything came from the cache
     assert not any("Parallel run unavailable" in line for line in s["log"])  # the process pool worked
     nec = s["result"]["nec"]
-    assert nec["isc_stc_module"] == 13.9 and round(nec["baseline"], 4) == 19.1125
-    assert round(nec["baseline_70pct"], 4) == 13.3788 and nec["use"] in ("simulated", "baseline_70pct")
+    assert nec["isc_stc_module"] == 13.9 and round(nec["baseline"], 4) == 17.375
+    assert round(nec["baseline_bifacial"], 4) == 19.1125 and round(nec["baseline_70pct"], 4) == 12.1625
+    assert nec["use"] in ("simulated", "baseline_70pct")
     sh = [r for r in s["result"]["inputs_used"] if r["input"] == "Self-shading"][0]
     assert sh["value"] == "Standard" and sh["section"] == "Advanced settings"
     again = call(app, "POST", "/api/weather", {"lat": 33.4, "lon": -112.0, "interval": 60})[1]["job"]
@@ -129,13 +130,13 @@ def test_isc_datasheet_entered_on_the_results_page(app):
     assert s["status"] == "done", s["error"]                       # not needed to run
     job, nec = s["id"], s["result"]["nec"]
     assert nec["isc_stc_module"] is None and nec["baseline"] is None and nec["use"] is None
-    row = lambda r: [x for x in r["inputs_used"] if x["input"] == "Module Isc at STC (datasheet)"][0]  # noqa: E731
+    row = lambda r: [x for x in r["inputs_used"] if x["input"] == "Module Isc (from datasheet)"][0]  # noqa: E731
     assert row(s["result"])["value"] == "(not entered)"
     code, err = call(app, "POST", f"/api/job/{job}/isc_datasheet", {"value": "500"})
     assert code == 400 and err["errors"][0]["field"] == "isc_datasheet"
     code, s = call(app, "POST", f"/api/job/{job}/isc_datasheet", {"value": "20"})
     nec = s["result"]["nec"]
-    assert code == 200 and nec["isc_stc_module"] == 20 and round(nec["baseline_70pct"], 4) == 19.25
+    assert code == 200 and nec["isc_stc_module"] == 20 and round(nec["baseline_70pct"], 4) == 17.5
     assert nec["use"] == "baseline_70pct" and nec["use_value"] == nec["baseline_70pct"]   # 70% floor is the larger
     assert row(s["result"])["value"] == "20" and row(s["result"])["method"] == "User entered"
     code, data, _ = request(app, "GET", f"/api/job/{job}/export/inputs_json")
@@ -155,7 +156,12 @@ def test_run_waits_for_running_retrieval_then_exports(app):
     assert wait(app, jw)["status"] == "done"
 
     code, data, _ = request(app, "GET", f"/api/job/{jr}/export/all")
-    assert code == 200 and len(zipfile.ZipFile(io.BytesIO(data)).namelist()) == 7
+    names = zipfile.ZipFile(io.BytesIO(data)).namelist()
+    assert code == 200 and len(names) == 7 + len(YEARS) and sum(n.startswith("weather/") for n in names) == len(YEARS)
+    code, data, hdr = request(app, "GET", f"/api/job/{jr}/export/weather")
+    wz = zipfile.ZipFile(io.BytesIO(data))
+    assert code == 200 and hdr["Content-Type"] == "application/zip" and len(wz.namelist()) == len(YEARS)
+    assert wz.read(wz.namelist()[0]).startswith(b"Source")                 # the NSRDB CSV itself
     code, data, hdr = request(app, "GET", f"/api/job/{jr}/export/sam_json")
     sam, year = json.loads(data), s["result"]["sam_json_year"]
     assert code == 200 and sam["compute_module_0"] == "pvsamv1" and sam["subarray1_shade_mode"] == 0

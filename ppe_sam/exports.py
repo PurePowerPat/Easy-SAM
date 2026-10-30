@@ -74,7 +74,8 @@ def sam_case_json(inputs: dict, weather_path) -> dict:
 def inputs_used_csv(rows) -> bytes:
     buf = io.StringIO()
     w = csv.writer(buf, lineterminator="\r\n")
-    w.writerow(["Section", "Input", "Value", "Units", "Method"])
+    w.writerow(["Section", "Input", "Value", "Units", "Method", "Key item to check", "Non-PPE standard"])
     for r in rows:
-        w.writerow([r["section"], r["input"], r["value"], r["units"], r["method"]])
+        w.writerow([r["section"], r["input"], r["value"], r["units"], r["method"],
+                    "Yes" if r.get("key") else "", "Yes" if r.get("nonstd") else ""])
     return buf.getvalue().encode("utf-8-sig")

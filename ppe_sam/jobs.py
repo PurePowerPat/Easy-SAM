@@ -17,6 +17,7 @@ import traceback
 import uuid
 import zipfile
 from concurrent.futures.process import BrokenProcessPool
+from pathlib import Path
 
 from . import analysis, config, exports, inputs_export, model, report, weather
 
@@ -165,7 +166,7 @@ class Job(_Base):
                                   self.isc_sim)
 
     def set_isc_datasheet(self, value):
-        """Module Isc at STC (datasheet) entered on the Results page (CEC library modules): recompute the PV
+        """Module Isc (from datasheet) entered on the Results page (CEC library modules): recompute the PV
         Maximum Circuit Current and Inputs used, and keep it in the Inputs (.json) download."""
         if self.status != "done" or not self.result:
             raise LookupError("Results are not available for this run.")
@@ -189,6 +190,11 @@ class Job(_Base):
         yrs = sorted(self.per_year)
         return f"{exports.safe_name(self.design['project'])}_{yrs[0]}-{yrs[-1]}"
 
+    def _add_weather(self, z, folder):
+        """The NSRDB weather files this run used (from the weather cache), one per year."""
+        for _year, p in self.files:
+            z.write(p, folder + Path(p).name)
+
     def export(self, kind):
         if self.status != "done" or not self.per_year:
             raise LookupError("Results are not available for this run.")
@@ -207,12 +213,18 @@ class Job(_Base):
         if kind == "inputs":
             h, rows = inputs_export.build_rows(self.design, self.inputs, self.files)
             return f"{base}_SAM_inputs.csv", inputs_export.to_csv(h, rows), "text/csv"
+        if kind == "weather":
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+                self._add_weather(z, "")
+            return f"{base}_weather.zip", buf.getvalue(), "application/zip"
         if kind == "all":
             buf = io.BytesIO()
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
                 for k in list(exports.KINDS) + ["inputs_used", "inputs_json", "sam_json", "inputs"]:
                     name, data, _ = self.export(k)
                     z.writestr(name, data)
+                self._add_weather(z, "weather/")
             return f"{base}_exports.zip", buf.getvalue(), "application/zip"
         raise LookupError(f"Unknown export '{kind}'.")
 

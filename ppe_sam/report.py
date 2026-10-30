@@ -3,7 +3,8 @@
 Columns: Section | Input | Value | Units | Method.
 Method is one of: Database, User entered, Calculated, Default.
 Row flags used by the Results page:
-  key   True  -> highlighted as a check-worthy item
+  key   True  -> highlighted as a check-worthy item (listed in QA/QC)
+  nonstd True -> an Advanced setting changed from the PPE standard (red in QA/QC)
   sub   "cec" -> CEC database module specs, shown in a collapsible sub-section under "Module model"
                (CEC library modules only; never highlighted)
   tip   "cec" -> "Module model" row gets the CEC-database tooltip
@@ -12,13 +13,16 @@ from . import config
 from . import model as model_mod
 
 DB, USER, CALC, DEF = "Database", "User entered", "Calculated", "Default"
+ADV = "Advanced settings"
+
+GAIN_LABEL = "Bifacial gain (NEC Baseline + Bifacial Gain)"
 
 KEY_INPUTS = {
     "Project name", "Latitude", "Longitude", "Weather time step", "Albedo",
     "Module", "Power at STC", "Isc", "Voc", "Imp", "Vmp",
     "Isc temperature coefficient", "Voc temperature coefficient", "Pmp temperature coefficient", "NOCT",
     "Bifacial", "Calculate bifacial electrical mismatch", "Module length", "Module width",
-    "Bifaciality", "Bifaciality tolerance", "Bifacial gain for NEC 70% check", "Self-shading",
+    "Bifaciality", "Bifaciality tolerance", GAIN_LABEL, "Self-shading",
     model_mod.ISC_DATASHEET_LABEL,
     "Inverter", "Mounting type", "Modules per string", "Tilt", "Azimuth",
     "Module orientation", "Ground clearance", "Modules High", "Modules Across", "Strings modeled",
@@ -61,7 +65,7 @@ def build(d: dict, weather: dict | None = None) -> list:
     def add(section, name, value, units="", method=USER, sub=None, tip=None):
         rows.append({"section": section, "input": name, "value": _n(value) if not isinstance(value, str) else value,
                      "units": units, "method": method, "key": (name in KEY_INPUTS) and not sub,
-                     "sub": sub, "tip": tip})
+                     "nonstd": section == ADV and method != DEF, "sub": sub, "tip": tip})
 
     def entered_or_db(field):
         return DB if field in dbf or (field not in e) else USER
@@ -155,7 +159,7 @@ def build(d: dict, weather: dict | None = None) -> list:
         add(S, "Bifaciality", d["bifaciality_base"], "%")
         add(S, "Bifaciality tolerance", d["bifaciality_tol"], "%")
         add(S, "Bifaciality used (base + tolerance)", round(d["bifaciality"], 4), "", CALC)
-        add(S, "Bifacial gain for NEC 70% check", d["bifacial_gain"], "%")
+        add(S, GAIN_LABEL, d["bifacial_gain"], "%")
         add(S, "Bifacial transmission fraction", config.BIFACIAL_TRANSMISSION_DEFAULT, "", DEF)
     add(S, "Temperature model", "NOCT, ground or rack mounted, one story", "", DEF)
 
@@ -209,7 +213,7 @@ def build(d: dict, weather: dict | None = None) -> list:
     add(S, "Grid limits", "None", "", DEF)
 
     # ---------------- Advanced settings (same order as the Advanced Settings page) ----------------
-    S = "Advanced settings"
+    S = ADV
     if bif:
         add(S, "Calculate bifacial electrical mismatch", "Include" if d.get("bifacial_mismatch") else "Exclude", "",
             USER if d.get("bifacial_mismatch") else DEF)

@@ -36,7 +36,7 @@ page and a small JSON API. No third-party dependencies besides PySAM.
 | `model.py` | Input validation (`validate_design`) and the SAM model settings (`build_inputs`) |
 | `weather.py` | NSRDB download, throttling, and the per-grid-cell weather cache |
 | `analysis.py` | Rolling 3-hour windows (Isc, Vmp), max Voc and the NEC 70% floor |
-| `report.py` | The "Inputs used" table |
+| `report.py` | The "Inputs used" rows (QA/QC on the Results page; full table as a .csv download) |
 | `exports.py`, `inputs_export.py` | CSV / JSON downloads (incl. SAM's "JSON for inputs" format) |
 | `libraries.py` | CEC module and inverter libraries (`libraries/*.csv`) |
 | `config.py` | Fixed settings (NSRDB, PPE standards, folders) |

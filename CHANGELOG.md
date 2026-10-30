@@ -7,32 +7,40 @@ Release notes for v0.1.0–v0.1.2 and v0.1.7 were not kept.
 
 ## v0.3.8 — 2026-10-30
 
-- **PDF report.** Results > **Save PDF report** (was Print) opens the print dialog with a report layout
-  instead of the web page. Page 1: header with the Easy-SAM and PPE logos, project name and report
-  date, a summary of the site, weather, module, inverter, mounting, string and rows, the Isc and Voc
-  design values, the PV Maximum Circuit Current and the annual maxima by weather year. Page 2: a
-  **QA/QC** checklist of the key items to check (with a box per item and Checked by / Date lines) and
-  the method notes. Then the full Inputs used table. Footer on every page (version, project, date,
-  "Page X of Y"); no buttons, downloads or log. The suggested file name is
-  "Easy-SAM - <project> - <date>". Best in Chrome or Edge (Destination: Save as PDF; turn off
-  "Headers and footers" under More settings).
-- **Results page:**
-  - Isc and Voc tiles show when the worst case happened (date and 3-hour window, or the single time
-    step for Voc). The Vmp tile is removed (the Vmp .csv download stays).
-  - **PV Maximum Circuit Current** (was NEC 690.8(A)(1)(2) 70% minimum): SAM Simulated, NEC Baseline
-    (Isc × 125% × (1 + bifacial gain %)) and 70% of NEC Baseline, with the formulas in tooltips,
-    a bar comparison and "Use SAM Simulated: X A" or "Use 70% of NEC Baseline: X A" (the larger).
-    No more "governs" wording.
-  - **New:** Annual maxima by weather year: the highest Isc (3-hour average) and Voc of each weather
-    year, with the worst year highlighted (hover a dot for its value).
-- **Module Isc at STC (datasheet) moved from Configure to Results** (in PV Maximum Circuit Current).
-  It is no longer needed to run: enter it after the run and the check, Inputs used, the PDF report and
-  Downloads > Inputs (.json) update. It is sent with the next run and saved with Save inputs; choosing
-  another module clears it. Save PDF report asks first if it is not entered. Custom modules still use
-  the Isc from their specs (shown read-only).
+- **PV Maximum Circuit Current** (was NEC 690.8(A)(1)(2) 70% minimum) on the Results page:
+  - Rows: NEC Baseline (Isc × 125%, per 2023 NEC 690.8(A)(1)(a)(1)); NEC Baseline + Bifacial Gain
+    (Isc × 125% × (1 + bifacial gain %), bifacial modules only); 70% of NEC Baseline (Isc × 125% × 70%);
+    SAM Simulated (max 3-hour average Isc). Formulas in tooltips (printed under the labels in the PDF).
+  - Bars on one scale with a dotted line at 70% of NEC Baseline.
+  - "Use SAM Simulated: X A" or "Use 70% of NEC Baseline: X A" (the larger), with "SAM Simulated is
+    N% of the NEC Baseline using 690.8(A)(1)(a)(1)." No more "governs" wording.
+  - **Calculation change:** 70% of NEC Baseline no longer includes the bifacial gain (was
+    0.70 × 1.25 × Isc × (1 + gain)). The bifacial gain (Configure: "Gain for NEC Baseline") is now
+    only used for NEC Baseline + Bifacial Gain. Simulated Isc and Voc are unchanged.
+- **Module Isc (from datasheet)** moved from Configure to this section. It is no longer needed to
+  run: enter it after the run and the check, QA/QC, the PDF report and Downloads update. It is sent
+  with the next run and saved with Save inputs; choosing another module clears it. Save PDF report
+  asks first if it is not entered. Custom modules use the Isc from their specs (shown read-only).
+- Results tiles: Isc and Voc, with when the worst case happened (date and 3-hour window, or the single
+  time step for Voc). The Vmp tile is removed (the Vmp .csv download stays).
+- **New:** Annual maxima by weather year: the highest Isc (3-hour average) and Voc of each weather year,
+  worst year highlighted.
+- **QA/QC** replaces the Inputs used table on the Results page: the key items to check, grouped by
+  section, with the source of each. An Advanced setting changed from the PPE standard is highlighted
+  red ("Non-PPE Standard"). The full table is the "Full inputs used (.csv)" download (new columns: Key
+  item to check, Non-PPE standard).
+- **PDF report.** Results > **Save PDF report** (was Print) prints a report instead of the web page:
+  page 1 has the header, project summary, max design values, PV Maximum Circuit Current and annual
+  maxima; page 2 the QA/QC table. Footer on every page (version, project, date, "Page X of Y"). The
+  suggested file name is "Easy-SAM - <project> - <date>". Best in Chrome or Edge (Destination: Save as
+  PDF; turn off "Headers and footers" under More settings).
+- **Downloads:** Isc, Voc, Vmp, **Weather files (.zip)** (new: the NSRDB file of every year used),
+  Inputs (.json), All files (.zip, now with the weather files). SAM case inputs (.json) is in All files.
+  Testing only: SAM inputs browser.
+- Fix: SAM inputs browser (.csv): an 8760-value array (grid_curtailment, all 1e+38) no longer spills
+  into the rows below in Excel. Values longer than an Excel cell are summarized, e.g. "8760 values,
+  all 1e+38".
 - Printing from Configure or Advanced Settings is unchanged.
-
-Calculations unchanged.
 
 ## v0.3.7 — 2026-10-29
 
