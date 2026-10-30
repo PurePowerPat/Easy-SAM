@@ -15,8 +15,14 @@
     <div class="tabs" role="tablist" aria-label="Views">
       <button type="button" class="tab" role="tab" id="tabCfg" aria-selected="true" aria-controls="viewCfg">Configure</button>
       <button type="button" class="tab" role="tab" id="tabRes" aria-selected="false" aria-controls="viewRes" disabled>Results</button>
-      <button type="button" class="tab" role="tab" id="tabSet" aria-selected="false" aria-controls="viewCfg">Advanced Settings</button>
-      <button type="button" class="tab" role="tab" id="tabAbout" aria-selected="false" aria-controls="viewAbout">About</button>
+    </div>
+    <div class="gear-wrap">
+      <button type="button" class="gear" id="gearBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="gearMenu" aria-label="Settings and info" title="Settings and info"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <div class="gmenu hidden" id="gearMenu" role="menu" aria-label="Settings and info">
+        <button type="button" role="menuitem" data-view="set"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg><span><span class="mi-t">Advanced settings</span><span class="mi-s">PPE defaults. Change only with PM approval.</span></span></button>
+        <hr>
+        <button type="button" role="menuitem" data-view="about"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span><span class="mi-t">About Easy-SAM</span><span class="mi-s">Version, method, sources</span></span></button>
+      </div>
     </div>
   </div>
 </div></header>
@@ -54,14 +60,17 @@
       <div class="prompt" id="locPrompt">Choose Address or Coordinates.</div>
     </div>
     <div class="g4" style="margin-top:12px">
-      <div class="fld" data-field="address"><label for="address">Address</label><div class="inwrap"><input id="address" name="address" placeholder="e.g. 1 Main St, Stamford, CT"><button type="button" class="sfx-btn hidden" id="geoRun" title="Look up the coordinates for this address">Run</button></div><div class="note" id="geoNote"></div></div>
+      <div class="fld" data-field="address"><label for="address">Address</label><div class="inwrap"><input id="address" name="address" placeholder="e.g. 100 Solar St, Hoboken, NJ"><button type="button" class="sfx-btn hidden" id="geoRun" title="Look up the coordinates for this address">Run</button></div></div>
       <div class="fld" data-field="lat"><label for="lat">Latitude</label><div class="inwrap"><input id="lat" name="lat" type="number" step="any" placeholder="e.g. 39.18886"><span class="sfx">°</span></div></div>
       <div class="fld" data-field="lon"><label for="lon">Longitude</label><div class="inwrap"><input id="lon" name="lon" type="number" step="any" placeholder="e.g. -76.60095"><span class="sfx">°</span></div></div>
       <div class="fld" data-field="interval"><label for="interval">Weather time step</label><select id="interval" name="interval"><option value="60">60-minute</option><option value="30">30-minute</option></select></div>
+      <div class="note geo-note" id="geoNote"></div>
     </div>
-    <div class="actions" style="margin-top:10px">
-      <button type="button" class="btn btn-sm" id="verifyLoc" disabled>Verify location on map</button>
-      <button type="button" class="btn btn-sm hidden" id="wxBtn">Retrieve weather</button>
+    <div class="actions loc-row">
+      <div class="loc-acts">
+        <button type="button" class="btn btn-act" id="verifyLoc" disabled><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>Verify location on map</button>
+        <button type="button" class="btn btn-act primary hidden" id="wxBtn">Retrieve weather</button>
+      </div>
       <span class="note" id="locText"></span>
     </div>
   </div>
@@ -204,15 +213,15 @@
 
       <div class="group" id="spacingBox"><h3>Row spacing</h3>
         <div class="choice compact" role="radiogroup" aria-label="Row spacing input" id="gcrMode">
-          <button type="button" role="radio" aria-checked="true" data-g="pitch"><span class="ck"></span><span class="ct">Row pitch</span></button>
-          <button type="button" role="radio" aria-checked="false" data-g="gcr"><span class="ck"></span><span class="ct">GCR</span></button>
+          <button type="button" role="radio" aria-checked="true" data-g="gcr"><span class="ck"></span><span class="ct">GCR</span></button>
+          <button type="button" role="radio" aria-checked="false" data-g="pitch"><span class="ck"></span><span class="ct">Row pitch</span></button>
         </div>
         <div class="g4" style="margin-top:10px">
-          <div class="fld g-pitch" data-field="pitch"><label for="pitch">Row pitch</label><div class="inwrap"><input id="pitch" name="pitch" type="number" min="0" step="any" placeholder="e.g. 236"><select class="unit" name="pitch_units" aria-label="Row pitch units"><option value="in" selected>in</option><option value="m">m</option></select></div><div class="note" id="pitchEq"></div></div>
-          <div class="fld g-pitch" id="gapBox" data-field="gap"><label for="gap">Module spacing<span class="tip">?<span class="tiptext">Gap between modules stacked high.</span></span></label><div class="inwrap"><input id="gap" name="gap" type="number" min="0" step="any" placeholder="e.g. 0.8"><span class="sfx">in</span></div></div>
-          <div class="fld g-gcr hidden" data-field="gcr"><label for="gcr">GCR</label><input id="gcr" name="gcr" type="number" min="0" step="0.1" placeholder="e.g. 0.35"></div>
-          <div class="fld ro g-pitch" data-s="calc" title="Source: Calculated ((Modules High × module dimension + spacing) ÷ row pitch)"><label for="cGcr">GCR</label><input id="cGcr" readonly tabindex="-1" placeholder="Needs dimensions, orientation, pitch"></div>
-          <div class="fld ro g-gcr hidden" data-s="calc" title="Source: Calculated (Modules High × module dimension ÷ GCR)"><label for="cPitch">Equivalent row pitch</label><div class="inwrap"><input id="cPitch" readonly tabindex="-1" placeholder="Needs GCR, dimensions, orientation"><span class="sfx">m</span></div></div>
+          <div class="fld g-gcr" data-field="gcr"><label for="gcr">GCR</label><input id="gcr" name="gcr" type="number" min="0" step="0.1" placeholder="e.g. 0.35"></div>
+          <div class="fld ro g-pitch hidden" data-s="calc" title="Source: Calculated ((Modules High × module dimension + spacing) ÷ row pitch)"><label for="cGcr">GCR</label><input id="cGcr" readonly tabindex="-1" placeholder="Needs dimensions, orientation, pitch"></div>
+          <div class="fld g-pitch hidden" data-field="pitch"><label for="pitch">Row pitch</label><div class="inwrap"><input id="pitch" name="pitch" type="number" min="0" step="any" placeholder="e.g. 236"><select class="unit" name="pitch_units" aria-label="Row pitch units"><option value="in" selected>in</option><option value="m">m</option></select></div><div class="note" id="pitchEq"></div></div>
+          <div class="fld ro g-gcr" data-s="calc" title="Source: Calculated (Modules High × module dimension ÷ GCR)"><label for="cPitch">Row pitch</label><div class="inwrap"><input id="cPitch" readonly tabindex="-1" placeholder="Needs GCR, dimensions, orientation"><span class="sfx">m</span></div></div>
+          <div class="fld g-pitch hidden" id="gapBox" data-field="gap"><label for="gap">Module spacing<span class="tip">?<span class="tiptext">Gap between modules stacked high.</span></span></label><div class="inwrap"><input id="gap" name="gap" type="number" min="0" step="any" placeholder="e.g. 0.8"><span class="sfx">in</span></div></div>
         </div>
       </div>
       <div class="group hidden" id="carportGcr"><h3>Row spacing</h3>
@@ -313,6 +322,7 @@
     <dt>Module</dt><dd id="sModule"></dd><dt>Inverter</dt><dd id="sInverter"></dd>
     <dt>Circuit</dt><dd id="sString"></dd><dt>Mounting</dt><dd id="sMount"></dd>
   </dl>
+  <div class="adv-changed hidden" id="advChanged" role="note"><b>Advanced settings changed</b><span id="advList"></span><button type="button" class="linkbtn" id="advOpen">Review advanced settings</button></div>
   <h3>Readiness</h3>
   <ul class="ready" id="ready"></ul>
   <button type="button" class="btn primary" id="runBtn">Run simulation</button>
@@ -383,7 +393,7 @@
 <style id="reportPage"></style>
 
 <!-- ======================= ABOUT VIEW ======================= -->
-<div class="wide view hidden" id="viewAbout" role="tabpanel" aria-labelledby="tabAbout">
+<div class="wide view hidden" id="viewAbout" aria-label="About">
   <section class="card">
     <div class="card-h"><h2>About</h2></div>
     <div class="card-b">

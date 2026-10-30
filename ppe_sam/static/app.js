@@ -1,7 +1,7 @@
 (() => {
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const f = $('#f');
-  const st = {src:'cec', loc:null, module:null, inverter:null, racking:null, gmode:'pitch', job:null, doneJob:null,
+  const st = {src:'cec', loc:null, module:null, inverter:null, racking:null, gmode:'gcr', job:null, doneJob:null,
               info:null, jobPrompted:false, touched:new Set(), running:false, geo:null, complete:null,
               wx:null, showing:null, view:'cfg', shadeAuto:true, iscDs:null};   // iscDs: Module Isc (from datasheet), entered on Results
   const IN = 0.0254;
@@ -73,13 +73,26 @@
 
   // ================= views =================
   // 'cfg' and 'set' are two pages of the same form (Configure / Advanced Settings) beside the summary panel.
-  const TABS = {cfg:'#tabCfg', set:'#tabSet', res:'#tabRes', about:'#tabAbout'};
+  // Configure and Results are tabs; Advanced Settings and About open from the gear menu.
+  const TABS = {cfg:'#tabCfg', res:'#tabRes'};
   function showView(v){ const changed = st.view!==v; st.view = v; const form = v==='cfg' || v==='set';
     $('#viewCfg').classList.toggle('hidden', !form); $('#pageCfg').classList.toggle('hidden', v!=='cfg'); $('#pageSet').classList.toggle('hidden', v!=='set');
     $('#viewRes').classList.toggle('hidden', v!=='res'); $('#viewAbout').classList.toggle('hidden', v!=='about');
     Object.entries(TABS).forEach(([k,id]) => $(id).setAttribute('aria-selected', String(k===v)));
+    $('#gearBtn').classList.toggle('on', v==='set' || v==='about');
+    $$('#gearMenu [data-view]').forEach(b => b.dataset.view===v ? b.setAttribute('aria-current','page') : b.removeAttribute('aria-current'));
     if(changed) window.scrollTo({top:0}); }
   Object.entries(TABS).forEach(([k,id]) => $(id).onclick = () => showView(k)); $('#backBtn').onclick = () => showView('cfg');
+  const gearBtn = $('#gearBtn'), gearMenu = $('#gearMenu'), gearItems = $$('#gearMenu [role=menuitem]');
+  function setGear(open, focusBtn){ gearMenu.classList.toggle('hidden', !open); gearBtn.setAttribute('aria-expanded', String(open));
+    if(open) gearItems[0].focus(); else if(focusBtn) gearBtn.focus(); }
+  gearBtn.onclick = () => setGear(gearMenu.classList.contains('hidden'));
+  gearItems.forEach(b => b.onclick = () => { setGear(false); showView(b.dataset.view); });
+  gearMenu.addEventListener('keydown', e => { const i = gearItems.indexOf(document.activeElement);
+    if(e.key==='ArrowDown' || e.key==='ArrowUp'){ e.preventDefault(); gearItems[(i + (e.key==='ArrowDown' ? 1 : gearItems.length-1)) % gearItems.length].focus(); }
+    else if(e.key==='Escape'){ e.preventDefault(); setGear(false, true); } else if(e.key==='Tab') setGear(false); });
+  document.addEventListener('click', e => { if(!e.target.closest('.gear-wrap')) setGear(false); });
+  $('#advOpen').onclick = () => showView('set');
   $$('.lockval').forEach(el => el.title = 'Locked: PPE default');
   // Fields on the page not shown still count; only fields hidden because they do not apply are left out.
   const notApplicable = el => !!el.closest('.hidden:not(.page):not(.view)');
@@ -153,7 +166,7 @@
   const srcG = radioGroup('#srcGroup', b => { st.src = b.dataset.src; update(); scheduleValidate(); });
   const rackG = radioGroup('#rack', b => { st.racking = b.dataset.r; clearFieldError($('#rack')); update(); scheduleValidate(); });
   const gcrG = radioGroup('#gcrMode', b => { st.gmode = b.dataset.g; update(); scheduleValidate(); });
-  locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=pitch]'));
+  locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=gcr]'));
 
   // ================= location: address or coordinates =================
   function setLatLon(lat, lon){ f.elements.lat.value = (lat??''); f.elements.lon.value = (lon??''); }
@@ -165,7 +178,7 @@
     ['lat','lon','address'].forEach(n => clearFieldError(f.elements[n]));
     update(); scheduleValidate();
   }
-  function setGeoNote(html){ $('#geoNote').innerHTML = html; }
+  function setGeoNote(html){ const n=$('#geoNote'); n.innerHTML = html; n.title = n.textContent; }
   $('#address').addEventListener('input', () => {
     if(st.loc!=='address') return;
     if(!(st.geo && st.geo.address===val('address'))){ setLatLon('', ''); f.elements.geocode_match.value=''; f.elements.geocode_source.value=''; setGeoNote(''); }
@@ -189,14 +202,15 @@
   // ================= background weather retrieval =================
   function wxKey(){ const a=num('lat'), o=num('lon');
     return (a!==null && o!==null && Math.abs(a)<=90 && Math.abs(o)<=180) ? `${a}|${o}|${val('interval')}` : null; }
+  const WX_ICO = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4 4 0 0 1-.5 7.97"/><path d="M12 12v8m-3-3 3 3 3-3"/></svg>';
   function renderWxBtn(){
     const b=$('#wxBtn'), k=wxKey(); b.classList.toggle('hidden', !k); if(!k) return;
     const s = st.wx && st.wx.key===k ? st.wx.status : null;
     b.classList.toggle('done', s==='done');
     if(s==='queued' || s==='downloading'){ b.disabled=true; b.innerHTML='<span class="spin"></span>'; b.setAttribute('aria-label','Retrieving weather'); b.title='Retrieving weather in the background (progress on the Results tab)'; }
     else if(s==='done'){ b.disabled=true; b.innerHTML='✓ Complete'; b.removeAttribute('aria-label'); b.title='Weather retrieved and cached. Run simulation will use it.'; }
-    else if(s==='error'){ b.disabled=false; b.textContent='Retry weather retrieval'; b.removeAttribute('aria-label'); b.title='The last retrieval failed. See the Results tab.'; }
-    else { b.disabled=false; b.textContent='Retrieve weather'; b.removeAttribute('aria-label'); b.title='Download the weather years now, in the background, while you finish the rest of the page'; }
+    else if(s==='error'){ b.disabled=false; b.innerHTML=WX_ICO+'Retry weather retrieval'; b.removeAttribute('aria-label'); b.title='The last retrieval failed. See the Results tab.'; }
+    else { b.disabled=false; b.innerHTML=WX_ICO+'Retrieve weather'; b.removeAttribute('aria-label'); b.title='Download the weather years now, in the background, while you finish the rest of the page'; }
   }
   $('#wxBtn').onclick = async () => {
     const k = wxKey(); if(!k) return;
@@ -420,7 +434,7 @@
 
   // ================= readiness + auto-expand =================
   function missing(){
-    const m={1:[],2:[],3:[],4:[],5:[]}, need=(s,n,cond=true)=>{ if(cond && !val(n)) m[s].push(n); };
+    const m={1:[],2:[],3:[],4:[]}, need=(s,n,cond=true)=>{ if(cond && !val(n)) m[s].push(n); };
     if(!st.loc) m[1].push('location_mode');
     else if(st.loc==='address'){ if(!val('address') || !val('lat') || !val('lon')) m[1].push('address'); }
     else { need(1,'lat'); need(1,'lon'); }
@@ -434,13 +448,12 @@
     if(st.racking){ need(4,'tilt',st.racking!=='tracker'); need(4,'rotlim',st.racking==='tracker'); need(4,'azimuth'); need(4,'orientation');
       if(isBif()) need(4,'ground_clearance'); need(4,'modules_high'); need(4,'modules_across');
       if(st.racking!=='carport'){ if(st.gmode==='gcr') need(4,'gcr'); else { need(4,'pitch'); need(4,'gap', (parseInt(val('modules_high'))||1)>=2); } } }
-    need(5,'self_shading', haveModule()); INV_LIMITS.forEach(n => need(5,n)); need(5,'rows');
     return m;
   }
   let lastReady = null;
-  const SEC_NAME = {1:'Site and weather', 2:'Module', 3:'Inverter', 4:'System design', 5:'Advanced Settings'};
+  const SEC_NAME = {1:'Site and weather', 2:'Module', 3:'Inverter', 4:'System design'};
   function renderReadiness(m){
-    const html = [1,2,3,4,5].map(s => `<li class="${m[s].length?'':'ok'}"><div class="rh"><span class="ri"></span>${SEC_NAME[s]}</div></li>`).join('');
+    const html = [1,2,3,4].map(s => `<li class="${m[s].length?'':'ok'}"><div class="rh"><span class="ri"></span>${SEC_NAME[s]}</div></li>`).join('');
     if(html !== lastReady){ lastReady = html; $('#ready').innerHTML = html; }
     [1,2,3,4].forEach(s => { const ch=$('#chip'+s); ch.classList.toggle('done', !m[s].length); ch.textContent = m[s].length ? 'Incomplete' : 'Complete'; });
     const now = [1,2,3,4].map(s => !m[s].length);
@@ -458,21 +471,28 @@
     const site = okLL ? `${hemi(lat,'N','S')}, ${hemi(lon,'E','W')}` : null;
     $('#sProject').innerHTML = val('project') ? esc(val('project')) : E('Not named');
     const addr = st.loc==='address' && val('address') ? `${esc(val('address'))}<br>` : '';
-    $('#sSite').innerHTML = site ? `${addr}${site} · ${val('interval')}-min` : E(st.loc==='address' ? 'Run the address lookup' : st.loc ? 'Coordinates needed' : 'Choose Address or Coordinates');
-    let mod = null;
-    if(st.src==='cec' && st.module) mod = `${esc(st.module.name)} · ${fnum(st.module.stc)} W${isBif()?' · bifacial':''}`;
-    if(st.src==='custom' && val('custom_name')) mod = `${esc(val('custom_name'))}${c.pmp?` · ${c.pmp.toFixed(0)} W`:''}${isBif()?' · bifacial':''}`;
-    $('#sModule').innerHTML = mod || E('Not selected');
-    $('#sInverter').innerHTML = st.inverter ? `${esc(st.inverter.name)} · ${fmt(st.inverter.paco/1000,1)} kWac` : E('Not selected');
+    $('#sSite').innerHTML = site ? `${addr}${site}` : E(st.loc==='address' ? 'Run the address lookup' : st.loc ? 'Coordinates needed' : 'Choose Address or Coordinates');
+    const mod = st.src==='cec' ? (st.module && st.module.name) : val('custom_name');
+    $('#sModule').innerHTML = mod ? esc(mod) : E('Not selected');
+    $('#sInverter').innerHTML = st.inverter ? esc(st.inverter.name) : E('Not selected');
     $('#sString').innerHTML = val('modules_per_string') ? `${val('modules_per_string')} modules per string` : E('Not set');
-    const r=st.racking, R=val('rows'), sh=val('self_shading');
-    $('#sMount').innerHTML = r ? `${RACK_NAME[r]} · ${val('modules_high')||'?'} × ${val('modules_across')||'?'}${R?` · ${R} row${R==='1'?'':'s'}`:''}${c.gcr?` · GCR ${c.gcr.toFixed(3)}`:''}${sh?` · self-shading ${SHADE_NAME[sh]}`:''}` : E('Not chosen');
+    const r=st.racking, R=val('rows');
+    $('#sMount').innerHTML = r ? `${RACK_NAME[r]} · ${val('modules_high')||'?'} × ${val('modules_across')||'?'}${R?` · ${R} row${R==='1'?'':'s'}`:''}${c.gcr?` · GCR ${c.gcr.toFixed(3)}`:''}` : E('Not chosen');
     $('#csum1').textContent = site ? `${st.loc==='address'&&val('address')?val('address')+' · ':''}${site} · ${val('interval')}-min` : '';
     $('#csum2').textContent = st.src==='cec' ? (st.module ? `${st.module.name} · ${fnum(st.module.stc)} W` : '') : val('custom_name');
     $('#csum3').textContent = st.inverter ? st.inverter.name : '';
     $('#csum4').textContent = r ? `${RACK_NAME[r]} · ${val('modules_per_string')||'?'} modules · ${val('modules_high')||'?'} × ${val('modules_across')||'?'}${R?` · ${R} row(s)`:''}${c.gcr?` · GCR ${c.gcr.toFixed(3)}`:''}` : '';
     $('#verifyLoc').disabled = !okLL; $('#locText').textContent = okLL ? site : '';
+    const adv = advChanged(); $('#advChanged').classList.toggle('hidden', !adv.length); $('#advList').textContent = adv.join(', ');
   }
+  // Advanced Settings that differ from the PPE default (only the ones that apply to this configuration).
+  function advChanged(){
+    const out = [];
+    if(isBif() && val('bifacial_mismatch')==='1') out.push(LABELS.bifacial_mismatch);
+    if(haveModule() && val('self_shading') && val('self_shading')!==ppeShade()) out.push(LABELS.self_shading);
+    INV_LIMITS.forEach(n => { if(val(n) && !atDefault(n)) out.push(LABELS[n]); });
+    if(val('rows') && !same(val('rows'), '1')) out.push(LABELS.rows);
+    return out; }
   $('#verifyLoc').onclick = () => { const a=num('lat'), o=num('lon'); if(a===null||o===null) return;
     window.open(`https://www.bing.com/maps?cp=${a}~${o}&lvl=16&style=h&sp=point.${a}_${o}_Site`, '_blank', 'noopener'); };
 
@@ -482,7 +502,7 @@
     const custom = st.src==='custom', r = st.racking, bif = isBif();
     $('#locPrompt').classList.toggle('hidden', !!st.loc);
     setRO('address', st.loc!=='address'); setRO('lat', st.loc!=='coords'); setRO('lon', st.loc!=='coords');
-    f.elements.address.placeholder = st.loc==='coords' ? 'Not used' : 'e.g. 1 Main St, Stamford, CT';
+    f.elements.address.placeholder = st.loc==='coords' ? 'Not used' : 'e.g. 100 Solar St, Hoboken, NJ';
     f.elements.lat.placeholder = st.loc==='address' ? 'From address lookup' : st.loc ? 'e.g. 39.18886' : '';
     f.elements.lon.placeholder = st.loc==='address' ? 'From address lookup' : st.loc ? 'e.g. -76.60095' : '';
     $('#geoRun').classList.toggle('hidden', !(st.loc==='address' && val('address')));
@@ -657,7 +677,7 @@
   // ================= reset =================
   function resetAll(){
     f.reset(); clearAllErrors(); st.touched.clear(); Object.keys(dbVals).forEach(k=>delete dbVals[k]);
-    Object.assign(st,{src:'cec', loc:null, racking:null, gmode:'pitch', geo:null, complete:null, shadeAuto:true, iscDs:null}); locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=pitch]'));
+    Object.assign(st,{src:'cec', loc:null, racking:null, gmode:'gcr', geo:null, complete:null, shadeAuto:true, iscDs:null}); locG.clear(); srcG.sync($('[data-src=cec]')); rackG.clear(); gcrG.sync($('[data-g=gcr]'));
     modPicker.reset(); invPicker.reset(); ['#customBif','#bifOverride'].forEach(s=>$(s).checked=false); ['#copyNote','#saveNote','#geoNote','#inNote'].forEach(s=>$(s).textContent='');
     $('#cCarGcr').value='0.01';
     setCollapsed($('#sec1'), false); ['#sec2','#sec3','#sec4'].forEach(s=>setCollapsed($(s), true));
