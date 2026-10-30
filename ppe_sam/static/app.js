@@ -178,7 +178,7 @@
     ['lat','lon','address'].forEach(n => clearFieldError(f.elements[n]));
     update(); scheduleValidate();
   }
-  function setGeoNote(html){ $('#geoNote').innerHTML = html; }
+  function setGeoNote(html){ const n=$('#geoNote'); n.innerHTML = html; n.title = n.textContent; }
   $('#address').addEventListener('input', () => {
     if(st.loc!=='address') return;
     if(!(st.geo && st.geo.address===val('address'))){ setLatLon('', ''); f.elements.geocode_match.value=''; f.elements.geocode_source.value=''; setGeoNote(''); }
