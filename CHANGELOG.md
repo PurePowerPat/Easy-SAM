@@ -5,6 +5,28 @@ Every version, newest first. Entries up to v0.2.8 are the release notes written 
 
 Release notes for v0.1.0–v0.1.2 and v0.1.7 were not kept.
 
+## v0.3.8 — 2026-10-30
+
+- Header: only Configure and Results are tabs (the selected one is underlined). Advanced settings and
+  About open from a gear menu at the right, which repeats "Change only with PM approval".
+- Configuration panel: an "Advanced settings changed" note lists any Advanced Setting that differs
+  from the PPE default (only those that apply), with a link to the page. Readiness no longer lists
+  Advanced Settings.
+- Configuration panel: Site shows the address and coordinates only (no weather time step), Module
+  and Inverter show the full name only (no W, bifacial or kWac), Mounting no longer shows
+  self-shading.
+- Site and weather: "Verify location on map" and "Retrieve weather" are larger buttons with icons,
+  the same width as Address / Coordinates, with more space above them. Retrieve weather is the
+  filled main action.
+- Site and weather: the address lookup result runs on one line across the section. Address example
+  is now "100 Solar St, Hoboken, NJ".
+- System design: Row spacing defaults to GCR and lists it first. GCR always sits on the left and
+  Row pitch on the right; the value not entered shows in place as a calculated field. "Equivalent
+  row pitch" is renamed "Row pitch" (page, report and SAM inputs export). Saved input files keep
+  their mode.
+
+Calculations unchanged.
+
 ## v0.3.7 — 2026-10-29
 
 - Configure: the section headings line up. The Complete / Incomplete chips and the summaries of the

@@ -1,17 +1,27 @@
 Easy-SAM (PPE SAM Multi-Year Simulation)
-Version: v0.3.7
-Date:    10/29/2026
+Version: v0.3.8
+Date:    10/30/2026
 
 HOW TO RUN: double-click run_from_source.bat.
 Full version history: CHANGELOG.md
 
-Changes since v0.3.6:
- - Configure: the section headings line up. The Complete / Incomplete chips and the summaries of the
-   collapsed sections sit in fixed columns.
- - Configure: the Layout illustration in System design is open by default (also after Reset).
- - System max. voltage is removed from System design, the configuration panel, the review screen and
-   Inputs used. It was no longer used by the calculation (the inverter voltage limits in Advanced
-   Settings replaced it in v0.3.5). Older input files that contain it still load; the value is
-   ignored.
+Changes since v0.3.7:
+ - Header: only Configure and Results are tabs (the selected one is underlined). Advanced settings and
+   About open from a gear menu at the right, which repeats "Change only with PM approval".
+ - Configuration panel: an "Advanced settings changed" note lists any Advanced Setting that differs
+   from the PPE default (only those that apply), with a link to the page. Readiness no longer lists
+   Advanced Settings.
+ - Configuration panel: Site shows the address and coordinates only (no weather time step), Module
+   and Inverter show the full name only (no W, bifacial or kWac), Mounting no longer shows
+   self-shading.
+ - Site and weather: "Verify location on map" and "Retrieve weather" are larger buttons with icons,
+   the same width as Address / Coordinates, with more space above them. Retrieve weather is the
+   filled main action.
+ - Site and weather: the address lookup result runs on one line across the section. Address example
+   is now "100 Solar St, Hoboken, NJ".
+ - System design: Row spacing defaults to GCR and lists it first. GCR always sits on the left and
+   Row pitch on the right; the value not entered shows in place as a calculated field. "Equivalent
+   row pitch" is renamed "Row pitch" (page, report and SAM inputs export). Saved input files keep
+   their mode.
 
  Calculations unchanged.
