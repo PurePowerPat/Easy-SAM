@@ -39,4 +39,21 @@ Changes since v0.3.7:
  - Fix: SAM inputs browser (.csv): an 8760-value array (grid_curtailment, all 1e+38) no longer spills
    into the rows below in Excel. Values longer than an Excel cell are summarized, e.g. "8760 values,
    all 1e+38".
+ - Header: only Configure and Results are tabs (the selected one is underlined). Advanced settings and
+   About open from a gear menu at the right, which repeats "Change only with PM approval".
+ - Configuration panel: an "Advanced settings changed" note lists any Advanced Setting that differs
+   from the PPE default (only those that apply), with a link to the page. Readiness no longer lists
+   Advanced Settings.
+ - Configuration panel: Site shows the address and coordinates only (no weather time step), Module
+   and Inverter show the full name only (no W, bifacial or kWac), Mounting no longer shows
+   self-shading.
+ - Site and weather: "Verify location on map" and "Retrieve weather" are larger buttons with icons,
+   the same width as Address / Coordinates, with more space above them. Retrieve weather is the
+   filled main action.
+ - Site and weather: the address lookup result runs on one line across the section. Address example
+   is now "100 Solar St, Hoboken, NJ".
+ - System design: Row spacing defaults to GCR and lists it first. GCR always sits on the left and
+   Row pitch on the right; the value not entered shows in place as a calculated field. "Equivalent
+   row pitch" is renamed "Row pitch" (page, report and SAM inputs export). Saved input files keep
+   their mode.
  - Printing from Configure or Advanced Settings is unchanged.
