@@ -334,7 +334,7 @@
 <div class="wide view hidden" id="viewRes" role="tabpanel" aria-labelledby="tabRes">
   <div class="printonly" id="printStamp2"></div>
   <div class="reshead"><h2 id="resTitle">Results</h2>
-    <div class="actions"><button type="button" class="btn btn-sm" id="backBtn">Back to configuration</button><button type="button" class="btn btn-sm" id="printBtn2">Print</button></div></div>
+    <div class="actions"><button type="button" class="btn btn-sm" id="backBtn">Back to configuration</button><button type="button" class="btn btn-sm primary hidden" id="printBtn2" title="Opens the print dialog: choose Save as PDF as the destination">Save PDF report</button></div></div>
 
   <section class="card hidden" id="progress" aria-live="polite">
     <div class="card-h"><h2>Run status</h2><span class="csum" style="visibility:visible" id="pmsg"></span></div>
@@ -352,7 +352,8 @@
 
   <div id="results" class="hidden">
     <div class="kpis" id="kpis"></div>
-    <details class="sec" open><summary>NEC 690.8(A)(1)(2) 70% minimum</summary><div class="sb" id="nec"></div></details>
+    <section class="card rcard"><div class="card-h"><h2>NEC 690.8(A)(1)(2) 70% minimum current</h2></div><div class="card-b" id="nec"></div></section>
+    <section class="card rcard"><div class="card-h"><h2>Annual maxima by weather year</h2></div><div class="card-b ychs" id="yrCharts"></div></section>
     <details class="sec"><summary>Inputs used</summary><div class="sb">
       <div class="actions" style="margin-bottom:8px"><button type="button" class="btn btn-sm" data-export="inputs_used">Download (.csv)</button><span class="keylegend"><i></i>Key items to check</span></div>
       <div id="inputsUsed"></div></div></details>
@@ -375,6 +376,10 @@
     <details class="sec"><summary>Log</summary><div class="sb"><pre class="log" id="finalLog"></pre></div></details>
   </div>
 </div>
+
+<!-- ============ PDF REPORT (print only, filled from the results) ============ -->
+<div id="report" aria-hidden="true"></div>
+<style id="reportPage"></style>
 
 <!-- ======================= ABOUT VIEW ======================= -->
 <div class="wide view hidden" id="viewAbout" role="tabpanel" aria-labelledby="tabAbout">

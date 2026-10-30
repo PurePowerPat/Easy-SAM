@@ -605,7 +605,7 @@
     catch(e){ showSummary([{field:null, message:'Could not reach the app. Is the console window still open?'}]); return; }
     if(!r.ok){ showSummary(j.errors || [{field:null,message:j.error}]); return; }
     st.job=j.job; st.jobPrompted=false; st.running=true; st.showing='run'; $('#runBtn').disabled=true;
-    $('#tabRes').disabled=false; $('#results').classList.add('hidden'); prepProgress(true); $('#resTitle').textContent='Running…';
+    $('#tabRes').disabled=false; $('#results').classList.add('hidden'); $('#printBtn2').classList.add('hidden'); prepProgress(true); $('#resTitle').textContent='Running…';
     showView('res'); poll(); };
   $('#cancelBtn').onclick = () => st.job && fetch(`/api/job/${st.job}/cancel`,{method:'POST',body:'{}'});
 
@@ -639,9 +639,22 @@
       a.href=URL.createObjectURL(blob); a.download=m?m[1]:'export'; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},1000);
     }catch(e){ $('#exportErr').textContent='Download failed: '+e; } finally{ b.disabled=false; } }));
   let openBefore=[];
+  const APP_TITLE = document.title;
+  const cssStr = s => '"' + String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/[\r\n]+/g,' ') + '"';
+  // Printing from Results (with results shown) prints the PDF report instead of the page: report layout, a footer with
+  // page numbers, and a document title that becomes the suggested PDF file name.
   window.addEventListener('beforeprint',()=>{ const t=`Easy-SAM v${(st.info&&st.info.version)||''} · printed ${new Date().toLocaleString()}`;
-    $('#printStamp').textContent=t; $('#printStamp2').textContent=t; openBefore=$$('details').map(d=>d.open); $$('details').forEach(d=>d.open=true); });
-  window.addEventListener('afterprint',()=>{ $$('details').forEach((d,i)=>d.open=openBefore[i]); });
+    $('#printStamp').textContent=t; $('#printStamp2').textContent=t; openBefore=$$('details').map(d=>d.open); $$('details').forEach(d=>d.open=true);
+    if(st.view!=='res' || !st.res || $('#results').classList.contains('hidden')) return;
+    const d = st.resDate, project = st.res.project || 'Untitled project';
+    const day = d.toLocaleDateString('en-GB',{day:'numeric', month:'short', year:'numeric'}), iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    $('#reportPage').textContent = `@page{margin:13mm 15mm 15mm;
+      @bottom-left{content:${cssStr(`Easy-SAM v${(st.info&&st.info.version)||''}  ·  ${project}  ·  ${day}`)};font:8pt "Segoe UI",Arial,sans-serif;color:#64748b}
+      @bottom-right{content:"Page " counter(page) " of " counter(pages);font:8pt "Segoe UI",Arial,sans-serif;color:#64748b}}`;
+    document.body.classList.add('print-report'); document.title = `Easy-SAM - ${project} - ${iso}`; });
+  window.addEventListener('afterprint',()=>{ $$('details').forEach((d,i)=>d.open=openBefore[i]);
+    if(!document.body.classList.contains('print-report')) return;
+    document.body.classList.remove('print-report'); $('#reportPage').textContent=''; document.title = APP_TITLE; });
   $('#printBtn2').onclick = () => window.print();
 
   // ================= reset =================
@@ -701,19 +714,98 @@
   // ================= results =================
   const METH = {'Database':'db','User entered':'user','Calculated':'calc','Default':'def'};
   const SUB_TITLE = {cec:'CEC database module specs'};
-  function kpi(t, w, u, d, sub){ return `<div class="kpi"><div class="t">${t}</div><div class="v">${w?fmt(w.value,d):'—'} ${u}</div><div class="s">${sub||''}</div></div>`; }
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const fmtg = (v,d=2) => (v===null||v===undefined||isNaN(v)) ? '—' : Number(v).toLocaleString('en-US',{minimumFractionDigits:d, maximumFractionDigits:d});
+  const hhmm = m => `${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+  // "5 Jul 2007, 08:00–11:00" for a 3-hour window, "13 Jan 2009, 15:00" for a single time step (weather file times).
+  function when(w){ if(!w) return '—'; const [d,t]=w.start.split(' '), [y,m,dd]=d.split('-');
+    let end=''; if(w.window_steps>1){ const [h,mi]=w.end_step.split(' ')[1].split(':').map(Number); end = '–' + hhmm(h*60+mi+w.step_minutes); }
+    return `${+dd} ${MON[m-1]} ${y}, ${t}${end}`; }
+  const whenDay = w => w ? when(w).split(',')[0] : '';
+  const inputsMap = res => Object.fromEntries(res.inputs_used.filter(r => !r.sub).map(r => [r.input, r]));
+
+  // ---- shared by the Results page and the PDF report ----
+  function kpiTiles(res){ const W=res.summary.worst, n=res.nec, I=inputsMap(res);
+    const tile = (l, sub, w, u, d, x) => `<div class="kpi"><div class="l">${l} <span>· ${sub}</span></div><div class="v">${w?fmtg(w.value,d):'—'}<small>${u}</small></div>
+      <div class="w">${w?`Worst case <b>${when(w)}</b>`:'No value'}</div>${x?`<div class="x">${x}</div>`:''}</div>`;
+    const vdc = I['Library max DC voltage'];
+    return tile('Isc', 'max 3-hr average', W.isc_max, 'A', 2, `NEC governing current <b>${fmtg(n.governing,2)} A</b>`)
+      + tile('Voc', 'max single time step', W.voc_max, 'V', 1, vdc && vdc.value ? `Inverter Vdc max (library) ${esc(vdc.value)} V` : '')
+      + tile('Vmp', 'max 3-hr average', W.vmp_max, 'V', 1, W.vmp_min ? `Min operating Vmp <b>${fmtg(W.vmp_min.value,1)} V</b> (${whenDay(W.vmp_min)})` : ''); }
+
+  function necPanel(res){ const n=res.nec, W=res.summary.worst, pass=!n.floor_governs, bif=n.bifacial_gain_pct!==null;
+    const diff = Math.abs(n.simulated_3hr/n.floor_70pct - 1)*100, mx = Math.max(n.simulated_3hr, n.floor_70pct)*1.08;
+    const bar = (lab, v, cls) => `<div class="br"><span>${lab}</span><div class="t"><div class="${cls}" style="width:${v/mx*100}%"></div></div><span class="bv">${fmtg(v,2)} A</span></div>`;
+    return `<div class="necp"><div>
+        <span class="verdict ${pass?'ok':'floor'}"><i>${pass?'✓':'!'}</i>${pass?'Simulation governs':'70% floor governs'}</span>
+        <div class="gov">Governing current</div><div class="big">${fmtg(n.governing,3)}<small> A</small></div>
+        <div class="gnote">Simulated Isc is ${fmtg(diff,1)}% ${pass?'above':'below'} the 70% floor${pass?'':', so the floor governs'}.</div>
+        <div class="bars">${bar('Simulated Isc', n.simulated_3hr, 'sim')}${bar('70% floor', n.floor_70pct, 'floor')}</div></div>
+      <table class="necc"><tr><td>Module Isc at STC (datasheet)</td><td>${fmtg(n.isc_stc_module,3)} A</td></tr>
+        ${bif?`<tr><td>Bifacial gain</td><td>${fmtg(n.bifacial_gain_pct,1)} %</td></tr>`:''}
+        <tr><td>70% floor<span class="f">0.70 × 1.25 × ${fmtg(n.isc_stc_module,3)} A${bif?` × (1 + ${+(n.bifacial_gain_pct/100).toFixed(4)})`:''}</span></td><td>${fmtg(n.floor_70pct,3)} A</td></tr>
+        <tr><td>Simulated max 3-hr average Isc<span class="f">${when(W.isc_max)}</span></td><td>${fmtg(n.simulated_3hr,3)} A</td></tr>
+        <tr><td><b>Governing current</b><span class="f">The larger of the two</span></td><td><b>${fmtg(n.governing,3)} A</b></td></tr></table></div>`; }
+
+  // One dot per weather year, own axis per chart (not zero-based, so no stems); the worst year is highlighted and labelled.
+  function yearChart(res, key, title, sub, u, d){ const worst=res.summary.worst[key], ys=res.summary.yearly.filter(r => r[key]!==null && r[key]!==undefined);
+    if(!ys.length) return '';
+    const vals=ys.map(r=>r[key]), lo=Math.min(...vals), hi=Math.max(...vals), pad=(hi-lo)*0.25 || Math.max(Math.abs(hi)*0.001, 10**-d);
+    const a=lo-pad, b=hi+pad, Wd=300, H=110, L=34, T=10, B=18, x=i => L+(i+0.5)*(Wd-L-4)/ys.length, y=v => T+(H-T-B)*(1-(v-a)/(b-a));
+    const td = Math.min(4, Math.max(d, Math.ceil(-Math.log10((b-a)/3))));     // enough decimals that no two ticks read the same
+    let s = `<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="${esc(title)}">` + [0,1,2,3].map(i => { const t=a+(b-a)*i/3;
+      return `<line x1="${L}" x2="${Wd-4}" y1="${y(t)}" y2="${y(t)}" class="gl"/><text x="${L-4}" y="${y(t)+2.3}" text-anchor="end">${fmtg(t,td)}</text>`; }).join('');
+    const step = Math.max(1, Math.ceil(ys.length/6));
+    ys.forEach((r,i) => { const w = worst && r.year===worst.year, cx=x(i), cy=y(r[key]);
+      if(i%step===0 || i===ys.length-1) s += `<text x="${cx}" y="${H-6}" text-anchor="middle">${r.year}</text>`;
+      s += `<circle cx="${cx}" cy="${cy}" r="${w?3.2:2.2}" class="${w?'dw':'d'}"/><circle cx="${cx}" cy="${cy}" r="6" class="hit"><title>${r.year}: ${fmtg(r[key],d)} ${u}</title></circle>`;
+      if(w) s += `<text x="${Math.min(Math.max(cx,L+24),Wd-28)}" y="${cy-6}" text-anchor="middle" class="wl">${r.year} · ${fmtg(r[key],d)} ${u}</text>`; });
+    return `<div class="ych"><div class="ct">${title}</div><div class="cs">${sub}</div>${s}</svg></div>`; }
+  const yearCharts = res => yearChart(res, 'isc_max', 'Isc · max 3-hr average (A)', 'Highest window in each weather year; worst year highlighted', 'A', 2)
+    + yearChart(res, 'voc_max', 'Voc · max single time step (V)', 'Highest time step in each weather year; worst year highlighted', 'V', 1);
+
+  // ---- PDF report: printed instead of the page when printing from Results ----
+  function reportHtml(res, dateText){ const I=inputsMap(res), iv=k => I[k] ? I[k].value : '', wx=res.weather||{}, n=res.nec;
+    const join = (...p) => p.filter(Boolean).join(' · '), withU = k => I[k] ? `${I[k].value}${I[k].units?' '+I[k].units:''}` : '';
+    const tracker = !!I['Rotation limit'], pitch = I['Row pitch'] ? withU('Row pitch') : withU('Equivalent row pitch');
+    const gcr = parseFloat(iv('GCR')), rows = iv('Number of rows');
+    const missing = (wx.unavailable_years||[]).length;
+    const meta = [
+      ['Location', `${iv('Latitude')}°, ${iv('Longitude')}°`, iv('NSRDB grid point') ? `NSRDB grid point ${iv('NSRDB grid point')}°` : ''],
+      ['Weather', wx.first ? `${wx.first}–${wx.last} · ${wx.count} years` : '—', join(wx.dataset, wx.interval ? `${wx.interval}-min` : '', missing ? `${missing} years not available` : '')],
+      ['Module', iv('Module'), join(iv('Bifacial')==='Yes' ? 'Bifacial' : 'Monofacial', `Isc (datasheet) ${fmtg(n.isc_stc_module,2)} A`)],
+      ['Inverter', iv('Inverter'), `Limits ${iv('Vmppt low')}–${iv('Vmppt high')} V, Vdc max ${iv('Vdc max')} V`],
+      ['Mounting', iv('Mounting type'), join(tracker ? `Rotation limit ±${iv('Rotation limit')}°` : `Tilt ${iv('Tilt')}°`, `azimuth ${iv('Azimuth')}°`)],
+      ['String', `${iv('Modules per string')} modules`, `${iv('Module orientation')}, ${iv('Modules High')} high × ${iv('Modules Across')} across`],
+      ['Rows / GCR', join(`${rows} ${rows==='1'?'row':'rows'}`, isNaN(gcr) ? '' : `GCR ${fmtg(gcr,2)}`), join(pitch && `Pitch ${pitch}`, I['Ground clearance'] && `clearance ${withU('Ground clearance')}`)],
+      ['Run', `${wx.count||'—'} SAM runs`, join(`Easy-SAM v${(st.info&&st.info.version)||''}`, res.elapsed_s!==undefined ? `${res.elapsed_s} s` : '')]];
+    const M = {'Database':'m-db','User entered':'','Calculated':'m-calc','Default':'m-def'};
+    let last='', subDone=false, t='';
+    res.inputs_used.forEach(r => {
+      if(r.section!==last){ t += `<tr class="grp"><td colspan="4">${esc(r.section)}</td></tr>`; last=r.section; }
+      if(r.sub && !subDone){ subDone=true; t += `<tr class="subh"><td colspan="4">CEC database module specs (these may differ from the datasheet; that is not an error)</td></tr>`; }
+      t += `<tr class="${r.sub?'sub':r.key?'key':''}"><td>${esc(r.input)}</td><td>${esc(r.value)}</td><td>${esc(r.units)}</td><td><span class="src ${M[r.method]||''}">${esc(r.method)}</span></td></tr>`; });
+    const logo = st.info && st.info.logo ? `<img src="${esc(st.info.logo)}" alt="Pure Power Engineering">` : '';
+    return `<div class="r-hdr"><div><div class="r-wm"><span class="wm1">Easy</span><span class="wm2">-SAM</span></div><div class="r-doc">Worst-case string values · multi-year SAM simulation</div></div>${logo}</div>
+      <div class="r-title"><h1>${esc(res.project || 'Untitled project')}</h1><div>Report date ${esc(dateText)}</div></div>
+      <dl class="r-meta">${meta.map(([k,v,s]) => `<div><dt>${k}</dt><dd>${esc(v)}<small>${esc(s)}</small></dd></div>`).join('')}</dl>
+      <section class="r-sec"><h2 class="r-h">Design values (per string)</h2><div class="kpis">${kpiTiles(res)}</div></section>
+      <section class="r-sec"><h2 class="r-h">NEC 690.8(A)(1)(2) — 70% minimum current</h2>${necPanel(res)}</section>
+      <section class="r-sec"><h2 class="r-h">Annual maxima by weather year</h2><div class="ychs">${yearCharts(res)}</div></section>
+      <section class="r-sec r-pb"><h2 class="r-h">Method and notes</h2><div class="r-notes">
+        <p><b>Isc and Vmp:</b> highest consecutive 3-hour average in any weather year (windows stay within one year; minimum Vmp counts only windows where every step is non-zero). <b>Voc:</b> highest single time step.</p>
+        <p><b>Model:</b> SAM (NLR-PySAM 8.0.0), one run per weather year, all strings on one inverter; results are per string, times in local standard time. <b>NEC floor:</b> 0.70 × 1.25 × Isc<sub>STC</sub>${n.bifacial_gain_pct!==null?' × (1 + bifacial gain)':''}.</p></div></section>
+      <section class="r-sec r-flow"><h2 class="r-h">Inputs used</h2>
+        <div class="r-legend"><span><i class="k"></i>Key item to check</span><span class="src m-db">Database</span><span class="src">User entered</span><span class="src m-calc">Calculated</span><span class="src m-def">Default</span></div>
+        <table class="r-inp"><thead><tr><th>Input</th><th>Value</th><th>Units</th><th>Source</th></tr></thead><tbody>${t}</tbody></table></section>`; }
+
   function show(res){
-    const W=res.summary.worst, n=res.nec, pass = !n.floor_governs;     // same test as the NEC table below
+    st.res = res; st.resDate = new Date();
     $('#resTitle').textContent = `Results${res.project?`: ${res.project}`:''}`;
-    $('#kpis').innerHTML =
-        kpi('Isc · max 3-hr avg', W.isc_max, 'A', 2, `70% of Isc = ${fmt(n.floor_70pct,2)} A <span class="mark ${pass?'yes':'no'}" title="${pass?'Simulated Isc is at or above the 70% floor':'Simulated Isc is below the 70% floor: the floor governs'}">${pass?'✓':'✕'}</span>`)
-      + kpi('Voc · max', W.voc_max, 'V', 1, W.voc_max ? 'Highest single time step (not averaged)' : '')
-      + kpi('Vmp · max 3-hr avg', W.vmp_max, 'V', 1, W.vmp_min ? `Min (operating) = ${fmt(W.vmp_min.value,1)} V` : '');
-    $('#nec').innerHTML = `<table><tr><th>Item</th><th class="num">Value</th></tr><tr><td>Module Isc at STC (datasheet)</td><td class="num">${fmt(n.isc_stc_module,3)} A</td></tr>
-      ${n.bifacial_gain_pct!==null?`<tr><td>Bifacial gain</td><td class="num">${fmt(n.bifacial_gain_pct,1)} %</td></tr>`:''}
-      <tr><td>70% floor = 0.70 × 1.25 × Isc${n.bifacial_gain_pct!==null?' × (1 + gain)':''}</td><td class="num">${fmt(n.floor_70pct,3)} A</td></tr>
-      <tr><td>Simulated max 3-hr avg Isc</td><td class="num">${fmt(n.simulated_3hr,3)} A</td></tr>
-      <tr><td><b>Governing current</b></td><td class="num"><b>${fmt(n.governing,3)} A</b> ${n.floor_governs?'<span class="warn">(70% floor governs)</span>':'<span class="ok">(simulation governs)</span>'}</td></tr></table>`;
+    $('#kpis').innerHTML = kpiTiles(res);
+    $('#nec').innerHTML = necPanel(res);
+    $('#yrCharts').innerHTML = yearCharts(res);
+    $('#report').innerHTML = reportHtml(res, st.resDate.toLocaleDateString('en-GB',{day:'numeric', month:'short', year:'numeric'}));
     const rows = res.inputs_used, tipTxt = res.cec_tip, started = {};
     let last='', h='<table><tr><th>Input</th><th>Value</th><th>Units</th><th>Method</th></tr>';
     rows.forEach(r => {
@@ -725,7 +817,7 @@
       h += `<tr${cls}><td>${esc(r.input)}${tip}</td><td>${esc(r.value)}</td><td>${esc(r.units)}</td><td><span class="meth ${METH[r.method]||'user'}">${esc(r.method)}</span></td></tr>`; });
     $('#inputsUsed').innerHTML = h + '</table>';
     $('#samJsonNote').textContent = res.sam_json_year ? `SAM case inputs (.json): every SAM input for ${res.sam_json_year} (the worst-case Isc year), in SAM's own "JSON for inputs" format, with that year's weather file.` : '';
-    $('#exportErr').textContent=''; $('#results').classList.remove('hidden');
+    $('#exportErr').textContent=''; $('#results').classList.remove('hidden'); $('#printBtn2').classList.remove('hidden');
   }
   $('#inputsUsed').addEventListener('click', e => { const b=e.target.closest('.subtog'); if(!b) return;
     const open = b.getAttribute('aria-expanded')!=='true'; b.setAttribute('aria-expanded', String(open));

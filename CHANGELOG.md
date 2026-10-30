@@ -5,6 +5,28 @@ Every version, newest first. Entries up to v0.2.8 are the release notes written 
 
 Release notes for v0.1.0–v0.1.2 and v0.1.7 were not kept.
 
+## v0.3.8 — 2026-10-30
+
+- **PDF report.** Results > **Save PDF report** (was Print) opens the print dialog with a report layout
+  instead of the web page: header with the Easy-SAM and PPE logos, project name and report date, a
+  summary of the site, weather, module, inverter, mounting, string and rows, the design values, the
+  NEC 70% check, annual maxima by weather year, method notes and the Inputs used table. Footer on every
+  page (version, project, date, "Page X of Y"); no buttons, downloads or log. The suggested file name
+  is "Easy-SAM - <project> - <date>". Fits on 3 Letter pages for a typical CEC-library run.
+  Best in Chrome or Edge (Destination: Save as PDF; turn off "Headers and footers" under More settings).
+- **Results page** uses the same pieces:
+  - Isc, Voc and Vmp tiles show when the worst case happened (date and 3-hour window, or the single
+    time step for Voc), the NEC governing current, the inverter's library Vdc max, and the minimum
+    operating Vmp with its date.
+  - NEC 70% minimum current: a "Simulation governs" / "70% floor governs" label, the governing current,
+    how far the simulated Isc is above or below the floor, a bar comparison, and the floor calculation
+    written out with the values.
+  - **New:** Annual maxima by weather year: the highest Isc (3-hour average) and Voc of each weather
+    year, with the worst year highlighted (hover a dot for its value).
+- Printing from Configure or Advanced Settings is unchanged.
+
+Calculations unchanged.
+
 ## v0.3.7 — 2026-10-29
 
 - Configure: the section headings line up. The Complete / Incomplete chips and the summaries of the
